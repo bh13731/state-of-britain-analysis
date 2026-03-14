@@ -1,0 +1,1214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>State of Britain — Dirty Water</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background: #FAFAF7;
+  color: #1A1A1A;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---------- Loading / Error ---------- */
+#loading-screen {
+  position: fixed; inset: 0; z-index: 9999;
+  background: #FAFAF7;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  transition: opacity 0.5s;
+}
+#loading-screen.hidden { opacity: 0; pointer-events: none; }
+#loading-screen .spinner {
+  width: 40px; height: 40px;
+  border: 3px solid #E0E0DB; border-top-color: #5B7553;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+#loading-screen p { margin-top: 16px; color: #595959; font-size: 1rem; }
+#error-screen {
+  display: none; position: fixed; inset: 0; z-index: 9998;
+  background: #FAFAF7;
+  flex-direction: column; align-items: center; justify-content: center;
+}
+#error-screen h2 { font-family: 'Source Serif 4', serif; font-size: 1.8rem; margin-bottom: 8px; }
+#error-screen p { color: #595959; max-width: 400px; text-align: center; }
+
+/* ---------- Header ---------- */
+.site-header {
+  padding: 72px 32px 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.site-header .kicker {
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #5B7553;
+  margin-bottom: 8px;
+}
+.site-header h1 {
+  font-family: 'Source Serif 4', serif;
+  font-size: clamp(2rem, 5vw, 3.4rem);
+  font-weight: 700;
+  line-height: 1.15;
+  max-width: 700px;
+  color: #1A1A1A;
+}
+.site-header .deck {
+  margin-top: 12px;
+  font-size: 1.15rem;
+  color: #3D3D3D;
+  max-width: 600px;
+  line-height: 1.55;
+}
+
+/* ---------- Scroll sections ---------- */
+.scroll-section {
+  position: relative;
+  display: flex;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 32px;
+}
+.scroll-steps {
+  flex: 0 0 40%;
+  position: relative;
+  z-index: 2;
+}
+.scroll-graphic {
+  flex: 0 0 58%;
+  margin-left: 2%;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.scroll-graphic .chart-container {
+  width: 100%;
+  position: relative;
+}
+.step {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 40px 0;
+}
+.step-inner {
+  max-width: 420px;
+  opacity: 0.15;
+  transition: opacity 0.5s;
+}
+.step-inner.active {
+  opacity: 1;
+}
+.step-inner h2 {
+  font-family: 'Source Serif 4', serif;
+  font-size: clamp(1.6rem, 3vw, 2.8rem);
+  font-weight: 700;
+  line-height: 1.2;
+  margin-bottom: 16px;
+  color: #1A1A1A;
+}
+.step-inner p {
+  font-size: 1.15rem;
+  color: #3D3D3D;
+  line-height: 1.6;
+  margin-bottom: 12px;
+}
+.big-number {
+  font-family: 'Source Serif 4', serif;
+  font-size: clamp(3rem, 6vw, 5rem);
+  font-weight: 700;
+  line-height: 1.1;
+  margin-bottom: 8px;
+}
+.big-number.red { color: #C53030; }
+.big-number.green { color: #2E7D32; }
+.big-number.amber { color: #A16B00; }
+.big-number.blue { color: #2563A0; }
+.big-number.murky { color: #5B7553; }
+.big-number.brown { color: #8B6C42; }
+
+/* ---------- Tooltip ---------- */
+.chart-tooltip {
+  position: fixed;
+  pointer-events: none;
+  background: #fff;
+  border: 1px solid #E0E0DB;
+  border-radius: 6px;
+  padding: 10px 14px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #1A1A1A;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  z-index: 1000;
+  opacity: 0;
+  transition: opacity 0.15s;
+  max-width: 260px;
+}
+.chart-tooltip.visible { opacity: 1; }
+.chart-tooltip .tt-label { font-weight: 600; margin-bottom: 2px; }
+.chart-tooltip .tt-value { color: #333; }
+
+/* ---------- Chart annotation ---------- */
+.chart-annotation {
+  font-size: 13px;
+  fill: #595959;
+  font-family: 'Inter', sans-serif;
+}
+.chart-annotation-bold {
+  font-size: 13.5px;
+  font-weight: 600;
+  fill: #1A1A1A;
+  font-family: 'Inter', sans-serif;
+}
+
+/* ---------- Section divider ---------- */
+.section-divider {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 32px;
+  height: 1px;
+  background: transparent;
+}
+
+/* ---------- Footer ---------- */
+.site-footer {
+  max-width: 1200px;
+  margin: 80px auto 0;
+  padding: 32px 32px 48px;
+  border-top: 1px solid #E0E0DB;
+  font-size: 0.9rem;
+  color: #595959;
+  line-height: 1.7;
+}
+.site-footer a { color: #5B7553; text-decoration: none; }
+.site-footer a:hover { text-decoration: underline; }
+
+/* ---------- SVG common ---------- */
+.axis text {
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  fill: #595959;
+}
+.axis path, .axis line { stroke: none; }
+.grid line { stroke: #F0F0EB; stroke-width: 1; }
+.grid path { stroke: none; }
+
+/* ---------- Responsive ---------- */
+@media (max-width: 768px) {
+  .scroll-section {
+    flex-direction: column;
+    padding: 0 16px;
+  }
+  .scroll-steps {
+    flex: none;
+    width: 100%;
+  }
+  .scroll-graphic {
+    flex: none;
+    width: 100%;
+    margin-left: 0;
+    position: sticky;
+    top: 0;
+    height: 55vh;
+  }
+  .step {
+    min-height: 80vh;
+  }
+  .step-inner {
+    max-width: 100%;
+  }
+  .site-header {
+    padding: 60px 16px 20px;
+  }
+  .site-header h1 { font-size: 2rem; }
+  .site-footer { padding: 24px 16px 32px; }
+  .chart-container svg { max-width: 100%; overflow: visible; }
+}
+</style>
+</head>
+<body>
+
+<nav style="position:fixed;top:0;left:0;right:0;z-index:999;background:rgba(250,250,247,0.95);backdrop-filter:blur(8px);border-bottom:1px solid #E0E0DB;padding:8px 24px;font-size:13px;font-family:Inter,sans-serif;"><a href="hub.html" style="color:#2563A0;text-decoration:none;font-weight:500;">&larr; All stories</a><span style="margin:0 12px;color:#8A8A82;">|</span><span style="color:#595959;font-weight:600;">Water</span></nav>
+
+<div id="loading-screen">
+  <div class="spinner"></div>
+  <p>Loading water data&hellip;</p>
+</div>
+
+<div id="error-screen">
+  <h2>Something went wrong</h2>
+  <p id="error-msg">Could not load water data. Please refresh or try again later.</p>
+</div>
+
+<div class="chart-tooltip" id="tooltip"></div>
+
+<header class="site-header" id="site-header" style="display:none;padding-top:72px;">
+  <div class="kicker">State of Britain</div>
+  <h1>Dirty Water</h1>
+  <p class="deck">The scandal beneath Britain&rsquo;s rivers &mdash; how decades of underinvestment left sewage in waterways, pollution climbing, and customers paying more for less.</p>
+</header>
+
+<main id="main-content" style="display:none;">
+
+<!-- ====== SECTION 1: The Hook — Sewage Spills ====== -->
+<section class="scroll-section" id="section-hook">
+  <div class="scroll-steps">
+    <div class="step" data-section="hook" data-step="0">
+      <div class="step-inner">
+        <div class="big-number red" id="bn-spills"></div>
+        <h2>Sewage spills per overflow in 2024</h2>
+        <p>On average, every storm overflow in England discharged raw sewage nearly 32 times last year. Only 12.5% of overflows recorded zero spills.</p>
+      </div>
+    </div>
+    <div class="step" data-section="hook" data-step="1">
+      <div class="step-inner">
+        <h2>Pollution incidents are surging</h2>
+        <p>Water companies caused 2,801 pollution incidents in 2024 &mdash; the highest figure since records began. That&rsquo;s a 47% jump from 2016, with serious incidents nearly doubling in a single year.</p>
+      </div>
+    </div>
+  </div>
+  <div class="scroll-graphic">
+    <div class="chart-container" id="chart-hook"></div>
+  </div>
+</section>
+
+<!-- ====== SECTION 2: Pollution Deep Dive ====== -->
+<section class="scroll-section" id="section-pollution">
+  <div class="scroll-steps">
+    <div class="step" data-section="pollution" data-step="0">
+      <div class="step-inner">
+        <h2>Serious pollution is getting worse</h2>
+        <p>In 2024, water companies caused 75 serious pollution incidents &mdash; up from 47 the year before. These are Category 1 and 2 events: fish kills, river contamination, harm to drinking water.</p>
+      </div>
+    </div>
+    <div class="step" data-section="pollution" data-step="1">
+      <div class="step-inner">
+        <h2>Pollution per kilometre is climbing</h2>
+        <p>Normalised for network size, pollution incidents rose 27% from 36.3 per 10,000km of sewer in 2019&ndash;20 to 45.9 in 2024&ndash;25. The system is getting dirtier, not cleaner.</p>
+      </div>
+    </div>
+  </div>
+  <div class="scroll-graphic">
+    <div class="chart-container" id="chart-pollution"></div>
+  </div>
+</section>
+
+<!-- ====== SECTION 3: Leakage & Infrastructure ====== -->
+<section class="scroll-section" id="section-leakage">
+  <div class="scroll-steps">
+    <div class="step" data-section="leakage" data-step="0">
+      <div class="step-inner">
+        <h2>Three billion litres lost every day</h2>
+        <p>Water companies leak nearly 3,000 megalitres per day &mdash; enough to fill 1,200 Olympic swimming pools. After decades of slow improvement, leakage has flatlined and even crept back up.</p>
+      </div>
+    </div>
+    <div class="step" data-section="leakage" data-step="1">
+      <div class="step-inner">
+        <h2>The worst offenders</h2>
+        <p>Thames Water alone leaks 580 megalitres per day. Several companies &mdash; D&#x175;r Cymru, Southern Water, South East Water &mdash; are actually leaking <em>more</em> than their baseline, missing their targets entirely.</p>
+      </div>
+    </div>
+  </div>
+  <div class="scroll-graphic">
+    <div class="chart-container" id="chart-leakage"></div>
+  </div>
+</section>
+
+<!-- ====== SECTION 4: Customer Impact & System State ====== -->
+<section class="scroll-section" id="section-system">
+  <div class="scroll-steps">
+    <div class="step" data-section="system" data-step="0">
+      <div class="step-inner">
+        <h2>Customers are paying the price</h2>
+        <p>Customer satisfaction has fallen from 82.4 to 74.7 &mdash; a 9% decline. Supply interruptions are up 8%. People are getting a worse service while bills keep rising.</p>
+      </div>
+    </div>
+    <div class="step" data-section="system" data-step="1">
+      <div class="step-inner">
+        <h2>The league table of failure</h2>
+        <p>Only one company &mdash; Portsmouth Water &mdash; is rated &ldquo;leading&rdquo;. Thames Water, Southern Water, Yorkshire Water, and D&#x175;r Cymru are all rated &ldquo;lagging&rdquo; by the regulator. The system is broken from top to bottom.</p>
+      </div>
+    </div>
+  </div>
+  <div class="scroll-graphic">
+    <div class="chart-container" id="chart-system"></div>
+  </div>
+</section>
+
+</main>
+
+<footer class="site-footer" id="site-footer" style="display:none;">
+  <p><strong>Sources:</strong> Ofwat Water Company Performance Report 2024&ndash;25; Environment Agency Pollution Incident Report 2016&ndash;2024; Environment Agency Storm Overflow EDM Annual Returns 2024.<br>
+  Data via <a href="https://stateofbritain.uk" target="_blank" rel="noopener">stateofbritain.uk</a>.<br>
+  Contains public sector information licensed under the <a href="https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/" target="_blank" rel="noopener">Open Government Licence v3.0</a>.</p>
+</footer>
+
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script>
+(function() {
+"use strict";
+
+/* =========================================================
+   COLOURS & CONSTANTS
+   ========================================================= */
+const C = {
+  primary: "#5B7553", secondary: "#8B6C42",
+  red: "#C53030", green: "#2E7D32", amber: "#A16B00", blue: "#2563A0",
+  faint: "#8A8A82", ink: "#1A1A1A", secondaryText: "#3D3D3D", muted: "#595959",
+  grid: "#F0F0EB", bg: "#FAFAF7",
+  redLight: "rgba(197,48,48,0.12)", greenLight: "rgba(46,125,50,0.08)",
+  primaryLight: "rgba(91,117,83,0.12)", secondaryLight: "rgba(139,108,66,0.12)",
+  amberLight: "rgba(161,107,0,0.12)"
+};
+const DURATION = 600;
+const MOBILE = 768;
+
+/* =========================================================
+   TOOLTIP HELPER
+   ========================================================= */
+const ttEl = document.getElementById("tooltip");
+function showTooltip(html, event) {
+  ttEl.innerHTML = html;
+  ttEl.classList.add("visible");
+  const r = ttEl.getBoundingClientRect();
+  let x = event.clientX + 14, y = event.clientY - 10;
+  if (x + r.width > window.innerWidth - 10) x = event.clientX - r.width - 14;
+  if (y + r.height > window.innerHeight - 10) y = event.clientY - r.height - 10;
+  if (y < 10) y = 10;
+  ttEl.style.left = x + "px";
+  ttEl.style.top = y + "px";
+}
+function hideTooltip() { ttEl.classList.remove("visible"); }
+
+/* =========================================================
+   HELPERS
+   ========================================================= */
+function fmtNum(v) { return d3.format(",")(Math.round(v)); }
+function fmtDec(v, d) { return d3.format("." + (d || 1) + "f")(v); }
+function fmtPct(v) { return d3.format(".0f")(v) + "%"; }
+function isMobile() { return window.innerWidth < MOBILE; }
+
+function chartDims(container) {
+  const w = container.clientWidth;
+  const h = Math.max(500, Math.min(600, window.innerHeight * 0.65));
+  const m = { top: 30, right: 60, bottom: 48, left: 55 };
+  return { width: w, height: h, margin: m, innerW: w - m.left - m.right, innerH: h - m.top - m.bottom };
+}
+
+/* =========================================================
+   DATA LOAD & INIT
+   ========================================================= */
+let DATA;
+
+fetch("https://stateofbritain.uk/api/data/water.json")
+  .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
+  .then(d => { DATA = d; init(); })
+  .catch(err => {
+    document.getElementById("loading-screen").style.display = "none";
+    const es = document.getElementById("error-screen");
+    es.style.display = "flex";
+    document.getElementById("error-msg").textContent = "Failed to load data: " + err.message;
+  });
+
+function init() {
+  document.getElementById("loading-screen").classList.add("hidden");
+  setTimeout(() => { document.getElementById("loading-screen").style.display = "none"; }, 600);
+  document.getElementById("site-header").style.display = "";
+  document.getElementById("main-content").style.display = "";
+  document.getElementById("site-footer").style.display = "";
+
+  // Set big numbers
+  document.getElementById("bn-spills").textContent = fmtDec(DATA.stormOverflows.avgSpillsPerOverflow2024, 1);
+
+  buildAllCharts();
+  setupScrollObserver();
+  window.addEventListener("resize", debounce(rebuildAll, 250));
+}
+
+let resizeTimer;
+function debounce(fn, ms) {
+  return function() { clearTimeout(resizeTimer); resizeTimer = setTimeout(fn, ms); };
+}
+function rebuildAll() {
+  d3.selectAll("#chart-hook svg, #chart-pollution svg, #chart-leakage svg, #chart-system svg").remove();
+  buildAllCharts();
+  document.querySelectorAll(".step-inner.active").forEach(el => {
+    const step = el.closest(".step");
+    const sec = step.dataset.section;
+    const idx = +step.dataset.step;
+    updateChart(sec, idx);
+  });
+}
+
+/* =========================================================
+   BUILD ALL CHARTS
+   ========================================================= */
+function buildAllCharts() {
+  buildHookChart();
+  buildPollutionChart();
+  buildLeakageChart();
+  buildSystemChart();
+}
+
+/* =========================================================
+   CHART 1: THE HOOK — Spills bar + Pollution incidents line
+   ========================================================= */
+function buildHookChart() {
+  const container = document.getElementById("chart-hook");
+  const dim = chartDims(container);
+  const svg = d3.select(container).append("svg")
+    .attr("width", dim.width).attr("height", dim.height)
+    .attr("viewBox", `0 0 ${dim.width} ${dim.height}`);
+  const g = svg.append("g").attr("transform", `translate(${dim.margin.left},${dim.margin.top})`);
+
+  // === STEP 0: Storm overflow spills bar chart ===
+  const barGroup = g.append("g").attr("class", "bar-view");
+
+  const spillData = [
+    { label: "2020", value: DATA.stormOverflows.avgSpillsPerOverflow2020 },
+    { label: "2023", value: DATA.stormOverflows.avgSpillsPerOverflow2023 },
+    { label: "2024", value: DATA.stormOverflows.avgSpillsPerOverflow2024 }
+  ];
+
+  const xBar = d3.scaleBand().domain(spillData.map(d => d.label)).range([0, dim.innerW]).padding(0.4);
+  const yBar = d3.scaleLinear().domain([0, 40]).range([dim.innerH, 0]);
+
+  // Grid
+  barGroup.append("g").attr("class", "grid")
+    .call(d3.axisLeft(yBar).ticks(5).tickSize(-dim.innerW).tickFormat(""))
+    .call(g => g.select(".domain").remove());
+
+  // Y axis
+  barGroup.append("g").attr("class", "axis y-axis")
+    .call(d3.axisLeft(yBar).ticks(5).tickFormat(d => d).tickSize(0))
+    .call(g => g.select(".domain").remove());
+
+  // Bars
+  barGroup.selectAll(".spill-bar").data(spillData).enter()
+    .append("rect").attr("class", "spill-bar")
+    .attr("x", d => xBar(d.label)).attr("y", d => yBar(d.value))
+    .attr("width", xBar.bandwidth()).attr("height", d => dim.innerH - yBar(d.value))
+    .attr("fill", (d, i) => i === 2 ? C.red : C.primary)
+    .attr("rx", 3)
+    .on("mousemove", function(event, d) {
+      showTooltip(`<div class="tt-label">${d.label}</div>
+        <div class="tt-value">${fmtDec(d.value, 1)} avg spills per overflow</div>`, event);
+    })
+    .on("mouseleave", hideTooltip);
+
+  // Bar value labels
+  barGroup.selectAll(".spill-label").data(spillData).enter()
+    .append("text").attr("class", "chart-annotation-bold")
+    .attr("x", d => xBar(d.label) + xBar.bandwidth() / 2)
+    .attr("y", d => yBar(d.value) - 10)
+    .attr("text-anchor", "middle")
+    .attr("fill", (d, i) => i === 2 ? C.red : C.primary)
+    .text(d => fmtDec(d.value, 1));
+
+  // X axis labels
+  barGroup.selectAll(".spill-x-label").data(spillData).enter()
+    .append("text").attr("class", "chart-annotation")
+    .attr("x", d => xBar(d.label) + xBar.bandwidth() / 2)
+    .attr("y", dim.innerH + 28)
+    .attr("text-anchor", "middle").attr("font-weight", 600)
+    .text(d => d.label);
+
+  // Title annotation
+  barGroup.append("text").attr("class", "chart-annotation")
+    .attr("x", 0).attr("y", -10)
+    .attr("fill", C.muted)
+    .text("Avg. sewage spills per storm overflow");
+
+  // Annotation for 2024
+  barGroup.append("text").attr("class", "chart-annotation")
+    .attr("x", xBar("2024") + xBar.bandwidth() / 2)
+    .attr("y", yBar(spillData[2].value) - 30)
+    .attr("text-anchor", "middle")
+    .attr("fill", C.red).attr("font-weight", 600).attr("font-size", "13px")
+    .text("Only 12.5% had zero spills");
+
+  // === STEP 1: Pollution incidents line chart ===
+  const lineGroup = g.append("g").attr("class", "line-view").style("opacity", 0);
+  const pollData = DATA.pollutionIncidents;
+
+  const xLine = d3.scaleLinear().domain([d3.min(pollData, d => d.year), d3.max(pollData, d => d.year)]).range([0, dim.innerW]);
+  const yLine = d3.scaleLinear().domain([0, d3.max(pollData, d => d.total) * 1.15]).range([dim.innerH, 0]);
+
+  // Grid
+  lineGroup.append("g").attr("class", "grid")
+    .call(d3.axisLeft(yLine).ticks(6).tickSize(-dim.innerW).tickFormat(""))
+    .call(g => g.select(".domain").remove());
+
+  // Area
+  const area = d3.area()
+    .x(d => xLine(d.year)).y0(dim.innerH).y1(d => yLine(d.total))
+    .curve(d3.curveMonotoneX);
+  lineGroup.append("path").datum(pollData)
+    .attr("d", area).attr("fill", C.redLight);
+
+  // Line
+  const line = d3.line().x(d => xLine(d.year)).y(d => yLine(d.total)).curve(d3.curveMonotoneX);
+  lineGroup.append("path").datum(pollData)
+    .attr("d", line).attr("fill", "none").attr("stroke", C.red).attr("stroke-width", 2.5);
+
+  // Dots
+  lineGroup.selectAll(".poll-dot").data(pollData).enter()
+    .append("circle").attr("class", "poll-dot")
+    .attr("cx", d => xLine(d.year)).attr("cy", d => yLine(d.total))
+    .attr("r", 4).attr("fill", C.red).attr("stroke", "#fff").attr("stroke-width", 2);
+
+  // Axes
+  lineGroup.append("g").attr("class", "axis x-axis")
+    .attr("transform", `translate(0,${dim.innerH})`)
+    .call(d3.axisBottom(xLine).ticks(pollData.length).tickFormat(d3.format("d")).tickSize(0))
+    .call(g => g.select(".domain").remove());
+  lineGroup.append("g").attr("class", "axis y-axis")
+    .call(d3.axisLeft(yLine).ticks(6).tickFormat(d => fmtNum(d)).tickSize(0))
+    .call(g => g.select(".domain").remove());
+
+  // End label
+  const lastPoll = pollData[pollData.length - 1];
+  lineGroup.append("text").attr("class", "chart-annotation-bold")
+    .attr("x", xLine(lastPoll.year) + 8).attr("y", yLine(lastPoll.total) + 5)
+    .attr("fill", C.red).text(fmtNum(lastPoll.total));
+
+  // 2024 annotation
+  lineGroup.append("text").attr("class", "chart-annotation")
+    .attr("x", xLine(2024)).attr("y", yLine(lastPoll.total) - 20)
+    .attr("text-anchor", "middle").attr("fill", C.red).attr("font-weight", 600)
+    .text("Record high");
+
+  // Title
+  lineGroup.append("text").attr("class", "chart-annotation")
+    .attr("x", 0).attr("y", -10).attr("fill", C.muted)
+    .text("Total pollution incidents by water companies");
+
+  // Hover overlay
+  const hoverRect = lineGroup.append("rect")
+    .attr("width", dim.innerW).attr("height", dim.innerH)
+    .attr("fill", "transparent").style("cursor", "crosshair");
+  const hoverLine = lineGroup.append("line")
+    .attr("y1", 0).attr("y2", dim.innerH)
+    .attr("stroke", "#999").attr("stroke-width", 1).attr("stroke-dasharray", "3,2")
+    .style("opacity", 0);
+  const hoverDot = lineGroup.append("circle").attr("r", 5).attr("fill", C.red).style("opacity", 0);
+
+  hoverRect.on("mousemove", function(event) {
+    const [mx] = d3.pointer(event, this);
+    const year = Math.round(xLine.invert(mx));
+    const d = pollData.find(a => a.year === year);
+    if (!d) return;
+    hoverLine.attr("x1", xLine(year)).attr("x2", xLine(year)).style("opacity", 1);
+    hoverDot.attr("cx", xLine(year)).attr("cy", yLine(d.total)).style("opacity", 1);
+    showTooltip(`<div class="tt-label">${d.year}</div>
+      <div class="tt-value">Total incidents: ${fmtNum(d.total)}</div>
+      <div class="tt-value" style="color:${C.red}">Serious: ${d.serious}</div>`, event);
+  }).on("mouseleave", function() {
+    hoverLine.style("opacity", 0); hoverDot.style("opacity", 0); hideTooltip();
+  });
+}
+
+function updateHookChart(step) {
+  const svg = d3.select("#chart-hook svg");
+  if (step === 0) {
+    svg.select(".bar-view").transition().duration(DURATION).style("opacity", 1);
+    svg.select(".line-view").transition().duration(DURATION).style("opacity", 0);
+  } else {
+    svg.select(".bar-view").transition().duration(DURATION).style("opacity", 0);
+    svg.select(".line-view").transition().duration(DURATION).style("opacity", 1);
+  }
+}
+
+/* =========================================================
+   CHART 2: POLLUTION — Serious incidents + normalised rate
+   ========================================================= */
+function buildPollutionChart() {
+  const container = document.getElementById("chart-pollution");
+  const dim = chartDims(container);
+  const svg = d3.select(container).append("svg")
+    .attr("width", dim.width).attr("height", dim.height)
+    .attr("viewBox", `0 0 ${dim.width} ${dim.height}`);
+  const g = svg.append("g").attr("transform", `translate(${dim.margin.left},${dim.margin.top})`);
+
+  const pollData = DATA.pollutionIncidents;
+
+  // === STEP 0: Serious incidents bar chart ===
+  const seriousGroup = g.append("g").attr("class", "serious-view");
+  const xBar = d3.scaleBand().domain(pollData.map(d => d.year)).range([0, dim.innerW]).padding(0.25);
+  const yBar = d3.scaleLinear().domain([0, d3.max(pollData, d => d.serious) * 1.2]).range([dim.innerH, 0]);
+
+  // Grid
+  seriousGroup.append("g").attr("class", "grid")
+    .call(d3.axisLeft(yBar).ticks(5).tickSize(-dim.innerW).tickFormat(""))
+    .call(g => g.select(".domain").remove());
+
+  // Y axis
+  seriousGroup.append("g").attr("class", "axis y-axis")
+    .call(d3.axisLeft(yBar).ticks(5).tickSize(0))
+    .call(g => g.select(".domain").remove());
+
+  // X axis
+  seriousGroup.append("g").attr("class", "axis x-axis")
+    .attr("transform", `translate(0,${dim.innerH})`)
+    .call(d3.axisBottom(xBar).tickSize(0))
+    .call(g => g.select(".domain").remove());
+
+  // Bars
+  seriousGroup.selectAll(".serious-bar").data(pollData).enter()
+    .append("rect").attr("class", "serious-bar")
+    .attr("x", d => xBar(d.year)).attr("y", d => yBar(d.serious))
+    .attr("width", xBar.bandwidth()).attr("height", d => dim.innerH - yBar(d.serious))
+    .attr("fill", (d, i) => i === pollData.length - 1 ? C.red : C.secondary)
+    .attr("rx", 2)
+    .on("mousemove", function(event, d) {
+      showTooltip(`<div class="tt-label">${d.year}</div>
+        <div class="tt-value" style="color:${C.red}">Serious incidents: ${d.serious}</div>
+        <div class="tt-value">Total incidents: ${fmtNum(d.total)}</div>`, event);
+    })
+    .on("mouseleave", hideTooltip);
+
+  // Value labels
+  seriousGroup.selectAll(".serious-label").data(pollData).enter()
+    .append("text").attr("class", "chart-annotation-bold")
+    .attr("x", d => xBar(d.year) + xBar.bandwidth() / 2)
+    .attr("y", d => yBar(d.serious) - 8)
+    .attr("text-anchor", "middle").attr("font-size", "13px")
+    .attr("fill", (d, i) => i === pollData.length - 1 ? C.red : C.secondary)
+    .text(d => d.serious);
+
+  // Title
+  seriousGroup.append("text").attr("class", "chart-annotation")
+    .attr("x", 0).attr("y", -10).attr("fill", C.muted)
+    .text("Serious pollution incidents (Cat 1 & 2)");
+
+  // 2024 callout
+  const last = pollData[pollData.length - 1];
+  seriousGroup.append("text").attr("class", "chart-annotation")
+    .attr("x", xBar(last.year) + xBar.bandwidth() / 2)
+    .attr("y", yBar(last.serious) - 28)
+    .attr("text-anchor", "middle").attr("fill", C.red).attr("font-weight", 600).attr("font-size", "13px")
+    .text("+60% vs 2023");
+
+  // === STEP 1: Normalised pollution rate — sector performance metric ===
+  const normGroup = g.append("g").attr("class", "norm-view").style("opacity", 0);
+
+  const normData = [
+    { label: "2019-20\n(baseline)", value: 36.29 },
+    { label: "2024-25\n(latest)", value: 45.91 }
+  ];
+
+  const xNorm = d3.scaleBand().domain(normData.map(d => d.label)).range([0, dim.innerW]).padding(0.45);
+  const yNorm = d3.scaleLinear().domain([0, 55]).range([dim.innerH, 0]);
+
+  // Grid
+  normGroup.append("g").attr("class", "grid")
+    .call(d3.axisLeft(yNorm).ticks(6).tickSize(-dim.innerW).tickFormat(""))
+    .call(g => g.select(".domain").remove());
+
+  // Y axis
+  normGroup.append("g").attr("class", "axis y-axis")
+    .call(d3.axisLeft(yNorm).ticks(6).tickSize(0))
+    .call(g => g.select(".domain").remove());
+
+  // Bars
+  normGroup.selectAll(".norm-bar").data(normData).enter()
+    .append("rect").attr("class", "norm-bar")
+    .attr("x", d => xNorm(d.label)).attr("y", d => yNorm(d.value))
+    .attr("width", xNorm.bandwidth()).attr("height", d => dim.innerH - yNorm(d.value))
+    .attr("fill", (d, i) => i === 0 ? C.primary : C.red)
+    .attr("rx", 3)
+    .on("mousemove", function(event, d) {
+      showTooltip(`<div class="tt-label">${d.label.replace('\n', ' ')}</div>
+        <div class="tt-value">${fmtDec(d.value, 2)} incidents per 10,000km of sewer</div>`, event);
+    })
+    .on("mouseleave", hideTooltip);
+
+  // Value labels
+  normGroup.selectAll(".norm-label").data(normData).enter()
+    .append("text").attr("class", "chart-annotation-bold")
+    .attr("x", d => xNorm(d.label) + xNorm.bandwidth() / 2)
+    .attr("y", d => yNorm(d.value) - 10)
+    .attr("text-anchor", "middle")
+    .attr("fill", (d, i) => i === 0 ? C.primary : C.red)
+    .text(d => fmtDec(d.value, 1));
+
+  // X axis labels (multiline)
+  normData.forEach(d => {
+    const parts = d.label.split('\n');
+    const xPos = xNorm(d.label) + xNorm.bandwidth() / 2;
+    parts.forEach((part, i) => {
+      normGroup.append("text").attr("class", "chart-annotation")
+        .attr("x", xPos).attr("y", dim.innerH + 20 + i * 16)
+        .attr("text-anchor", "middle").attr("font-weight", i === 0 ? 600 : 400)
+        .text(part);
+    });
+  });
+
+  // Title
+  normGroup.append("text").attr("class", "chart-annotation")
+    .attr("x", 0).attr("y", -10).attr("fill", C.muted)
+    .text("Pollution incidents per 10,000km of sewer");
+
+  // Change annotation arrow
+  const midX = (xNorm(normData[0].label) + xNorm.bandwidth() / 2 + xNorm(normData[1].label) + xNorm.bandwidth() / 2) / 2;
+  const midY = (yNorm(normData[0].value) + yNorm(normData[1].value)) / 2;
+  normGroup.append("text").attr("class", "chart-annotation-bold")
+    .attr("x", midX).attr("y", midY - 5)
+    .attr("text-anchor", "middle").attr("fill", C.red)
+    .text("+27%");
+  // Arrow line
+  normGroup.append("line")
+    .attr("x1", xNorm(normData[0].label) + xNorm.bandwidth() + 10)
+    .attr("x2", xNorm(normData[1].label) - 10)
+    .attr("y1", midY + 10).attr("y2", midY + 10)
+    .attr("stroke", C.red).attr("stroke-width", 1.5)
+    .attr("marker-end", "url(#arrowhead)");
+
+  // Arrow marker
+  svg.append("defs").append("marker")
+    .attr("id", "arrowhead").attr("viewBox", "0 0 10 10")
+    .attr("refX", 9).attr("refY", 5)
+    .attr("markerWidth", 6).attr("markerHeight", 6)
+    .attr("orient", "auto-start-reverse")
+    .append("path").attr("d", "M 0 0 L 10 5 L 0 10 z").attr("fill", C.red);
+}
+
+function updatePollutionChart(step) {
+  const svg = d3.select("#chart-pollution svg");
+  if (step === 0) {
+    svg.select(".serious-view").transition().duration(DURATION).style("opacity", 1);
+    svg.select(".norm-view").transition().duration(DURATION).style("opacity", 0);
+  } else {
+    svg.select(".serious-view").transition().duration(DURATION).style("opacity", 0);
+    svg.select(".norm-view").transition().duration(DURATION).style("opacity", 1);
+  }
+}
+
+/* =========================================================
+   CHART 3: LEAKAGE — National trend + Company comparison
+   ========================================================= */
+function buildLeakageChart() {
+  const container = document.getElementById("chart-leakage");
+  const dim = chartDims(container);
+  const svg = d3.select(container).append("svg")
+    .attr("width", dim.width).attr("height", dim.height)
+    .attr("viewBox", `0 0 ${dim.width} ${dim.height}`);
+  const g = svg.append("g").attr("transform", `translate(${dim.margin.left},${dim.margin.top})`);
+
+  // === STEP 0: National leakage trend line ===
+  const trendGroup = g.append("g").attr("class", "trend-view");
+  const leakData = DATA.leakage;
+
+  // Parse years: "1992-93" => 1992
+  const parsed = leakData.map(d => ({
+    year: parseInt(d.year.split("-")[0]),
+    label: d.year,
+    value: d.value
+  }));
+
+  const xLine = d3.scaleLinear()
+    .domain([d3.min(parsed, d => d.year), d3.max(parsed, d => d.year)])
+    .range([0, dim.innerW]);
+  const yLine = d3.scaleLinear()
+    .domain([0, d3.max(parsed, d => d.value) * 1.1])
+    .range([dim.innerH, 0]);
+
+  // Grid
+  trendGroup.append("g").attr("class", "grid")
+    .call(d3.axisLeft(yLine).ticks(6).tickSize(-dim.innerW).tickFormat(""))
+    .call(g => g.select(".domain").remove());
+
+  // Area
+  const area = d3.area()
+    .x(d => xLine(d.year)).y0(dim.innerH).y1(d => yLine(d.value))
+    .curve(d3.curveMonotoneX);
+  trendGroup.append("path").datum(parsed)
+    .attr("d", area).attr("fill", C.primaryLight);
+
+  // Line
+  const line = d3.line().x(d => xLine(d.year)).y(d => yLine(d.value)).curve(d3.curveMonotoneX);
+  trendGroup.append("path").datum(parsed)
+    .attr("d", line).attr("fill", "none").attr("stroke", C.primary).attr("stroke-width", 2.5);
+
+  // Axes
+  trendGroup.append("g").attr("class", "axis x-axis")
+    .attr("transform", `translate(0,${dim.innerH})`)
+    .call(d3.axisBottom(xLine).ticks(8).tickFormat(d3.format("d")).tickSize(0))
+    .call(g => g.select(".domain").remove());
+  trendGroup.append("g").attr("class", "axis y-axis")
+    .call(d3.axisLeft(yLine).ticks(6).tickFormat(d => fmtNum(d)).tickSize(0))
+    .call(g => g.select(".domain").remove());
+
+  // Title
+  trendGroup.append("text").attr("class", "chart-annotation")
+    .attr("x", 0).attr("y", -10).attr("fill", C.muted)
+    .text("Leakage, megalitres per day (Ml/d)");
+
+  // Start label
+  const first = parsed[0];
+  trendGroup.append("text").attr("class", "chart-annotation-bold")
+    .attr("x", xLine(first.year) - 4).attr("y", yLine(first.value) - 10)
+    .attr("text-anchor", "start").attr("fill", C.primary)
+    .text(fmtNum(first.value) + " Ml/d");
+
+  // End label
+  const last = parsed[parsed.length - 1];
+  trendGroup.append("text").attr("class", "chart-annotation-bold")
+    .attr("x", xLine(last.year) + 8).attr("y", yLine(last.value) + 5)
+    .attr("fill", C.primary)
+    .text(fmtNum(last.value));
+
+  // Flatline annotation
+  trendGroup.append("text").attr("class", "chart-annotation")
+    .attr("x", xLine(2018)).attr("y", yLine(3100) - 30)
+    .attr("text-anchor", "middle").attr("fill", C.secondary).attr("font-weight", 600)
+    .text("Progress stalls");
+  trendGroup.append("line")
+    .attr("x1", xLine(2018)).attr("x2", xLine(2018))
+    .attr("y1", yLine(3100) - 24).attr("y2", yLine(3100) - 4)
+    .attr("stroke", C.secondary).attr("stroke-width", 1).attr("stroke-dasharray", "3,2");
+
+  // Hover
+  const hoverRect = trendGroup.append("rect")
+    .attr("width", dim.innerW).attr("height", dim.innerH)
+    .attr("fill", "transparent").style("cursor", "crosshair");
+  const hoverLine = trendGroup.append("line")
+    .attr("y1", 0).attr("y2", dim.innerH)
+    .attr("stroke", "#999").attr("stroke-width", 1).attr("stroke-dasharray", "3,2")
+    .style("opacity", 0);
+  const hoverDot = trendGroup.append("circle").attr("r", 4).attr("fill", C.primary).style("opacity", 0);
+
+  hoverRect.on("mousemove", function(event) {
+    const [mx] = d3.pointer(event, this);
+    const year = Math.round(xLine.invert(mx));
+    const d = parsed.reduce((prev, curr) => Math.abs(curr.year - year) < Math.abs(prev.year - year) ? curr : prev);
+    if (!d) return;
+    hoverLine.attr("x1", xLine(d.year)).attr("x2", xLine(d.year)).style("opacity", 1);
+    hoverDot.attr("cx", xLine(d.year)).attr("cy", yLine(d.value)).style("opacity", 1);
+    showTooltip(`<div class="tt-label">${d.label}</div>
+      <div class="tt-value">Leakage: ${fmtNum(d.value)} Ml/d</div>`, event);
+  }).on("mouseleave", function() {
+    hoverLine.style("opacity", 0); hoverDot.style("opacity", 0); hideTooltip();
+  });
+
+  // === STEP 1: Company leakage performance ===
+  const compGroup = g.append("g").attr("class", "comp-view").style("opacity", 0);
+  const compData = DATA.companyLeakage
+    .map(d => ({ company: d.company, latest: d.latest, commitment: d.commitment, baseline: d.baseline }))
+    .sort((a, b) => b.latest - a.latest); // Worst performers first (highest = leaking more)
+
+  const h2 = dim.height;
+  const m2 = { top: 30, right: 90, bottom: 30, left: 10 };
+  const innerW2 = dim.width - dim.margin.left - m2.right;
+  const innerH2 = dim.innerH;
+
+  const yComp = d3.scaleBand().domain(compData.map(d => d.company)).range([0, innerH2]).padding(0.22);
+  const maxAbs = d3.max(compData, d => Math.max(Math.abs(d.latest), Math.abs(d.commitment)));
+  const xComp = d3.scaleLinear().domain([-25, 20]).range([0, innerW2]);
+
+  // Zero line
+  compGroup.append("line")
+    .attr("x1", xComp(0)).attr("x2", xComp(0))
+    .attr("y1", 0).attr("y2", innerH2)
+    .attr("stroke", "#D0D0C8").attr("stroke-width", 1);
+
+  // Commitment markers (diamonds)
+  compGroup.selectAll(".commit-marker").data(compData).enter()
+    .append("path").attr("class", "commit-marker")
+    .attr("d", d3.symbol().type(d3.symbolDiamond).size(50))
+    .attr("transform", d => `translate(${xComp(d.commitment)},${yComp(d.company) + yComp.bandwidth() / 2})`)
+    .attr("fill", "none").attr("stroke", C.muted).attr("stroke-width", 1.5);
+
+  // Actual bars
+  compGroup.selectAll(".leak-bar").data(compData).enter()
+    .append("rect").attr("class", "leak-bar")
+    .attr("x", d => d.latest >= 0 ? xComp(0) : xComp(d.latest))
+    .attr("y", d => yComp(d.company) + yComp.bandwidth() * 0.15)
+    .attr("width", d => Math.abs(xComp(d.latest) - xComp(0)))
+    .attr("height", yComp.bandwidth() * 0.7)
+    .attr("fill", d => d.latest > 0 ? C.red : C.green)
+    .attr("rx", 2)
+    .on("mousemove", function(event, d) {
+      showTooltip(`<div class="tt-label">${d.company}</div>
+        <div class="tt-value">Baseline: ${fmtNum(d.baseline)} Ml/d</div>
+        <div class="tt-value" style="color:${d.latest > 0 ? C.red : C.green}">Change: ${d.latest > 0 ? '+' : ''}${fmtDec(d.latest, 1)}%</div>
+        <div class="tt-value">Commitment: ${fmtDec(d.commitment, 1)}%</div>`, event);
+    })
+    .on("mouseleave", hideTooltip);
+
+  // Company name labels
+  compGroup.selectAll(".comp-name").data(compData).enter()
+    .append("text").attr("class", "chart-annotation")
+    .attr("x", d => {
+      if (d.latest >= 0) return xComp(0) - 8;
+      return xComp(d.latest) - 8;
+    })
+    .attr("y", d => yComp(d.company) + yComp.bandwidth() / 2 + 4.5)
+    .attr("text-anchor", "end")
+    .attr("fill", d => d.latest > 0 ? C.red : C.ink)
+    .attr("font-weight", d => d.latest > 0 ? 600 : 400)
+    .attr("font-size", "13px")
+    .text(d => {
+      const maxLen = isMobile() ? 14 : 22;
+      return d.company.length > maxLen ? d.company.slice(0, maxLen - 1) + "\u2026" : d.company;
+    });
+
+  // Value labels
+  compGroup.selectAll(".leak-val").data(compData).enter()
+    .append("text").attr("class", "chart-annotation-bold")
+    .attr("x", d => d.latest >= 0 ? xComp(d.latest) + 6 : xComp(0) + 6)
+    .attr("y", d => yComp(d.company) + yComp.bandwidth() / 2 + 4.5)
+    .attr("fill", d => d.latest > 0 ? C.red : C.green)
+    .attr("font-size", "13px")
+    .text(d => (d.latest > 0 ? "+" : "") + fmtDec(d.latest, 1) + "%");
+
+  // Title
+  compGroup.append("text").attr("class", "chart-annotation")
+    .attr("x", 0).attr("y", -10).attr("fill", C.muted)
+    .text("Leakage change vs baseline (%) — \u25C7 = commitment");
+
+  // Legend
+  compGroup.append("text").attr("class", "chart-annotation")
+    .attr("x", xComp(0) - 8).attr("y", innerH2 + 18)
+    .attr("text-anchor", "end").attr("fill", C.red).attr("font-size", "13px")
+    .text("\u2190 Worse (leaking more)");
+  compGroup.append("text").attr("class", "chart-annotation")
+    .attr("x", xComp(0) + 8).attr("y", innerH2 + 18)
+    .attr("fill", C.green).attr("font-size", "13px")
+    .text("Better (leaking less) \u2192");
+}
+
+function updateLeakageChart(step) {
+  const svg = d3.select("#chart-leakage svg");
+  if (step === 0) {
+    svg.select(".trend-view").transition().duration(DURATION).style("opacity", 1);
+    svg.select(".comp-view").transition().duration(DURATION).style("opacity", 0);
+  } else {
+    svg.select(".trend-view").transition().duration(DURATION).style("opacity", 0);
+    svg.select(".comp-view").transition().duration(DURATION).style("opacity", 1);
+  }
+}
+
+/* =========================================================
+   CHART 4: SYSTEM STATE — Sector metrics + Company league
+   ========================================================= */
+function buildSystemChart() {
+  const container = document.getElementById("chart-system");
+  const dim = chartDims(container);
+  const h = Math.max(580, dim.height);
+  const m = { top: 30, right: 80, bottom: 30, left: 10 };
+  const innerW = dim.width - m.left - m.right;
+  const innerH = h - m.top - m.bottom;
+
+  const svg = d3.select(container).append("svg")
+    .attr("width", dim.width).attr("height", h)
+    .attr("viewBox", `0 0 ${dim.width} ${h}`);
+  const g = svg.append("g").attr("transform", `translate(${m.left},${m.top})`);
+
+  // === STEP 0: Sector performance metrics diverging bar ===
+  const metricsGroup = g.append("g").attr("class", "metrics-view");
+  const metrics = DATA.sectorPerformance.metrics
+    .map(d => ({ metric: d.metric, change: d.change, unit: d.unit, baseline: d.baseline, latest: d.latest }))
+    .sort((a, b) => b.change - a.change);
+
+  const yMetric = d3.scaleBand().domain(metrics.map(d => d.metric)).range([0, innerH]).padding(0.22);
+  const maxAbsChange = d3.max(metrics, d => Math.abs(d.change));
+  const xMetric = d3.scaleLinear().domain([-maxAbsChange * 1.3, maxAbsChange * 1.3]).range([0, innerW]);
+
+  // Zero line
+  metricsGroup.append("line")
+    .attr("x1", xMetric(0)).attr("x2", xMetric(0))
+    .attr("y1", 0).attr("y2", innerH)
+    .attr("stroke", "#D0D0C8").attr("stroke-width", 1);
+
+  // Determine which direction is "bad" for each metric
+  // Positive change is bad for: pollution, supply interruptions
+  // Negative change is bad for: customer satisfaction
+  // Negative change is good for: sewer collapses, CRI, flooding, leakage, mains repairs, per capita consumption, unplanned outage
+  function isWorsening(d) {
+    const badIfUp = ["Pollution incidents", "Supply interruptions"];
+    const badIfDown = ["Customer satisfaction", "Treatment works compliance", "Priority services register"];
+    if (badIfUp.includes(d.metric)) return d.change > 0;
+    if (badIfDown.includes(d.metric)) return d.change < 0;
+    return false; // default: decreases are improvements
+  }
+
+  // Bars
+  metricsGroup.selectAll(".metric-bar").data(metrics).enter()
+    .append("rect").attr("class", "metric-bar")
+    .attr("x", d => d.change >= 0 ? xMetric(0) : xMetric(d.change))
+    .attr("y", d => yMetric(d.metric))
+    .attr("width", d => Math.abs(xMetric(d.change) - xMetric(0)))
+    .attr("height", yMetric.bandwidth())
+    .attr("fill", d => isWorsening(d) ? C.red : C.green)
+    .attr("rx", 2)
+    .on("mousemove", function(event, d) {
+      showTooltip(`<div class="tt-label">${d.metric}</div>
+        <div class="tt-value">Baseline (2019-20): ${d.baseline} ${d.unit}</div>
+        <div class="tt-value">Latest (2024-25): ${d.latest} ${d.unit}</div>
+        <div class="tt-value" style="color:${isWorsening(d) ? C.red : C.green}">Change: ${d.change > 0 ? '+' : ''}${d.change}%</div>`, event);
+    })
+    .on("mouseleave", hideTooltip);
+
+  // Metric name labels
+  metricsGroup.selectAll(".metric-name").data(metrics).enter()
+    .append("text").attr("class", "chart-annotation")
+    .attr("x", d => d.change >= 0 ? xMetric(0) - 8 : xMetric(d.change) - 8)
+    .attr("y", d => yMetric(d.metric) + yMetric.bandwidth() / 2 + 4.5)
+    .attr("text-anchor", "end")
+    .attr("fill", C.ink)
+    .attr("font-weight", d => isWorsening(d) ? 600 : 400)
+    .attr("font-size", "13px")
+    .text(d => {
+      const maxLen = isMobile() ? 18 : 30;
+      return d.metric.length > maxLen ? d.metric.slice(0, maxLen - 1) + "\u2026" : d.metric;
+    });
+
+  // Value labels
+  metricsGroup.selectAll(".metric-val").data(metrics).enter()
+    .append("text").attr("class", "chart-annotation-bold")
+    .attr("x", d => d.change >= 0 ? xMetric(d.change) + 6 : xMetric(0) + 6)
+    .attr("y", d => yMetric(d.metric) + yMetric.bandwidth() / 2 + 4.5)
+    .attr("fill", d => isWorsening(d) ? C.red : C.green)
+    .attr("font-size", "13px")
+    .text(d => (d.change > 0 ? "+" : "") + d.change + "%");
+
+  // Title
+  metricsGroup.append("text").attr("class", "chart-annotation")
+    .attr("x", xMetric(0)).attr("y", -10).attr("text-anchor", "middle").attr("fill", C.muted)
+    .text("Change in sector metrics, 2019-20 to 2024-25");
+
+  // Axis labels
+  metricsGroup.append("text").attr("class", "chart-annotation")
+    .attr("x", xMetric(0) - 8).attr("y", innerH + 18)
+    .attr("text-anchor", "end").attr("fill", C.muted).attr("font-size", "13px")
+    .text("\u2190 Decline");
+  metricsGroup.append("text").attr("class", "chart-annotation")
+    .attr("x", xMetric(0) + 8).attr("y", innerH + 18)
+    .attr("fill", C.muted).attr("font-size", "13px")
+    .text("Improvement \u2192");
+
+  // === STEP 1: Company league table ===
+  const leagueGroup = g.append("g").attr("class", "league-view").style("opacity", 0);
+
+  const categories = DATA.companyCategories;
+  const allCompanies = [
+    ...categories.leading.map(c => ({ company: c, category: "Leading", order: 0 })),
+    ...categories.average.map(c => ({ company: c, category: "Average", order: 1 })),
+    ...categories.lagging.map(c => ({ company: c, category: "Lagging", order: 2 }))
+  ];
+
+  const catColors = { "Leading": C.green, "Average": C.secondary, "Lagging": C.red };
+  const catBg = { "Leading": "rgba(46,125,50,0.1)", "Average": "rgba(139,108,66,0.08)", "Lagging": "rgba(197,48,48,0.1)" };
+
+  const yLeague = d3.scaleBand().domain(allCompanies.map(d => d.company)).range([0, innerH]).padding(0.15);
+
+  // Category background bands
+  let catStart = 0;
+  ["Leading", "Average", "Lagging"].forEach(cat => {
+    const items = allCompanies.filter(d => d.category === cat);
+    if (items.length === 0) return;
+    const firstY = yLeague(items[0].company) - yLeague.step() * 0.08;
+    const lastY = yLeague(items[items.length - 1].company) + yLeague.bandwidth() + yLeague.step() * 0.08;
+    leagueGroup.append("rect")
+      .attr("x", 0).attr("y", firstY)
+      .attr("width", innerW).attr("height", lastY - firstY)
+      .attr("fill", catBg[cat]).attr("rx", 4);
+
+    // Category label
+    leagueGroup.append("text").attr("class", "chart-annotation-bold")
+      .attr("x", innerW - 8).attr("y", firstY + 16)
+      .attr("text-anchor", "end")
+      .attr("fill", catColors[cat]).attr("font-size", "13px")
+      .text(cat);
+  });
+
+  // Company dots and names
+  allCompanies.forEach(d => {
+    const y = yLeague(d.company) + yLeague.bandwidth() / 2;
+    leagueGroup.append("circle")
+      .attr("cx", 20).attr("cy", y)
+      .attr("r", 6).attr("fill", catColors[d.category]);
+    leagueGroup.append("text").attr("class", "chart-annotation")
+      .attr("x", 34).attr("y", y + 4.5)
+      .attr("fill", C.ink)
+      .attr("font-weight", d.category === "Lagging" ? 600 : 400)
+      .attr("font-size", "13px")
+      .text(d.company);
+  });
+
+  // Title
+  leagueGroup.append("text").attr("class", "chart-annotation")
+    .attr("x", 0).attr("y", -10).attr("fill", C.muted)
+    .text("Ofwat company performance categories, 2024-25");
+}
+
+function updateSystemChart(step) {
+  const svg = d3.select("#chart-system svg");
+  if (step === 0) {
+    svg.select(".metrics-view").transition().duration(DURATION).style("opacity", 1);
+    svg.select(".league-view").transition().duration(DURATION).style("opacity", 0);
+  } else {
+    svg.select(".metrics-view").transition().duration(DURATION).style("opacity", 0);
+    svg.select(".league-view").transition().duration(DURATION).style("opacity", 1);
+  }
+}
+
+/* =========================================================
+   UPDATE DISPATCHER
+   ========================================================= */
+function updateChart(section, step) {
+  switch (section) {
+    case "hook": updateHookChart(step); break;
+    case "pollution": updatePollutionChart(step); break;
+    case "leakage": updateLeakageChart(step); break;
+    case "system": updateSystemChart(step); break;
+  }
+}
+
+/* =========================================================
+   SCROLLYTELLING — IntersectionObserver
+   ========================================================= */
+function setupScrollObserver() {
+  const steps = document.querySelectorAll(".step");
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      const inner = entry.target.querySelector(".step-inner");
+      if (entry.isIntersecting && entry.intersectionRatio >= 0.4) {
+        const section = entry.target.dataset.section;
+        document.querySelectorAll(`.step[data-section="${section}"] .step-inner`).forEach(el => el.classList.remove("active"));
+        inner.classList.add("active");
+        updateChart(section, +entry.target.dataset.step);
+      }
+    });
+  }, {
+    threshold: [0.4, 0.5, 0.6]
+  });
+
+  steps.forEach(step => observer.observe(step));
+
+  // Activate first step immediately
+  const firstStep = document.querySelector('.step[data-section="hook"][data-step="0"] .step-inner');
+  if (firstStep) firstStep.classList.add("active");
+}
+
+})();
+</script>
+</body>
+</html>

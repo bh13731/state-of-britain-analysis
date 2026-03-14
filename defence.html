@@ -1,0 +1,1614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>State of Britain — Defence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background: #FAFAF7;
+  color: #1A1A1A;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---------- Loading / Error ---------- */
+#loading-screen {
+  position: fixed; inset: 0; z-index: 9999;
+  background: #FAFAF7;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  transition: opacity 0.5s;
+}
+#loading-screen.hidden { opacity: 0; pointer-events: none; }
+#loading-screen .spinner {
+  width: 40px; height: 40px;
+  border: 3px solid #E0E0DB; border-top-color: #4A5D23;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+#loading-screen p { margin-top: 16px; color: #595959; font-size: 0.95rem; }
+#error-screen {
+  display: none; position: fixed; inset: 0; z-index: 9998;
+  background: #FAFAF7;
+  flex-direction: column; align-items: center; justify-content: center;
+}
+#error-screen h2 { font-family: 'Source Serif 4', serif; font-size: 1.8rem; margin-bottom: 8px; }
+#error-screen p { color: #595959; max-width: 400px; text-align: center; }
+
+/* ---------- Header ---------- */
+.site-header {
+  padding: 48px 32px 24px;
+  padding-top: 96px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.site-header .kicker {
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #4A5D23;
+  margin-bottom: 8px;
+}
+.site-header h1 {
+  font-family: 'Source Serif 4', serif;
+  font-size: clamp(2rem, 5vw, 3.4rem);
+  font-weight: 700;
+  line-height: 1.15;
+  max-width: 700px;
+  color: #1A1A1A;
+}
+.site-header .deck {
+  margin-top: 12px;
+  font-size: 1.15rem;
+  color: #3D3D3D;
+  max-width: 600px;
+  line-height: 1.55;
+}
+
+/* ---------- Scroll sections ---------- */
+.scroll-section {
+  position: relative;
+  display: flex;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 32px;
+}
+.scroll-steps {
+  flex: 0 0 40%;
+  position: relative;
+  z-index: 2;
+}
+.scroll-graphic {
+  flex: 0 0 58%;
+  margin-left: 2%;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.scroll-graphic .chart-container {
+  width: 100%;
+  position: relative;
+}
+.step {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 40px 0;
+}
+.step-inner {
+  max-width: 420px;
+  opacity: 0.15;
+  transition: opacity 0.5s;
+}
+.step-inner.active {
+  opacity: 1;
+}
+.step-inner h2 {
+  font-family: 'Source Serif 4', serif;
+  font-size: clamp(1.6rem, 3vw, 2.8rem);
+  font-weight: 700;
+  line-height: 1.2;
+  margin-bottom: 16px;
+  color: #1A1A1A;
+}
+.step-inner p {
+  font-size: 1.15rem;
+  color: #3D3D3D;
+  line-height: 1.6;
+  margin-bottom: 12px;
+}
+.big-number {
+  font-family: 'Source Serif 4', serif;
+  font-size: clamp(3rem, 6vw, 5rem);
+  font-weight: 700;
+  line-height: 1.1;
+  margin-bottom: 8px;
+}
+.big-number.red { color: #C53030; }
+.big-number.green { color: #4A5D23; }
+.big-number.amber { color: #A16B00; }
+.big-number.blue { color: #2563A0; }
+.big-number.military { color: #4A5D23; }
+
+/* ---------- Tooltip ---------- */
+.chart-tooltip {
+  position: fixed;
+  pointer-events: none;
+  background: #fff;
+  border: 1px solid #E0E0DB;
+  border-radius: 6px;
+  padding: 10px 14px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #1A1A1A;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  z-index: 1000;
+  opacity: 0;
+  transition: opacity 0.15s;
+  max-width: 260px;
+}
+.chart-tooltip.visible { opacity: 1; }
+.chart-tooltip .tt-label { font-weight: 600; margin-bottom: 2px; }
+.chart-tooltip .tt-value { color: #3D3D3D; }
+
+/* ---------- Chart annotation ---------- */
+.chart-annotation {
+  font-size: 13px;
+  fill: #595959;
+  font-family: 'Inter', sans-serif;
+}
+.chart-annotation-bold {
+  font-size: 13.5px;
+  font-weight: 600;
+  fill: #1A1A1A;
+  font-family: 'Inter', sans-serif;
+}
+
+/* ---------- Section divider ---------- */
+.section-divider {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 32px;
+  height: 1px;
+  background: transparent;
+}
+
+/* ---------- Footer ---------- */
+.site-footer {
+  max-width: 1200px;
+  margin: 80px auto 0;
+  padding: 32px 32px 48px;
+  border-top: 1px solid #E0E0DB;
+  font-size: 0.85rem;
+  color: #595959;
+  line-height: 1.7;
+}
+.site-footer a { color: #4A5D23; text-decoration: none; }
+.site-footer a:hover { text-decoration: underline; }
+
+/* ---------- SVG common ---------- */
+.axis text {
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  fill: #595959;
+}
+.axis path, .axis line { stroke: none; }
+.grid line { stroke: #F0F0EB; stroke-width: 1; }
+.grid path { stroke: none; }
+
+/* ---------- Responsive ---------- */
+@media (max-width: 768px) {
+  .scroll-section {
+    flex-direction: column;
+    padding: 0 16px;
+  }
+  .scroll-steps {
+    flex: none;
+    width: 100%;
+  }
+  .scroll-graphic {
+    flex: none;
+    width: 100%;
+    margin-left: 0;
+    position: sticky;
+    top: 0;
+    height: 60vh;
+  }
+  .step {
+    min-height: 80vh;
+  }
+  .step-inner {
+    max-width: 100%;
+  }
+  .site-header {
+    padding: 80px 16px 20px;
+  }
+  .site-header h1 { font-size: 2rem; }
+  .site-footer { padding: 24px 16px 32px; }
+}
+</style>
+</head>
+<body>
+
+<nav style="position:fixed;top:0;left:0;right:0;z-index:999;background:rgba(250,250,247,0.95);backdrop-filter:blur(8px);border-bottom:1px solid #E0E0DB;padding:8px 24px;font-size:13px;font-family:Inter,sans-serif;"><a href="hub.html" style="color:#2563A0;text-decoration:none;font-weight:500;">&larr; All stories</a><span style="margin:0 12px;color:#8A8A82;">|</span><span style="color:#595959;font-weight:600;">Defence</span></nav>
+
+<div id="loading-screen">
+  <div class="spinner"></div>
+  <p>Loading defence data&hellip;</p>
+</div>
+
+<div id="error-screen">
+  <h2>Something went wrong</h2>
+  <p id="error-msg">Could not load defence data. Please refresh or try again later.</p>
+</div>
+
+<div class="chart-tooltip" id="tooltip"></div>
+
+<header class="site-header" id="site-header" style="display:none;">
+  <div class="kicker">State of Britain</div>
+  <h1>The Defence Gap</h1>
+  <p class="deck">Britain&rsquo;s shrinking military in a dangerous world &mdash; how decades of cuts have left the armed forces at their smallest since the Napoleonic era.</p>
+</header>
+
+<main id="main-content" style="display:none;">
+
+<!-- ====== SECTION 1: Hook — Personnel collapse ====== -->
+<section class="scroll-section" id="section-hook">
+  <div class="scroll-steps">
+    <div class="step" data-section="hook" data-step="0">
+      <div class="step-inner">
+        <div class="big-number red" id="bn-personnel"></div>
+        <h2>The armed forces are at their smallest since Napoleon</h2>
+        <p>Just 129,200 regular personnel serve in Britain&rsquo;s military today. Since 2000, the armed forces have shed more than a third of their strength.</p>
+      </div>
+    </div>
+    <div class="step" data-section="hook" data-step="1">
+      <div class="step-inner">
+        <div class="big-number red" id="bn-decline"></div>
+        <h2>A 38% decline in a generation</h2>
+        <p>From 207,700 personnel in 2000 to 129,200 today. The Army has lost more than a third of its soldiers. The RAF has nearly halved.</p>
+      </div>
+    </div>
+  </div>
+  <div class="scroll-graphic">
+    <div class="chart-container" id="chart-hook"></div>
+  </div>
+</section>
+
+<!-- ====== SECTION 2: Spending as % of GDP ====== -->
+<section class="scroll-section" id="section-spending">
+  <div class="scroll-steps">
+    <div class="step" data-section="spending" data-step="0">
+      <div class="step-inner">
+        <h2>The long decline from Cold War spending</h2>
+        <p>In 1990, Britain spent 3.8% of GDP on defence. By 2015, that had been cut in half &mdash; barely scraping the NATO 2% floor. The peace dividend has been cashed &mdash; and spent.</p>
+      </div>
+    </div>
+    <div class="step" data-section="spending" data-step="1">
+      <div class="step-inner">
+        <h2>Barely meeting the minimum</h2>
+        <p>Since 2015, spending has hovered just above the NATO 2% target. At 2.3% today, Britain meets the floor &mdash; but the new NATO target is 2.5%, and most analysts argue even that isn&rsquo;t enough.</p>
+      </div>
+    </div>
+  </div>
+  <div class="scroll-graphic">
+    <div class="chart-container" id="chart-spending"></div>
+  </div>
+</section>
+
+<!-- ====== SECTION 3: Personnel by service ====== -->
+<section class="scroll-section" id="section-personnel">
+  <div class="scroll-steps">
+    <div class="step" data-section="personnel" data-step="0">
+      <div class="step-inner">
+        <h2>Every branch is shrinking</h2>
+        <p>The Army has fallen from 110,000 to 72,500. The Navy from 43,000 to 29,000. The RAF from 55,000 to 28,000. These are not temporary dips &mdash; the trend has been relentless for two decades.</p>
+      </div>
+    </div>
+    <div class="step" data-section="personnel" data-step="1">
+      <div class="step-inner">
+        <h2>The RAF has nearly halved</h2>
+        <p>The Royal Air Force has lost 49% of its personnel since 2000, falling from 54,800 to just 27,800. The Navy has lost a third. Every service is well below its recruitment targets.</p>
+      </div>
+    </div>
+  </div>
+  <div class="scroll-graphic">
+    <div class="chart-container" id="chart-personnel"></div>
+  </div>
+</section>
+
+<!-- ====== SECTION 4: Equipment plan ====== -->
+<section class="scroll-section" id="section-equipment">
+  <div class="scroll-steps">
+    <div class="step" data-section="equipment" data-step="0">
+      <div class="step-inner">
+        <h2>The equipment bill</h2>
+        <p>The MoD&rsquo;s equipment plan totals &pound;60.4 billion across eight major categories. Submarines and the nuclear deterrent alone account for &pound;17.2bn &mdash; nearly a third of the entire plan.</p>
+      </div>
+    </div>
+    <div class="step" data-section="equipment" data-step="1">
+      <div class="step-inner">
+        <h2>Nuclear crowds everything else out</h2>
+        <p>The Dreadnought submarine programme and the nuclear enterprise dominate the budget. Combat air (&pound;12.5bn), ships (&pound;8.3bn), and land equipment (&pound;6.1bn) compete for what remains.</p>
+      </div>
+    </div>
+  </div>
+  <div class="scroll-graphic">
+    <div class="chart-container" id="chart-equipment"></div>
+  </div>
+</section>
+
+<!-- ====== SECTION 5: Reserves ====== -->
+<section class="scroll-section" id="section-reserves">
+  <div class="scroll-steps">
+    <div class="step" data-section="reserves" data-step="0">
+      <div class="step-inner">
+        <h2>Reserves: a brief recovery, now declining</h2>
+        <p>Reserve numbers grew from 21,200 in 2013 to a peak of 30,700 in 2022, as the government tried to offset regular force cuts. But the trend has reversed &mdash; reserves fell to 26,000 in 2024.</p>
+      </div>
+    </div>
+    <div class="step" data-section="reserves" data-step="1">
+      <div class="step-inner">
+        <h2>The total force is thinning</h2>
+        <p>Combining regulars and reserves, Britain&rsquo;s total trained military strength is around 155,000 &mdash; smaller than the population of Oxford. The reserve force was supposed to compensate for regular cuts, but it too is now shrinking.</p>
+      </div>
+    </div>
+  </div>
+  <div class="scroll-graphic">
+    <div class="chart-container" id="chart-reserves"></div>
+  </div>
+</section>
+
+<!-- ====== SECTION 6: Ambition vs reality ====== -->
+<section class="scroll-section" id="section-ambition">
+  <div class="scroll-steps">
+    <div class="step" data-section="ambition" data-step="0">
+      <div class="step-inner">
+        <h2>The gap between ambition and reality</h2>
+        <p>NATO allies agreed to spend 2.5% of GDP on defence. At 2.3%, Britain is &pound;5 billion short &mdash; every year. Closing that gap would require the biggest sustained increase in defence spending since the Korean War.</p>
+      </div>
+    </div>
+    <div class="step" data-section="ambition" data-step="1">
+      <div class="step-inner">
+        <h2>&pound;54 billion &mdash; and it&rsquo;s not enough</h2>
+        <p>Real defence spending has risen from a low of &pound;38bn in 2016 to &pound;54bn today. But with a war in Europe, threats from Russia and China, and equipment costs spiralling, even record nominal spending buys less capability than ever.</p>
+      </div>
+    </div>
+  </div>
+  <div class="scroll-graphic">
+    <div class="chart-container" id="chart-ambition"></div>
+  </div>
+</section>
+
+</main>
+
+<footer class="site-footer" id="site-footer" style="display:none;">
+  <p><strong>Sources:</strong> MoD Annual Report &amp; Accounts; MoD Armed Forces Personnel Statistics; MoD Equipment Plan; SIPRI Military Expenditure Database.<br>
+  Data via <a href="https://stateofbritain.uk" target="_blank" rel="noopener">stateofbritain.uk</a>.<br>
+  Contains public sector information licensed under the <a href="https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/" target="_blank" rel="noopener">Open Government Licence v3.0</a>.</p>
+</footer>
+
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script>
+(function() {
+"use strict";
+
+/* =========================================================
+   COLOURS & CONSTANTS
+   ========================================================= */
+const C = {
+  primary: "#4A5D23", secondary: "#6B7B3A", red: "#C53030",
+  green: "#4A5D23", greenLight: "rgba(74,93,35,0.12)",
+  secondaryLight: "rgba(107,123,58,0.12)",
+  redLight: "rgba(197,48,48,0.10)",
+  amber: "#A16B00", amberLight: "rgba(161,107,0,0.12)",
+  blue: "#2563A0", blueLight: "rgba(37,99,160,0.12)",
+  faint: "#8A8A82", ink: "#1A1A1A", secondaryText: "#3D3D3D",
+  muted: "#595959", grid: "#F0F0EB", bg: "#FAFAF7",
+  army: "#4A5D23", navy: "#2563A0", raf: "#6B7B3A"
+};
+const DURATION = 600;
+const MOBILE = 768;
+
+/* =========================================================
+   TOOLTIP HELPER
+   ========================================================= */
+const ttEl = document.getElementById("tooltip");
+function showTooltip(html, event) {
+  ttEl.innerHTML = html;
+  ttEl.classList.add("visible");
+  const r = ttEl.getBoundingClientRect();
+  let x = event.clientX + 14, y = event.clientY - 10;
+  if (x + r.width > window.innerWidth - 10) x = event.clientX - r.width - 14;
+  if (y + r.height > window.innerHeight - 10) y = event.clientY - r.height - 10;
+  if (y < 10) y = 10;
+  ttEl.style.left = x + "px";
+  ttEl.style.top = y + "px";
+}
+function hideTooltip() { ttEl.classList.remove("visible"); }
+
+/* =========================================================
+   HELPERS
+   ========================================================= */
+function fmtK(v) { return d3.format(",.1f")(v) + "k"; }
+function fmtPct(v) { return d3.format(".1f")(v) + "%"; }
+function fmtBn(v) { return "\u00a3" + d3.format(".1f")(v) + "bn"; }
+function fmtBnShort(v) { return "\u00a3" + d3.format(",.0f")(v) + "bn"; }
+
+function isMobile() { return window.innerWidth < MOBILE; }
+
+function chartDims(container) {
+  const w = container.clientWidth;
+  const h = Math.max(500, Math.min(600, window.innerHeight * 0.65));
+  const m = { top: 30, right: 60, bottom: 40, left: 55 };
+  return { width: w, height: h, margin: m, innerW: w - m.left - m.right, innerH: h - m.top - m.bottom };
+}
+
+/* =========================================================
+   DATA LOAD & INIT
+   ========================================================= */
+let DATA;
+
+fetch("https://stateofbritain.uk/api/data/defence.json")
+  .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
+  .then(d => { DATA = d; init(); })
+  .catch(err => {
+    document.getElementById("loading-screen").style.display = "none";
+    const es = document.getElementById("error-screen");
+    es.style.display = "flex";
+    document.getElementById("error-msg").textContent = "Failed to load data: " + err.message;
+  });
+
+function init() {
+  document.getElementById("loading-screen").classList.add("hidden");
+  setTimeout(() => { document.getElementById("loading-screen").style.display = "none"; }, 600);
+  document.getElementById("site-header").style.display = "";
+  document.getElementById("main-content").style.display = "";
+  document.getElementById("site-footer").style.display = "";
+
+  // Set big numbers
+  document.getElementById("bn-personnel").textContent = d3.format(",.1f")(DATA.snapshot.totalPersonnel) + "k";
+  document.getElementById("bn-decline").textContent = "\u2193" + DATA.snapshot.personnelDecline + "%";
+
+  buildAllCharts();
+  setupScrollObserver();
+  window.addEventListener("resize", debounce(rebuildAll, 250));
+}
+
+let resizeTimer;
+function debounce(fn, ms) {
+  return function() { clearTimeout(resizeTimer); resizeTimer = setTimeout(fn, ms); };
+}
+function rebuildAll() {
+  d3.selectAll(".chart-container svg").remove();
+  buildAllCharts();
+  document.querySelectorAll(".step-inner.active").forEach(el => {
+    const step = el.closest(".step");
+    const sec = step.dataset.section;
+    const idx = +step.dataset.step;
+    updateChart(sec, idx);
+  });
+}
+
+/* =========================================================
+   BUILD ALL CHARTS
+   ========================================================= */
+function buildAllCharts() {
+  buildHookChart();
+  buildSpendingChart();
+  buildPersonnelChart();
+  buildEquipmentChart();
+  buildReservesChart();
+  buildAmbitionChart();
+}
+
+/* =========================================================
+   CHART 1: HOOK — Big personnel bar comparison
+   ========================================================= */
+function buildHookChart() {
+  const container = document.getElementById("chart-hook");
+  const dim = chartDims(container);
+  const svg = d3.select(container).append("svg")
+    .attr("width", dim.width).attr("height", dim.height)
+    .attr("viewBox", `0 0 ${dim.width} ${dim.height}`);
+  const g = svg.append("g").attr("transform", `translate(${dim.margin.left},${dim.margin.top})`);
+
+  // --- BAR VIEW (step 0) ---
+  const barGroup = g.append("g").attr("class", "bar-view");
+
+  const peakVal = DATA.snapshot.personnelPeak;
+  const currentVal = DATA.snapshot.totalPersonnel;
+  const categories = [
+    { label: "2000", value: peakVal },
+    { label: "2024", value: currentVal }
+  ];
+
+  const xBar = d3.scaleBand().domain(categories.map(d => d.label)).range([0, dim.innerW]).padding(0.4);
+  const yBar = d3.scaleLinear().domain([0, 230]).range([dim.innerH, 0]);
+
+  // Grid
+  barGroup.append("g").attr("class", "grid")
+    .call(d3.axisLeft(yBar).ticks(5).tickSize(-dim.innerW).tickFormat(""))
+    .call(g => g.select(".domain").remove());
+
+  // Bars
+  barGroup.selectAll(".bar").data(categories).enter()
+    .append("rect").attr("class", "bar")
+    .attr("x", d => xBar(d.label))
+    .attr("y", d => yBar(d.value))
+    .attr("width", xBar.bandwidth())
+    .attr("height", d => dim.innerH - yBar(d.value))
+    .attr("fill", (d, i) => i === 0 ? C.primary : C.red)
+    .attr("rx", 3)
+    .on("mousemove", function(event, d) {
+      showTooltip(`<div class="tt-label">${d.label}</div><div class="tt-value">${fmtK(d.value)} personnel</div>`, event);
+    })
+    .on("mouseleave", hideTooltip);
+
+  // Bar labels
+  barGroup.selectAll(".bar-label").data(categories).enter()
+    .append("text").attr("class", "chart-annotation-bold")
+    .attr("x", d => xBar(d.label) + xBar.bandwidth() / 2)
+    .attr("y", d => yBar(d.value) - 10)
+    .attr("text-anchor", "middle")
+    .attr("fill", (d, i) => i === 0 ? C.primary : C.red)
+    .text(d => fmtK(d.value));
+
+  // Decline arrow annotation
+  const x1 = xBar("2000") + xBar.bandwidth() + 10;
+  const x2 = xBar("2024") - 10;
+  const midX = (x1 + x2) / 2;
+  const midY = yBar((peakVal + currentVal) / 2);
+  barGroup.append("text").attr("class", "chart-annotation-bold")
+    .attr("x", midX).attr("y", midY - 4).attr("text-anchor", "middle")
+    .attr("fill", C.red)
+    .text("\u221238%");
+
+  // Axes
+  barGroup.append("g").attr("class", "axis x-axis")
+    .attr("transform", `translate(0,${dim.innerH})`)
+    .call(d3.axisBottom(xBar).tickSize(0))
+    .call(g => g.select(".domain").remove());
+  barGroup.append("g").attr("class", "axis y-axis")
+    .call(d3.axisLeft(yBar).ticks(5).tickFormat(d => d + "k").tickSize(0))
+    .call(g => g.select(".domain").remove());
+
+  // --- LINE VIEW (step 1) — total personnel over time ---
+  const lineGroup = g.append("g").attr("class", "line-view").style("opacity", 0);
+
+  const personnel = DATA.personnel;
+  const totalData = personnel.map(d => ({ year: d.year, total: d.army + d.navy + d.raf }));
+  const xLine = d3.scaleLinear().domain([2000, 2024]).range([0, dim.innerW]);
+  const yLine = d3.scaleLinear().domain([0, 230]).range([dim.innerH, 0]);
+
+  // Grid
+  lineGroup.append("g").attr("class", "grid")
+    .call(d3.axisLeft(yLine).ticks(5).tickSize(-dim.innerW).tickFormat(""))
+    .call(g => g.select(".domain").remove());
+
+  // Area
+  const area = d3.area().x(d => xLine(d.year)).y0(dim.innerH).y1(d => yLine(d.total)).curve(d3.curveMonotoneX);
+  lineGroup.append("path").datum(totalData)
+    .attr("d", area).attr("fill", C.redLight);
+
+  // Line
+  const line = d3.line().x(d => xLine(d.year)).y(d => yLine(d.total)).curve(d3.curveMonotoneX);
+  lineGroup.append("path").datum(totalData)
+    .attr("d", line).attr("fill", "none").attr("stroke", C.red).attr("stroke-width", 2.5);
+
+  // Start & end dots
+  const first = totalData[0];
+  const last = totalData[totalData.length - 1];
+  lineGroup.append("circle").attr("cx", xLine(first.year)).attr("cy", yLine(first.total)).attr("r", 5)
+    .attr("fill", C.red).attr("stroke", "#fff").attr("stroke-width", 2);
+  lineGroup.append("circle").attr("cx", xLine(last.year)).attr("cy", yLine(last.total)).attr("r", 5)
+    .attr("fill", C.red).attr("stroke", "#fff").attr("stroke-width", 2);
+
+  // Labels
+  lineGroup.append("text").attr("class", "chart-annotation-bold")
+    .attr("x", xLine(first.year)).attr("y", yLine(first.total) - 14)
+    .attr("text-anchor", "start").attr("fill", C.red)
+    .text(fmtK(first.total));
+  lineGroup.append("text").attr("class", "chart-annotation-bold")
+    .attr("x", xLine(last.year) + 6).attr("y", yLine(last.total) + 5)
+    .attr("fill", C.red)
+    .text(fmtK(last.total));
+
+  // Axes
+  lineGroup.append("g").attr("class", "axis x-axis")
+    .attr("transform", `translate(0,${dim.innerH})`)
+    .call(d3.axisBottom(xLine).ticks(6).tickFormat(d3.format("d")).tickSize(0))
+    .call(g => g.select(".domain").remove());
+  lineGroup.append("g").attr("class", "axis y-axis")
+    .call(d3.axisLeft(yLine).ticks(5).tickFormat(d => d + "k").tickSize(0))
+    .call(g => g.select(".domain").remove());
+
+  // Hover
+  const hoverRect = lineGroup.append("rect")
+    .attr("width", dim.innerW).attr("height", dim.innerH)
+    .attr("fill", "transparent").style("cursor", "crosshair");
+  const hoverLine = lineGroup.append("line")
+    .attr("y1", 0).attr("y2", dim.innerH)
+    .attr("stroke", "#999").attr("stroke-width", 1).attr("stroke-dasharray", "3,2")
+    .style("opacity", 0);
+  const hoverDot = lineGroup.append("circle").attr("r", 4).attr("fill", C.red).style("opacity", 0);
+
+  hoverRect.on("mousemove", function(event) {
+    const [mx] = d3.pointer(event, this);
+    const year = Math.round(xLine.invert(mx));
+    const d = totalData.find(a => a.year === year);
+    if (!d) return;
+    hoverLine.attr("x1", xLine(year)).attr("x2", xLine(year)).style("opacity", 1);
+    hoverDot.attr("cx", xLine(year)).attr("cy", yLine(d.total)).style("opacity", 1);
+    showTooltip(`<div class="tt-label">${d.year}</div><div class="tt-value">Total: ${fmtK(d.total)}</div>`, event);
+  }).on("mouseleave", function() {
+    hoverLine.style("opacity", 0); hoverDot.style("opacity", 0); hideTooltip();
+  });
+}
+
+function updateHookChart(step) {
+  const svg = d3.select("#chart-hook svg");
+  if (step === 0) {
+    svg.select(".bar-view").transition().duration(DURATION).style("opacity", 1);
+    svg.select(".line-view").transition().duration(DURATION).style("opacity", 0);
+  } else {
+    svg.select(".bar-view").transition().duration(DURATION).style("opacity", 0);
+    svg.select(".line-view").transition().duration(DURATION).style("opacity", 1);
+  }
+}
+
+/* =========================================================
+   CHART 2: SPENDING AS % OF GDP
+   ========================================================= */
+function buildSpendingChart() {
+  const container = document.getElementById("chart-spending");
+  const dim = chartDims(container);
+  const svg = d3.select(container).append("svg")
+    .attr("width", dim.width).attr("height", dim.height)
+    .attr("viewBox", `0 0 ${dim.width} ${dim.height}`);
+  const g = svg.append("g").attr("transform", `translate(${dim.margin.left},${dim.margin.top})`);
+
+  const spData = DATA.spendingPctGdp;
+  const x = d3.scaleLinear().domain([1990, 2024]).range([0, dim.innerW]);
+  const y = d3.scaleLinear().domain([0, 4.5]).range([dim.innerH, 0]);
+
+  // --- Main view (step 0): full line with NATO 2% ---
+  const mainGroup = g.append("g").attr("class", "spending-main-view");
+
+  // Grid
+  mainGroup.append("g").attr("class", "grid")
+    .call(d3.axisLeft(y).ticks(5).tickSize(-dim.innerW).tickFormat(""))
+    .call(g => g.select(".domain").remove());
+
+  // NATO 2% threshold line
+  mainGroup.append("line")
+    .attr("x1", 0).attr("x2", dim.innerW)
+    .attr("y1", y(2)).attr("y2", y(2))
+    .attr("stroke", C.red).attr("stroke-width", 1.5).attr("stroke-dasharray", "8,4");
+  mainGroup.append("text").attr("class", "chart-annotation-bold")
+    .attr("x", dim.innerW).attr("y", y(2) - 8).attr("text-anchor", "end")
+    .attr("fill", C.red).text("NATO 2% target");
+
+  // Area below line
+  const area = d3.area().x(d => x(d.year)).y0(dim.innerH).y1(d => y(d.pct)).curve(d3.curveMonotoneX);
+  mainGroup.append("path").datum(spData)
+    .attr("d", area).attr("fill", C.greenLight);
+
+  // Line
+  const line = d3.line().x(d => x(d.year)).y(d => y(d.pct)).curve(d3.curveMonotoneX);
+  mainGroup.append("path").datum(spData)
+    .attr("d", line).attr("fill", "none").attr("stroke", C.primary).attr("stroke-width", 2.5);
+
+  // Start label
+  const first = spData[0];
+  mainGroup.append("circle").attr("cx", x(first.year)).attr("cy", y(first.pct)).attr("r", 5)
+    .attr("fill", C.primary).attr("stroke", "#fff").attr("stroke-width", 2);
+  mainGroup.append("text").attr("class", "chart-annotation-bold")
+    .attr("x", x(first.year) + 8).attr("y", y(first.pct) - 10)
+    .attr("fill", C.primary).text(fmtPct(first.pct));
+
+  // End label
+  const last = spData[spData.length - 1];
+  mainGroup.append("circle").attr("cx", x(last.year)).attr("cy", y(last.pct)).attr("r", 5)
+    .attr("fill", C.primary).attr("stroke", "#fff").attr("stroke-width", 2);
+  mainGroup.append("text").attr("class", "chart-annotation-bold")
+    .attr("x", x(last.year) + 8).attr("y", y(last.pct) + 5)
+    .attr("fill", C.primary).text(fmtPct(last.pct));
+
+  // Annotation: 2015 nadir
+  const nadir = spData.find(d => d.year === 2015);
+  mainGroup.append("text").attr("class", "chart-annotation")
+    .attr("x", x(2015)).attr("y", y(nadir.pct) + 22)
+    .attr("text-anchor", "middle").attr("fill", C.red)
+    .text("Hit 2.0% floor");
+  mainGroup.append("line")
+    .attr("x1", x(2015)).attr("x2", x(2015))
+    .attr("y1", y(nadir.pct) + 6).attr("y2", y(nadir.pct) + 14)
+    .attr("stroke", C.red).attr("stroke-width", 1).attr("stroke-dasharray", "3,2");
+
+  // Axes
+  mainGroup.append("g").attr("class", "axis x-axis")
+    .attr("transform", `translate(0,${dim.innerH})`)
+    .call(d3.axisBottom(x).ticks(7).tickFormat(d3.format("d")).tickSize(0))
+    .call(g => g.select(".domain").remove());
+  mainGroup.append("g").attr("class", "axis y-axis")
+    .call(d3.axisLeft(y).ticks(5).tickFormat(d => d + "%").tickSize(0))
+    .call(g => g.select(".domain").remove());
+
+  // Hover
+  const hoverRect = mainGroup.append("rect")
+    .attr("width", dim.innerW).attr("height", dim.innerH)
+    .attr("fill", "transparent").style("cursor", "crosshair");
+  const hoverLine = mainGroup.append("line")
+    .attr("y1", 0).attr("y2", dim.innerH)
+    .attr("stroke", "#999").attr("stroke-width", 1).attr("stroke-dasharray", "3,2")
+    .style("opacity", 0);
+  const hoverDot = mainGroup.append("circle").attr("r", 4).attr("fill", C.primary).style("opacity", 0);
+
+  hoverRect.on("mousemove", function(event) {
+    const [mx] = d3.pointer(event, this);
+    const year = Math.round(x.invert(mx));
+    const d = spData.find(a => a.year === year);
+    if (!d) return;
+    hoverLine.attr("x1", x(year)).attr("x2", x(year)).style("opacity", 1);
+    hoverDot.attr("cx", x(year)).attr("cy", y(d.pct)).style("opacity", 1);
+    showTooltip(`<div class="tt-label">${d.year}</div><div class="tt-value">Defence: ${fmtPct(d.pct)} of GDP</div>`, event);
+  }).on("mouseleave", function() {
+    hoverLine.style("opacity", 0); hoverDot.style("opacity", 0); hideTooltip();
+  });
+
+  // --- Zoomed view (step 1): 2010-2024 with NATO 2% and 2.5% target ---
+  const zoomGroup = g.append("g").attr("class", "spending-zoom-view").style("opacity", 0);
+  const recentData = spData.filter(d => d.year >= 2010);
+  const x2 = d3.scaleLinear().domain([2010, 2024]).range([0, dim.innerW]);
+  const y2 = d3.scaleLinear().domain([1.5, 3]).range([dim.innerH, 0]);
+
+  // Grid
+  zoomGroup.append("g").attr("class", "grid")
+    .call(d3.axisLeft(y2).ticks(6).tickSize(-dim.innerW).tickFormat(""))
+    .call(g => g.select(".domain").remove());
+
+  // NATO 2% line
+  zoomGroup.append("line")
+    .attr("x1", 0).attr("x2", dim.innerW)
+    .attr("y1", y2(2)).attr("y2", y2(2))
+    .attr("stroke", C.red).attr("stroke-width", 1.5).attr("stroke-dasharray", "8,4");
+  zoomGroup.append("text").attr("class", "chart-annotation-bold")
+    .attr("x", 4).attr("y", y2(2) - 8)
+    .attr("fill", C.red).text("NATO 2% floor");
+
+  // NATO 2.5% target line
+  zoomGroup.append("line")
+    .attr("x1", 0).attr("x2", dim.innerW)
+    .attr("y1", y2(2.5)).attr("y2", y2(2.5))
+    .attr("stroke", C.amber).attr("stroke-width", 1.5).attr("stroke-dasharray", "8,4");
+  zoomGroup.append("text").attr("class", "chart-annotation-bold")
+    .attr("x", 4).attr("y", y2(2.5) - 8)
+    .attr("fill", C.amber).text("NATO 2.5% target");
+
+  // Shaded gap between current and 2.5%
+  const gapArea = d3.area()
+    .x(d => x2(d.year))
+    .y0(d => y2(d.pct))
+    .y1(d => y2(2.5))
+    .curve(d3.curveMonotoneX);
+  zoomGroup.append("path").datum(recentData)
+    .attr("d", gapArea).attr("fill", C.redLight);
+
+  // Line
+  const line2 = d3.line().x(d => x2(d.year)).y(d => y2(d.pct)).curve(d3.curveMonotoneX);
+  zoomGroup.append("path").datum(recentData)
+    .attr("d", line2).attr("fill", "none").attr("stroke", C.primary).attr("stroke-width", 2.5);
+
+  // End label
+  const lastRecent = recentData[recentData.length - 1];
+  zoomGroup.append("circle").attr("cx", x2(lastRecent.year)).attr("cy", y2(lastRecent.pct)).attr("r", 5)
+    .attr("fill", C.primary).attr("stroke", "#fff").attr("stroke-width", 2);
+  zoomGroup.append("text").attr("class", "chart-annotation-bold")
+    .attr("x", x2(lastRecent.year) + 8).attr("y", y2(lastRecent.pct) + 5)
+    .attr("fill", C.primary).text(fmtPct(lastRecent.pct));
+
+  // Gap annotation
+  const gapMidYear = 2018;
+  const gapMidPct = spData.find(d => d.year === gapMidYear).pct;
+  const gapMidY = (y2(gapMidPct) + y2(2.5)) / 2;
+  zoomGroup.append("text").attr("class", "chart-annotation-bold")
+    .attr("x", x2(gapMidYear) + 4).attr("y", gapMidY + 4)
+    .attr("text-anchor", "start").attr("fill", C.red)
+    .text("Shortfall");
+
+  // Axes
+  zoomGroup.append("g").attr("class", "axis x-axis")
+    .attr("transform", `translate(0,${dim.innerH})`)
+    .call(d3.axisBottom(x2).ticks(7).tickFormat(d3.format("d")).tickSize(0))
+    .call(g => g.select(".domain").remove());
+  zoomGroup.append("g").attr("class", "axis y-axis")
+    .call(d3.axisLeft(y2).ticks(6).tickFormat(d => d + "%").tickSize(0))
+    .call(g => g.select(".domain").remove());
+
+  // Hover
+  const hoverRect2 = zoomGroup.append("rect")
+    .attr("width", dim.innerW).attr("height", dim.innerH)
+    .attr("fill", "transparent").style("cursor", "crosshair");
+  const hoverLine2 = zoomGroup.append("line")
+    .attr("y1", 0).attr("y2", dim.innerH)
+    .attr("stroke", "#999").attr("stroke-width", 1).attr("stroke-dasharray", "3,2")
+    .style("opacity", 0);
+  const hoverDot2 = zoomGroup.append("circle").attr("r", 4).attr("fill", C.primary).style("opacity", 0);
+
+  hoverRect2.on("mousemove", function(event) {
+    const [mx] = d3.pointer(event, this);
+    const year = Math.round(x2.invert(mx));
+    const d = recentData.find(a => a.year === year);
+    if (!d) return;
+    hoverLine2.attr("x1", x2(year)).attr("x2", x2(year)).style("opacity", 1);
+    hoverDot2.attr("cx", x2(year)).attr("cy", y2(d.pct)).style("opacity", 1);
+    const gap = (2.5 - d.pct).toFixed(1);
+    showTooltip(`<div class="tt-label">${d.year}</div>
+      <div class="tt-value">Defence: ${fmtPct(d.pct)} of GDP</div>
+      <div class="tt-value" style="color:${C.red}">Gap to 2.5%: ${gap}pp</div>`, event);
+  }).on("mouseleave", function() {
+    hoverLine2.style("opacity", 0); hoverDot2.style("opacity", 0); hideTooltip();
+  });
+}
+
+function updateSpendingChart(step) {
+  const svg = d3.select("#chart-spending svg");
+  if (step === 0) {
+    svg.select(".spending-main-view").transition().duration(DURATION).style("opacity", 1);
+    svg.select(".spending-zoom-view").transition().duration(DURATION).style("opacity", 0);
+  } else {
+    svg.select(".spending-main-view").transition().duration(DURATION).style("opacity", 0);
+    svg.select(".spending-zoom-view").transition().duration(DURATION).style("opacity", 1);
+  }
+}
+
+/* =========================================================
+   CHART 3: PERSONNEL BY SERVICE
+   ========================================================= */
+function buildPersonnelChart() {
+  const container = document.getElementById("chart-personnel");
+  const dim = chartDims(container);
+  const svg = d3.select(container).append("svg")
+    .attr("width", dim.width).attr("height", dim.height)
+    .attr("viewBox", `0 0 ${dim.width} ${dim.height}`);
+  const g = svg.append("g").attr("transform", `translate(${dim.margin.left},${dim.margin.top})`);
+
+  const personnel = DATA.personnel;
+  const x = d3.scaleLinear().domain([2000, 2024]).range([0, dim.innerW]);
+  const y = d3.scaleLinear().domain([0, 120]).range([dim.innerH, 0]);
+
+  // --- Stacked area view (step 0) ---
+  const stackGroup = g.append("g").attr("class", "personnel-stack-view");
+
+  // Grid
+  stackGroup.append("g").attr("class", "grid")
+    .call(d3.axisLeft(y).ticks(6).tickSize(-dim.innerW).tickFormat(""))
+    .call(g => g.select(".domain").remove());
+
+  const services = [
+    { key: "army", label: "Army", color: C.army },
+    { key: "navy", label: "Royal Navy", color: C.navy },
+    { key: "raf", label: "RAF", color: C.raf }
+  ];
+
+  services.forEach(s => {
+    // Area
+    const area = d3.area()
+      .x(d => x(d.year))
+      .y0(dim.innerH)
+      .y1(d => y(d[s.key]))
+      .curve(d3.curveMonotoneX);
+    stackGroup.append("path").datum(personnel)
+      .attr("d", area)
+      .attr("fill", s.color)
+      .attr("fill-opacity", 0.12);
+
+    // Line
+    const line = d3.line().x(d => x(d.year)).y(d => y(d[s.key])).curve(d3.curveMonotoneX);
+    stackGroup.append("path").datum(personnel)
+      .attr("d", line).attr("fill", "none").attr("stroke", s.color).attr("stroke-width", 2.5);
+
+    // End label
+    const last = personnel[personnel.length - 1];
+    stackGroup.append("text").attr("class", "chart-annotation-bold")
+      .attr("x", x(last.year) + 6).attr("y", y(last[s.key]) + 4)
+      .attr("fill", s.color).text(s.label + " " + fmtK(last[s.key]));
+  });
+
+  // Axes
+  stackGroup.append("g").attr("class", "axis x-axis")
+    .attr("transform", `translate(0,${dim.innerH})`)
+    .call(d3.axisBottom(x).ticks(6).tickFormat(d3.format("d")).tickSize(0))
+    .call(g => g.select(".domain").remove());
+  stackGroup.append("g").attr("class", "axis y-axis")
+    .call(d3.axisLeft(y).ticks(6).tickFormat(d => d + "k").tickSize(0))
+    .call(g => g.select(".domain").remove());
+
+  // Hover
+  const hoverRect = stackGroup.append("rect")
+    .attr("width", dim.innerW).attr("height", dim.innerH)
+    .attr("fill", "transparent").style("cursor", "crosshair");
+  const hoverLine = stackGroup.append("line")
+    .attr("y1", 0).attr("y2", dim.innerH)
+    .attr("stroke", "#999").attr("stroke-width", 1).attr("stroke-dasharray", "3,2")
+    .style("opacity", 0);
+
+  hoverRect.on("mousemove", function(event) {
+    const [mx] = d3.pointer(event, this);
+    const year = Math.round(x.invert(mx));
+    const d = personnel.find(a => a.year === year);
+    if (!d) return;
+    hoverLine.attr("x1", x(year)).attr("x2", x(year)).style("opacity", 1);
+    showTooltip(`<div class="tt-label">${d.year}</div>
+      <div class="tt-value" style="color:${C.army}">Army: ${fmtK(d.army)}</div>
+      <div class="tt-value" style="color:${C.navy}">Navy: ${fmtK(d.navy)}</div>
+      <div class="tt-value" style="color:${C.raf}">RAF: ${fmtK(d.raf)}</div>
+      <div class="tt-value" style="font-weight:600">Total: ${fmtK(d.army + d.navy + d.raf)}</div>`, event);
+  }).on("mouseleave", function() {
+    hoverLine.style("opacity", 0); hideTooltip();
+  });
+
+  // --- Index view (step 1): rebased to 100 ---
+  const indexGroup = g.append("g").attr("class", "personnel-index-view").style("opacity", 0);
+  const yIdx = d3.scaleLinear().domain([40, 105]).range([dim.innerH, 0]);
+
+  // Grid
+  indexGroup.append("g").attr("class", "grid")
+    .call(d3.axisLeft(yIdx).ticks(6).tickSize(-dim.innerW).tickFormat(""))
+    .call(g => g.select(".domain").remove());
+
+  // 100 baseline
+  indexGroup.append("line")
+    .attr("x1", 0).attr("x2", dim.innerW)
+    .attr("y1", yIdx(100)).attr("y2", yIdx(100))
+    .attr("stroke", C.faint).attr("stroke-width", 1.5).attr("stroke-dasharray", "6,4");
+  indexGroup.append("text").attr("class", "chart-annotation")
+    .attr("x", dim.innerW).attr("y", yIdx(100) - 8).attr("text-anchor", "end")
+    .attr("fill", C.faint).text("2000 = 100");
+
+  const base = personnel[0];
+  services.forEach(s => {
+    const indexData = personnel.map(d => ({ year: d.year, value: (d[s.key] / base[s.key]) * 100 }));
+    const line = d3.line().x(d => x(d.year)).y(d => yIdx(d.value)).curve(d3.curveMonotoneX);
+    indexGroup.append("path").datum(indexData)
+      .attr("d", line).attr("fill", "none").attr("stroke", s.color).attr("stroke-width", 2.5);
+
+    const last = indexData[indexData.length - 1];
+    indexGroup.append("text").attr("class", "chart-annotation-bold")
+      .attr("x", x(last.year) + 6).attr("y", yIdx(last.value) + 4)
+      .attr("fill", s.color)
+      .text(s.label + " " + Math.round(last.value));
+  });
+
+  // Axes
+  indexGroup.append("g").attr("class", "axis x-axis")
+    .attr("transform", `translate(0,${dim.innerH})`)
+    .call(d3.axisBottom(x).ticks(6).tickFormat(d3.format("d")).tickSize(0))
+    .call(g => g.select(".domain").remove());
+  indexGroup.append("g").attr("class", "axis y-axis")
+    .call(d3.axisLeft(yIdx).ticks(6).tickFormat(d => d).tickSize(0))
+    .call(g => g.select(".domain").remove());
+
+  // Hover
+  const hoverRect2 = indexGroup.append("rect")
+    .attr("width", dim.innerW).attr("height", dim.innerH)
+    .attr("fill", "transparent").style("cursor", "crosshair");
+  const hoverLine2 = indexGroup.append("line")
+    .attr("y1", 0).attr("y2", dim.innerH)
+    .attr("stroke", "#999").attr("stroke-width", 1).attr("stroke-dasharray", "3,2")
+    .style("opacity", 0);
+
+  hoverRect2.on("mousemove", function(event) {
+    const [mx] = d3.pointer(event, this);
+    const year = Math.round(x.invert(mx));
+    const d = personnel.find(a => a.year === year);
+    if (!d) return;
+    hoverLine2.attr("x1", x(year)).attr("x2", x(year)).style("opacity", 1);
+    const armyIdx = ((d.army / base.army) * 100).toFixed(0);
+    const navyIdx = ((d.navy / base.navy) * 100).toFixed(0);
+    const rafIdx = ((d.raf / base.raf) * 100).toFixed(0);
+    showTooltip(`<div class="tt-label">${d.year} (indexed to 2000 = 100)</div>
+      <div class="tt-value" style="color:${C.army}">Army: ${armyIdx}</div>
+      <div class="tt-value" style="color:${C.navy}">Navy: ${navyIdx}</div>
+      <div class="tt-value" style="color:${C.raf}">RAF: ${rafIdx}</div>`, event);
+  }).on("mouseleave", function() {
+    hoverLine2.style("opacity", 0); hideTooltip();
+  });
+}
+
+function updatePersonnelChart(step) {
+  const svg = d3.select("#chart-personnel svg");
+  if (step === 0) {
+    svg.select(".personnel-stack-view").transition().duration(DURATION).style("opacity", 1);
+    svg.select(".personnel-index-view").transition().duration(DURATION).style("opacity", 0);
+  } else {
+    svg.select(".personnel-stack-view").transition().duration(DURATION).style("opacity", 0);
+    svg.select(".personnel-index-view").transition().duration(DURATION).style("opacity", 1);
+  }
+}
+
+/* =========================================================
+   CHART 4: EQUIPMENT PLAN — Horizontal bar chart
+   ========================================================= */
+function buildEquipmentChart() {
+  const container = document.getElementById("chart-equipment");
+  const dim = chartDims(container);
+  const h = Math.max(520, dim.height);
+  const m = { top: 30, right: 80, bottom: 50, left: 10 };
+  const innerW = dim.width - m.left - m.right;
+  const innerH = h - m.top - m.bottom;
+
+  const svg = d3.select(container).append("svg")
+    .attr("width", dim.width).attr("height", h)
+    .attr("viewBox", `0 0 ${dim.width} ${h}`);
+  const g = svg.append("g").attr("transform", `translate(${m.left},${m.top})`);
+
+  const eqData = DATA.equipmentPlan;
+  const total = d3.sum(eqData, d => d.value);
+
+  // --- Full view (step 0) ---
+  const fullGroup = g.append("g").attr("class", "equip-full-view");
+
+  const yBand = d3.scaleBand().domain(eqData.map(d => d.category)).range([0, innerH]).padding(0.25);
+  const xScale = d3.scaleLinear().domain([0, 20]).range([0, innerW]);
+
+  // Grid
+  fullGroup.append("g").attr("class", "grid")
+    .attr("transform", `translate(0,0)`)
+    .call(d3.axisTop(xScale).ticks(5).tickSize(-innerH).tickFormat(""))
+    .call(g => g.select(".domain").remove());
+
+  // Bars
+  fullGroup.selectAll(".bar").data(eqData).enter()
+    .append("rect")
+    .attr("x", 0)
+    .attr("y", d => yBand(d.category))
+    .attr("width", d => xScale(d.value))
+    .attr("height", yBand.bandwidth())
+    .attr("fill", (d, i) => i === 0 ? C.red : C.primary)
+    .attr("rx", 3)
+    .on("mousemove", function(event, d) {
+      const pct = ((d.value / total) * 100).toFixed(0);
+      showTooltip(`<div class="tt-label">${d.category}</div><div class="tt-value">${fmtBn(d.value)} (${pct}% of plan)</div>`, event);
+    })
+    .on("mouseleave", hideTooltip);
+
+  // Category labels (above bars for readability)
+  fullGroup.selectAll(".cat-label").data(eqData).enter()
+    .append("text").attr("class", "chart-annotation")
+    .attr("x", 4)
+    .attr("y", d => yBand(d.category) + 14)
+    .attr("fill", (d, i) => i === 0 ? C.red : C.primary)
+    .style("font-size", "13px").style("font-weight", "600")
+    .text(d => d.category);
+
+  // Value labels
+  fullGroup.selectAll(".val-label").data(eqData).enter()
+    .append("text").attr("class", "chart-annotation-bold")
+    .attr("x", d => xScale(d.value) + 6)
+    .attr("y", d => yBand(d.category) + yBand.bandwidth() / 2 + 5)
+    .attr("fill", (d, i) => i === 0 ? C.red : C.primary)
+    .text(d => fmtBn(d.value));
+
+  // X-axis for equipment values
+  fullGroup.append("g").attr("class", "axis x-axis")
+    .attr("transform", `translate(0,${innerH})`)
+    .call(d3.axisBottom(xScale).ticks(5).tickFormat(d => "\u00a3" + d + "bn").tickSize(0))
+    .call(g => g.select(".domain").remove());
+
+  // Total annotation
+  fullGroup.append("text").attr("class", "chart-annotation-bold")
+    .attr("x", innerW).attr("y", innerH + 36)
+    .attr("text-anchor", "end").attr("fill", C.ink)
+    .style("font-size", "14px")
+    .text("Total equipment plan: " + fmtBn(total));
+
+  // --- Highlight nuclear (step 1) ---
+  const highlightGroup = g.append("g").attr("class", "equip-highlight-view").style("opacity", 0);
+
+  // Same bars but dimmed, nuclear highlighted
+  highlightGroup.selectAll(".bar").data(eqData).enter()
+    .append("rect")
+    .attr("x", 0)
+    .attr("y", d => yBand(d.category))
+    .attr("width", d => xScale(d.value))
+    .attr("height", yBand.bandwidth())
+    .attr("fill", (d, i) => i === 0 ? C.red : C.faint)
+    .attr("fill-opacity", (d, i) => i === 0 ? 1 : 0.35)
+    .attr("rx", 3)
+    .on("mousemove", function(event, d) {
+      const pct = ((d.value / total) * 100).toFixed(0);
+      showTooltip(`<div class="tt-label">${d.category}</div><div class="tt-value">${fmtBn(d.value)} (${pct}% of plan)</div>`, event);
+    })
+    .on("mouseleave", hideTooltip);
+
+  // Category labels (above bars for readability)
+  highlightGroup.selectAll(".cat-label").data(eqData).enter()
+    .append("text").attr("class", "chart-annotation")
+    .attr("x", 4)
+    .attr("y", d => yBand(d.category) + 14)
+    .attr("fill", (d, i) => i === 0 ? C.red : C.muted)
+    .style("font-size", "13px").style("font-weight", "600")
+    .text(d => d.category);
+
+  // Value labels
+  highlightGroup.selectAll(".val-label").data(eqData).enter()
+    .append("text").attr("class", "chart-annotation-bold")
+    .attr("x", d => xScale(d.value) + 6)
+    .attr("y", d => yBand(d.category) + yBand.bandwidth() / 2 + 5)
+    .attr("fill", (d, i) => i === 0 ? C.red : C.muted)
+    .text(d => fmtBn(d.value));
+
+  // Nuclear callout
+  const nucY = yBand(eqData[0].category) + yBand.bandwidth() / 2;
+  highlightGroup.append("text").attr("class", "chart-annotation-bold")
+    .attr("x", xScale(eqData[0].value) + 6).attr("y", nucY - 24)
+    .attr("fill", C.red).style("font-size", "14px")
+    .text("28% of total plan");
+
+  // X-axis for equipment values
+  highlightGroup.append("g").attr("class", "axis x-axis")
+    .attr("transform", `translate(0,${innerH})`)
+    .call(d3.axisBottom(xScale).ticks(5).tickFormat(d => "\u00a3" + d + "bn").tickSize(0))
+    .call(g => g.select(".domain").remove());
+
+  // Total
+  highlightGroup.append("text").attr("class", "chart-annotation-bold")
+    .attr("x", innerW).attr("y", innerH + 36)
+    .attr("text-anchor", "end").attr("fill", C.ink)
+    .style("font-size", "14px")
+    .text("Total equipment plan: " + fmtBn(total));
+}
+
+function updateEquipmentChart(step) {
+  const svg = d3.select("#chart-equipment svg");
+  if (step === 0) {
+    svg.select(".equip-full-view").transition().duration(DURATION).style("opacity", 1);
+    svg.select(".equip-highlight-view").transition().duration(DURATION).style("opacity", 0);
+  } else {
+    svg.select(".equip-full-view").transition().duration(DURATION).style("opacity", 0);
+    svg.select(".equip-highlight-view").transition().duration(DURATION).style("opacity", 1);
+  }
+}
+
+/* =========================================================
+   CHART 5: RESERVES
+   ========================================================= */
+function buildReservesChart() {
+  const container = document.getElementById("chart-reserves");
+  const dim = chartDims(container);
+  const svg = d3.select(container).append("svg")
+    .attr("width", dim.width).attr("height", dim.height)
+    .attr("viewBox", `0 0 ${dim.width} ${dim.height}`);
+  const g = svg.append("g").attr("transform", `translate(${dim.margin.left},${dim.margin.top})`);
+
+  const resData = DATA.reserves;
+  const x = d3.scaleLinear().domain([2012, 2024]).range([0, dim.innerW]);
+  const y = d3.scaleLinear().domain([0, 35]).range([dim.innerH, 0]);
+
+  // --- Reserve strength view (step 0) ---
+  const resGroup = g.append("g").attr("class", "reserves-main-view");
+
+  // Grid
+  resGroup.append("g").attr("class", "grid")
+    .call(d3.axisLeft(y).ticks(5).tickSize(-dim.innerW).tickFormat(""))
+    .call(g => g.select(".domain").remove());
+
+  // Area
+  const area = d3.area().x(d => x(d.year)).y0(dim.innerH).y1(d => y(d.strength)).curve(d3.curveMonotoneX);
+  resGroup.append("path").datum(resData)
+    .attr("d", area).attr("fill", C.secondaryLight);
+
+  // Line
+  const line = d3.line().x(d => x(d.year)).y(d => y(d.strength)).curve(d3.curveMonotoneX);
+  resGroup.append("path").datum(resData)
+    .attr("d", line).attr("fill", "none").attr("stroke", C.secondary).attr("stroke-width", 2.5);
+
+  // Peak annotation
+  const peak = resData.reduce((a, b) => b.strength > a.strength ? b : a);
+  resGroup.append("circle").attr("cx", x(peak.year)).attr("cy", y(peak.strength)).attr("r", 5)
+    .attr("fill", C.secondary).attr("stroke", "#fff").attr("stroke-width", 2);
+  resGroup.append("text").attr("class", "chart-annotation-bold")
+    .attr("x", x(peak.year)).attr("y", y(peak.strength) - 14)
+    .attr("text-anchor", "middle").attr("fill", C.secondary)
+    .text("Peak: " + fmtK(peak.strength));
+
+  // End label
+  const last = resData[resData.length - 1];
+  resGroup.append("circle").attr("cx", x(last.year)).attr("cy", y(last.strength)).attr("r", 5)
+    .attr("fill", C.red).attr("stroke", "#fff").attr("stroke-width", 2);
+  resGroup.append("text").attr("class", "chart-annotation-bold")
+    .attr("x", x(last.year) + 8).attr("y", y(last.strength) + 5)
+    .attr("fill", C.red).text(fmtK(last.strength));
+
+  // Decline annotation
+  resGroup.append("text").attr("class", "chart-annotation")
+    .attr("x", x(2023) + 4).attr("y", y(28.5))
+    .attr("fill", C.red).text("\u2193 Declining");
+
+  // Axes
+  resGroup.append("g").attr("class", "axis x-axis")
+    .attr("transform", `translate(0,${dim.innerH})`)
+    .call(d3.axisBottom(x).ticks(7).tickFormat(d3.format("d")).tickSize(0))
+    .call(g => g.select(".domain").remove());
+  resGroup.append("g").attr("class", "axis y-axis")
+    .call(d3.axisLeft(y).ticks(5).tickFormat(d => d + "k").tickSize(0))
+    .call(g => g.select(".domain").remove());
+
+  // Hover
+  const hoverRect = resGroup.append("rect")
+    .attr("width", dim.innerW).attr("height", dim.innerH)
+    .attr("fill", "transparent").style("cursor", "crosshair");
+  const hoverLine = resGroup.append("line")
+    .attr("y1", 0).attr("y2", dim.innerH)
+    .attr("stroke", "#999").attr("stroke-width", 1).attr("stroke-dasharray", "3,2")
+    .style("opacity", 0);
+  const hoverDot = resGroup.append("circle").attr("r", 4).attr("fill", C.secondary).style("opacity", 0);
+
+  hoverRect.on("mousemove", function(event) {
+    const [mx] = d3.pointer(event, this);
+    const year = Math.round(x.invert(mx));
+    const d = resData.find(a => a.year === year);
+    if (!d) return;
+    hoverLine.attr("x1", x(year)).attr("x2", x(year)).style("opacity", 1);
+    hoverDot.attr("cx", x(year)).attr("cy", y(d.strength)).style("opacity", 1);
+    showTooltip(`<div class="tt-label">${d.year}</div><div class="tt-value">Reserves: ${fmtK(d.strength)}</div>`, event);
+  }).on("mouseleave", function() {
+    hoverLine.style("opacity", 0); hoverDot.style("opacity", 0); hideTooltip();
+  });
+
+  // --- Combined view (step 1): regulars + reserves stacked ---
+  const combGroup = g.append("g").attr("class", "reserves-combined-view").style("opacity", 0);
+
+  // Build combined data where we have both
+  const personnel = DATA.personnel;
+  const combData = resData.map(r => {
+    const p = personnel.find(d => d.year === r.year);
+    if (!p) return null;
+    return { year: r.year, regulars: p.army + p.navy + p.raf, reserves: r.strength };
+  }).filter(Boolean);
+
+  const yC = d3.scaleLinear().domain([0, 200]).range([dim.innerH, 0]);
+  const xC = d3.scaleLinear().domain([d3.min(combData, d => d.year), d3.max(combData, d => d.year)]).range([0, dim.innerW]);
+
+  // Grid
+  combGroup.append("g").attr("class", "grid")
+    .call(d3.axisLeft(yC).ticks(5).tickSize(-dim.innerW).tickFormat(""))
+    .call(g => g.select(".domain").remove());
+
+  // Regulars area
+  const regArea = d3.area().x(d => xC(d.year)).y0(dim.innerH).y1(d => yC(d.regulars)).curve(d3.curveMonotoneX);
+  combGroup.append("path").datum(combData)
+    .attr("d", regArea).attr("fill", C.greenLight);
+
+  // Regulars line
+  const regLine = d3.line().x(d => xC(d.year)).y(d => yC(d.regulars)).curve(d3.curveMonotoneX);
+  combGroup.append("path").datum(combData)
+    .attr("d", regLine).attr("fill", "none").attr("stroke", C.primary).attr("stroke-width", 2.5);
+
+  // Combined (regulars + reserves) area
+  const totalArea = d3.area().x(d => xC(d.year)).y0(d => yC(d.regulars)).y1(d => yC(d.regulars + d.reserves)).curve(d3.curveMonotoneX);
+  combGroup.append("path").datum(combData)
+    .attr("d", totalArea).attr("fill", C.secondaryLight);
+
+  // Combined line
+  const totalLine = d3.line().x(d => xC(d.year)).y(d => yC(d.regulars + d.reserves)).curve(d3.curveMonotoneX);
+  combGroup.append("path").datum(combData)
+    .attr("d", totalLine).attr("fill", "none").attr("stroke", C.secondary).attr("stroke-width", 2).attr("stroke-dasharray", "6,3");
+
+  // End labels
+  const lastC = combData[combData.length - 1];
+  combGroup.append("text").attr("class", "chart-annotation-bold")
+    .attr("x", xC(lastC.year) + 6).attr("y", yC(lastC.regulars) + 5)
+    .attr("fill", C.primary).text("Regulars " + fmtK(lastC.regulars));
+  combGroup.append("text").attr("class", "chart-annotation-bold")
+    .attr("x", xC(lastC.year) + 6).attr("y", yC(lastC.regulars + lastC.reserves) - 8)
+    .attr("fill", C.secondary).text("+ Reserves " + fmtK(lastC.reserves));
+  combGroup.append("text").attr("class", "chart-annotation-bold")
+    .attr("x", xC(lastC.year) + 6).attr("y", yC(lastC.regulars + lastC.reserves) + 20)
+    .attr("fill", C.ink).style("font-size", "14px")
+    .text("Total: " + fmtK(lastC.regulars + lastC.reserves));
+
+  // Axes
+  combGroup.append("g").attr("class", "axis x-axis")
+    .attr("transform", `translate(0,${dim.innerH})`)
+    .call(d3.axisBottom(xC).ticks(7).tickFormat(d3.format("d")).tickSize(0))
+    .call(g => g.select(".domain").remove());
+  combGroup.append("g").attr("class", "axis y-axis")
+    .call(d3.axisLeft(yC).ticks(5).tickFormat(d => d + "k").tickSize(0))
+    .call(g => g.select(".domain").remove());
+
+  // Hover
+  const hoverRect2 = combGroup.append("rect")
+    .attr("width", dim.innerW).attr("height", dim.innerH)
+    .attr("fill", "transparent").style("cursor", "crosshair");
+  const hoverLine2 = combGroup.append("line")
+    .attr("y1", 0).attr("y2", dim.innerH)
+    .attr("stroke", "#999").attr("stroke-width", 1).attr("stroke-dasharray", "3,2")
+    .style("opacity", 0);
+
+  hoverRect2.on("mousemove", function(event) {
+    const [mx] = d3.pointer(event, this);
+    const year = Math.round(xC.invert(mx));
+    const d = combData.find(a => a.year === year);
+    if (!d) return;
+    hoverLine2.attr("x1", xC(year)).attr("x2", xC(year)).style("opacity", 1);
+    showTooltip(`<div class="tt-label">${d.year}</div>
+      <div class="tt-value" style="color:${C.primary}">Regulars: ${fmtK(d.regulars)}</div>
+      <div class="tt-value" style="color:${C.secondary}">Reserves: ${fmtK(d.reserves)}</div>
+      <div class="tt-value" style="font-weight:600">Total: ${fmtK(d.regulars + d.reserves)}</div>`, event);
+  }).on("mouseleave", function() {
+    hoverLine2.style("opacity", 0); hideTooltip();
+  });
+}
+
+function updateReservesChart(step) {
+  const svg = d3.select("#chart-reserves svg");
+  if (step === 0) {
+    svg.select(".reserves-main-view").transition().duration(DURATION).style("opacity", 1);
+    svg.select(".reserves-combined-view").transition().duration(DURATION).style("opacity", 0);
+  } else {
+    svg.select(".reserves-main-view").transition().duration(DURATION).style("opacity", 0);
+    svg.select(".reserves-combined-view").transition().duration(DURATION).style("opacity", 1);
+  }
+}
+
+/* =========================================================
+   CHART 6: AMBITION vs REALITY — Real spending + targets
+   ========================================================= */
+function buildAmbitionChart() {
+  const container = document.getElementById("chart-ambition");
+  const dim = chartDims(container);
+  const svg = d3.select(container).append("svg")
+    .attr("width", dim.width).attr("height", dim.height)
+    .attr("viewBox", `0 0 ${dim.width} ${dim.height}`);
+  const g = svg.append("g").attr("transform", `translate(${dim.margin.left},${dim.margin.top})`);
+
+  const spGdp = DATA.spendingPctGdp;
+  const x = d3.scaleLinear().domain([1990, 2024]).range([0, dim.innerW]);
+  const y = d3.scaleLinear().domain([0, 4.5]).range([dim.innerH, 0]);
+
+  // --- Gap view (step 0): spending vs 2.5% target ---
+  const gapGroup = g.append("g").attr("class", "ambition-gap-view");
+
+  // Grid
+  gapGroup.append("g").attr("class", "grid")
+    .call(d3.axisLeft(y).ticks(5).tickSize(-dim.innerW).tickFormat(""))
+    .call(g => g.select(".domain").remove());
+
+  // 2.5% target line
+  gapGroup.append("line")
+    .attr("x1", 0).attr("x2", dim.innerW)
+    .attr("y1", y(2.5)).attr("y2", y(2.5))
+    .attr("stroke", C.amber).attr("stroke-width", 2).attr("stroke-dasharray", "8,4");
+  gapGroup.append("text").attr("class", "chart-annotation-bold")
+    .attr("x", dim.innerW).attr("y", y(2.5) - 8).attr("text-anchor", "end")
+    .attr("fill", C.amber).text("NATO 2.5% target");
+
+  // 2% line
+  gapGroup.append("line")
+    .attr("x1", 0).attr("x2", dim.innerW)
+    .attr("y1", y(2)).attr("y2", y(2))
+    .attr("stroke", C.red).attr("stroke-width", 1).attr("stroke-dasharray", "4,4").attr("opacity", 0.6);
+  gapGroup.append("text").attr("class", "chart-annotation")
+    .attr("x", dim.innerW).attr("y", y(2) + 16).attr("text-anchor", "end")
+    .attr("fill", C.red).text("2% floor");
+
+  // Shaded shortfall area from actual to 2.5%
+  const gapArea = d3.area()
+    .x(d => x(d.year))
+    .y0(d => y(Math.min(d.pct, 2.5)))
+    .y1(d => y(2.5))
+    .curve(d3.curveMonotoneX);
+  gapGroup.append("path").datum(spGdp)
+    .attr("d", gapArea).attr("fill", C.redLight);
+
+  // Area under line
+  const area = d3.area().x(d => x(d.year)).y0(dim.innerH).y1(d => y(d.pct)).curve(d3.curveMonotoneX);
+  gapGroup.append("path").datum(spGdp)
+    .attr("d", area).attr("fill", C.greenLight);
+
+  // Line
+  const line = d3.line().x(d => x(d.year)).y(d => y(d.pct)).curve(d3.curveMonotoneX);
+  gapGroup.append("path").datum(spGdp)
+    .attr("d", line).attr("fill", "none").attr("stroke", C.primary).attr("stroke-width", 2.5);
+
+  // End label
+  const last = spGdp[spGdp.length - 1];
+  gapGroup.append("circle").attr("cx", x(last.year)).attr("cy", y(last.pct)).attr("r", 5)
+    .attr("fill", C.primary).attr("stroke", "#fff").attr("stroke-width", 2);
+  gapGroup.append("text").attr("class", "chart-annotation-bold")
+    .attr("x", x(last.year) + 8).attr("y", y(last.pct) + 5)
+    .attr("fill", C.primary).text(fmtPct(last.pct));
+
+  // Gap label
+  gapGroup.append("text").attr("class", "chart-annotation-bold")
+    .attr("x", x(2020)).attr("y", y(2.4)).attr("text-anchor", "middle")
+    .attr("fill", C.red).style("font-size", "13px")
+    .text("0.2pp gap = ~\u00a35bn/yr");
+
+  // Axes
+  gapGroup.append("g").attr("class", "axis x-axis")
+    .attr("transform", `translate(0,${dim.innerH})`)
+    .call(d3.axisBottom(x).ticks(7).tickFormat(d3.format("d")).tickSize(0))
+    .call(g => g.select(".domain").remove());
+  gapGroup.append("g").attr("class", "axis y-axis")
+    .call(d3.axisLeft(y).ticks(5).tickFormat(d => d + "%").tickSize(0))
+    .call(g => g.select(".domain").remove());
+
+  // Hover
+  const hoverRect = gapGroup.append("rect")
+    .attr("width", dim.innerW).attr("height", dim.innerH)
+    .attr("fill", "transparent").style("cursor", "crosshair");
+  const hoverLineEl = gapGroup.append("line")
+    .attr("y1", 0).attr("y2", dim.innerH)
+    .attr("stroke", "#999").attr("stroke-width", 1).attr("stroke-dasharray", "3,2")
+    .style("opacity", 0);
+  const hoverDot = gapGroup.append("circle").attr("r", 4).attr("fill", C.primary).style("opacity", 0);
+
+  hoverRect.on("mousemove", function(event) {
+    const [mx] = d3.pointer(event, this);
+    const year = Math.round(x.invert(mx));
+    const d = spGdp.find(a => a.year === year);
+    if (!d) return;
+    hoverLineEl.attr("x1", x(year)).attr("x2", x(year)).style("opacity", 1);
+    hoverDot.attr("cx", x(year)).attr("cy", y(d.pct)).style("opacity", 1);
+    const gap25 = (2.5 - d.pct).toFixed(1);
+    showTooltip(`<div class="tt-label">${d.year}</div>
+      <div class="tt-value">Defence: ${fmtPct(d.pct)} of GDP</div>
+      <div class="tt-value" style="color:${C.red}">Gap to 2.5%: ${gap25 > 0 ? gap25 + "pp" : "Met"}</div>`, event);
+  }).on("mouseleave", function() {
+    hoverLineEl.style("opacity", 0); hoverDot.style("opacity", 0); hideTooltip();
+  });
+
+  // --- Real spending view (step 1) ---
+  const realGroup = g.append("g").attr("class", "ambition-real-view").style("opacity", 0);
+
+  const realData = DATA.spendingReal;
+  const xR = d3.scaleLinear().domain([2000, 2024]).range([0, dim.innerW]);
+  const yR = d3.scaleLinear().domain([0, 60]).range([dim.innerH, 0]);
+
+  // Grid
+  realGroup.append("g").attr("class", "grid")
+    .call(d3.axisLeft(yR).ticks(6).tickSize(-dim.innerW).tickFormat(""))
+    .call(g => g.select(".domain").remove());
+
+  // Area
+  const realArea = d3.area().x(d => xR(d.year)).y0(dim.innerH).y1(d => yR(d.value)).curve(d3.curveMonotoneX);
+  realGroup.append("path").datum(realData)
+    .attr("d", realArea).attr("fill", C.greenLight);
+
+  // Line
+  const realLine = d3.line().x(d => xR(d.year)).y(d => yR(d.value)).curve(d3.curveMonotoneX);
+  realGroup.append("path").datum(realData)
+    .attr("d", realLine).attr("fill", "none").attr("stroke", C.primary).attr("stroke-width", 2.5);
+
+  // Low point
+  const low = realData.reduce((a, b) => b.value < a.value ? b : a);
+  realGroup.append("circle").attr("cx", xR(low.year)).attr("cy", yR(low.value)).attr("r", 5)
+    .attr("fill", C.red).attr("stroke", "#fff").attr("stroke-width", 2);
+  realGroup.append("text").attr("class", "chart-annotation-bold")
+    .attr("x", xR(low.year)).attr("y", yR(low.value) + 22)
+    .attr("text-anchor", "middle").attr("fill", C.red)
+    .text("Low: " + fmtBn(low.value));
+
+  // End label
+  const lastR = realData[realData.length - 1];
+  realGroup.append("circle").attr("cx", xR(lastR.year)).attr("cy", yR(lastR.value)).attr("r", 5)
+    .attr("fill", C.primary).attr("stroke", "#fff").attr("stroke-width", 2);
+  realGroup.append("text").attr("class", "chart-annotation-bold")
+    .attr("x", xR(lastR.year) + 8).attr("y", yR(lastR.value) + 5)
+    .attr("fill", C.primary).text(fmtBn(lastR.value));
+
+  // Austerity annotation
+  realGroup.append("text").attr("class", "chart-annotation")
+    .attr("x", xR(2012)).attr("y", yR(45))
+    .attr("text-anchor", "middle").attr("fill", C.muted)
+    .text("Austerity cuts");
+  realGroup.append("line")
+    .attr("x1", xR(2012)).attr("x2", xR(2012))
+    .attr("y1", yR(44)).attr("y2", yR(42))
+    .attr("stroke", C.muted).attr("stroke-width", 1).attr("stroke-dasharray", "3,2");
+
+  // Axes
+  realGroup.append("g").attr("class", "axis x-axis")
+    .attr("transform", `translate(0,${dim.innerH})`)
+    .call(d3.axisBottom(xR).ticks(6).tickFormat(d3.format("d")).tickSize(0))
+    .call(g => g.select(".domain").remove());
+  realGroup.append("g").attr("class", "axis y-axis")
+    .call(d3.axisLeft(yR).ticks(6).tickFormat(d => "\u00a3" + d + "bn").tickSize(0))
+    .call(g => g.select(".domain").remove());
+
+  // Hover
+  const hoverRect2 = realGroup.append("rect")
+    .attr("width", dim.innerW).attr("height", dim.innerH)
+    .attr("fill", "transparent").style("cursor", "crosshair");
+  const hoverLine2 = realGroup.append("line")
+    .attr("y1", 0).attr("y2", dim.innerH)
+    .attr("stroke", "#999").attr("stroke-width", 1).attr("stroke-dasharray", "3,2")
+    .style("opacity", 0);
+  const hoverDot2 = realGroup.append("circle").attr("r", 4).attr("fill", C.primary).style("opacity", 0);
+
+  hoverRect2.on("mousemove", function(event) {
+    const [mx] = d3.pointer(event, this);
+    const year = Math.round(xR.invert(mx));
+    const d = realData.find(a => a.year === year);
+    if (!d) return;
+    hoverLine2.attr("x1", xR(year)).attr("x2", xR(year)).style("opacity", 1);
+    hoverDot2.attr("cx", xR(year)).attr("cy", yR(d.value)).style("opacity", 1);
+    showTooltip(`<div class="tt-label">${d.year}</div><div class="tt-value">Real spending: ${fmtBn(d.value)}</div>`, event);
+  }).on("mouseleave", function() {
+    hoverLine2.style("opacity", 0); hoverDot2.style("opacity", 0); hideTooltip();
+  });
+}
+
+function updateAmbitionChart(step) {
+  const svg = d3.select("#chart-ambition svg");
+  if (step === 0) {
+    svg.select(".ambition-gap-view").transition().duration(DURATION).style("opacity", 1);
+    svg.select(".ambition-real-view").transition().duration(DURATION).style("opacity", 0);
+  } else {
+    svg.select(".ambition-gap-view").transition().duration(DURATION).style("opacity", 0);
+    svg.select(".ambition-real-view").transition().duration(DURATION).style("opacity", 1);
+  }
+}
+
+/* =========================================================
+   CHART UPDATE DISPATCHER
+   ========================================================= */
+function updateChart(section, step) {
+  switch (section) {
+    case "hook": updateHookChart(step); break;
+    case "spending": updateSpendingChart(step); break;
+    case "personnel": updatePersonnelChart(step); break;
+    case "equipment": updateEquipmentChart(step); break;
+    case "reserves": updateReservesChart(step); break;
+    case "ambition": updateAmbitionChart(step); break;
+  }
+}
+
+/* =========================================================
+   SCROLLYTELLING — IntersectionObserver
+   ========================================================= */
+function setupScrollObserver() {
+  const steps = document.querySelectorAll(".step");
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      const inner = entry.target.querySelector(".step-inner");
+      if (entry.isIntersecting && entry.intersectionRatio >= 0.4) {
+        // Deactivate siblings in same section
+        const section = entry.target.dataset.section;
+        document.querySelectorAll(`.step[data-section="${section}"] .step-inner`).forEach(el => el.classList.remove("active"));
+        inner.classList.add("active");
+        updateChart(section, +entry.target.dataset.step);
+      }
+    });
+  }, {
+    threshold: [0.4, 0.5, 0.6]
+  });
+
+  steps.forEach(step => observer.observe(step));
+
+  // Activate first step immediately
+  const firstStep = document.querySelector('.step[data-section="hook"][data-step="0"] .step-inner');
+  if (firstStep) firstStep.classList.add("active");
+}
+
+})();
+</script>
+</body>
+</html>

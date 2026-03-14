@@ -1,0 +1,1400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>State of Britain — Inflation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background: #FAFAF7;
+  color: #1A1A1A;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---------- Loading / Error ---------- */
+#loading-screen {
+  position: fixed; inset: 0; z-index: 9999;
+  background: #FAFAF7;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  transition: opacity 0.5s;
+}
+#loading-screen.hidden { opacity: 0; pointer-events: none; }
+#loading-screen .spinner {
+  width: 40px; height: 40px;
+  border: 3px solid #E0E0DB; border-top-color: #DC2626;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+#loading-screen p { margin-top: 16px; color: #555555; font-size: 0.95rem; }
+#error-screen {
+  display: none; position: fixed; inset: 0; z-index: 9998;
+  background: #FAFAF7;
+  flex-direction: column; align-items: center; justify-content: center;
+}
+#error-screen h2 { font-family: 'Source Serif 4', serif; font-size: 1.8rem; margin-bottom: 8px; }
+#error-screen p { color: #555555; max-width: 400px; text-align: center; }
+
+/* ---------- Header ---------- */
+.site-header {
+  padding: 48px 32px 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.site-header .kicker {
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #DC2626;
+  margin-bottom: 8px;
+}
+.site-header h1 {
+  font-family: 'Source Serif 4', serif;
+  font-size: clamp(2rem, 5vw, 3.4rem);
+  font-weight: 700;
+  line-height: 1.15;
+  max-width: 700px;
+  color: #1A1A1A;
+}
+.site-header .deck {
+  margin-top: 12px;
+  font-size: 1.15rem;
+  color: #3D3D3D;
+  max-width: 600px;
+  line-height: 1.55;
+}
+
+/* ---------- Scroll sections ---------- */
+.scroll-section {
+  position: relative;
+  display: flex;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 32px;
+}
+.scroll-steps {
+  flex: 0 0 40%;
+  position: relative;
+  z-index: 2;
+}
+.scroll-graphic {
+  flex: 0 0 58%;
+  margin-left: 2%;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.scroll-graphic .chart-container {
+  width: 100%;
+  position: relative;
+}
+.step {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 40px 0;
+}
+.step-inner {
+  max-width: 420px;
+  opacity: 0.15;
+  transition: opacity 0.5s;
+}
+.step-inner.active {
+  opacity: 1;
+}
+.step-inner h2 {
+  font-family: 'Source Serif 4', serif;
+  font-size: clamp(1.6rem, 3vw, 2.8rem);
+  font-weight: 700;
+  line-height: 1.2;
+  margin-bottom: 16px;
+  color: #1A1A1A;
+}
+.step-inner p {
+  font-size: 1.15rem;
+  color: #3D3D3D;
+  line-height: 1.6;
+  margin-bottom: 12px;
+}
+.big-number {
+  font-family: 'Source Serif 4', serif;
+  font-size: clamp(3rem, 6vw, 5rem);
+  font-weight: 700;
+  line-height: 1.1;
+  margin-bottom: 8px;
+}
+.big-number.red { color: #DC2626; }
+.big-number.orange { color: #EA580C; }
+.big-number.amber { color: #A16B00; }
+
+/* ---------- Tooltip ---------- */
+.chart-tooltip {
+  position: fixed;
+  pointer-events: none;
+  background: #fff;
+  border: 1px solid #E0E0DB;
+  border-radius: 6px;
+  padding: 10px 14px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #1A1A1A;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  z-index: 1000;
+  opacity: 0;
+  transition: opacity 0.15s;
+  max-width: 280px;
+}
+.chart-tooltip.visible { opacity: 1; }
+.chart-tooltip .tt-label { font-weight: 600; margin-bottom: 2px; }
+.chart-tooltip .tt-value { color: #333333; }
+
+/* ---------- Chart annotation ---------- */
+.chart-annotation {
+  font-size: 13.5px;
+  fill: #555555;
+  font-family: 'Inter', sans-serif;
+}
+.chart-annotation-bold {
+  font-size: 14px;
+  font-weight: 600;
+  fill: #1A1A1A;
+  font-family: 'Inter', sans-serif;
+}
+
+/* ---------- Section divider ---------- */
+.section-divider {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 32px;
+  height: 1px;
+  background: transparent;
+}
+
+/* ---------- Footer ---------- */
+.site-footer {
+  max-width: 1200px;
+  margin: 80px auto 0;
+  padding: 32px 32px 48px;
+  border-top: 1px solid #E0E0DB;
+  font-size: 0.9rem;
+  color: #555555;
+  line-height: 1.7;
+}
+.site-footer a { color: #DC2626; text-decoration: none; }
+.site-footer a:hover { text-decoration: underline; }
+
+/* ---------- SVG common ---------- */
+.axis text {
+  font-family: 'Inter', sans-serif;
+  font-size: 13.5px;
+  fill: #555555;
+}
+.axis path, .axis line { stroke: none; }
+.grid line { stroke: #F0F0EB; stroke-width: 1; }
+.grid path { stroke: none; }
+
+/* ---------- Responsive ---------- */
+@media (max-width: 768px) {
+  .scroll-section {
+    flex-direction: column;
+    padding: 0 16px;
+  }
+  .scroll-steps {
+    flex: none;
+    width: 100%;
+  }
+  .scroll-graphic {
+    flex: none;
+    width: 100%;
+    margin-left: 0;
+    position: sticky;
+    top: 0;
+    height: 60vh;
+  }
+  .step {
+    min-height: 80vh;
+  }
+  .step-inner {
+    max-width: 100%;
+  }
+  .site-header {
+    padding: 32px 16px 20px;
+  }
+  .site-header h1 { font-size: 2rem; }
+  .site-footer { padding: 24px 16px 32px; }
+}
+</style>
+</head>
+<body>
+
+<div id="loading-screen">
+  <div class="spinner"></div>
+  <p>Loading inflation data&hellip;</p>
+</div>
+
+<div id="error-screen">
+  <h2>Something went wrong</h2>
+  <p id="error-msg">Could not load inflation data. Please refresh or try again later.</p>
+</div>
+
+<nav style="position:fixed;top:0;left:0;right:0;z-index:999;background:rgba(250,250,247,0.95);backdrop-filter:blur(8px);border-bottom:1px solid #E0E0DB;padding:10px 24px;font-size:14px;font-family:Inter,sans-serif;"><a href="hub.html" style="color:#2563A0;text-decoration:none;font-weight:500;">&larr; All stories</a><span style="margin:0 12px;color:#8A8A82;">|</span><span style="color:#555555;font-weight:600;">Inflation</span></nav>
+
+<div class="chart-tooltip" id="tooltip"></div>
+
+<header class="site-header" id="site-header" style="display:none;padding-top:72px;">
+  <div class="kicker">State of Britain</div>
+  <h1>The Squeeze &mdash; How inflation ate Britain&rsquo;s pay packets</h1>
+  <p class="deck">Prices surged at the fastest rate in 40 years. They have not come back down. A visual guide to the inflation shock and what it left behind.</p>
+</header>
+
+<main id="main-content" style="display:none;">
+
+<!-- ====== SECTION 1: The Hook ====== -->
+<section class="scroll-section" id="section-hook">
+  <div class="scroll-steps">
+    <div class="step" data-section="hook" data-step="0">
+      <div class="step-inner">
+        <div class="big-number red" id="bn-peak"></div>
+        <h2>The fastest price rises in 40 years</h2>
+        <p>In October 2022, CPIH &mdash; the broadest measure of UK inflation &mdash; hit its highest level since the early 1980s. Energy bills doubled, food prices surged, and the cost of almost everything jumped.</p>
+      </div>
+    </div>
+    <div class="step" data-section="hook" data-step="1">
+      <div class="step-inner">
+        <h2>A decade of calm, then a shock</h2>
+        <p>For most of the 2010s, inflation hovered around the Bank of England&rsquo;s 2% target. Then came the pandemic, supply-chain chaos, and the energy crisis triggered by Russia&rsquo;s invasion of Ukraine.</p>
+      </div>
+    </div>
+  </div>
+  <div class="scroll-graphic">
+    <div class="chart-container" id="chart-hook"></div>
+  </div>
+</section>
+
+<!-- ====== SECTION 2: Sector Breakdown ====== -->
+<section class="scroll-section" id="section-sectors">
+  <div class="scroll-steps">
+    <div class="step" data-section="sectors" data-step="0">
+      <div class="step-inner">
+        <h2>Food led the charge</h2>
+        <p>Food &amp; drink prices rose faster than almost any other category, peaking at over 19% year-on-year in early 2023. Supply disruption, fertiliser costs, and the weak pound all played a role.</p>
+      </div>
+    </div>
+    <div class="step" data-section="sectors" data-step="1">
+      <div class="step-inner">
+        <h2>Energy: the invisible tax</h2>
+        <p>Housing, water, electricity &amp; gas spiked sharply when the energy price cap rose in April and October 2022. Transport costs &mdash; driven by fuel &mdash; surged even earlier.</p>
+      </div>
+    </div>
+  </div>
+  <div class="scroll-graphic">
+    <div class="chart-container" id="chart-sectors"></div>
+  </div>
+</section>
+
+<!-- ====== SECTION 3: Cumulative Hit ====== -->
+<section class="scroll-section" id="section-cumulative">
+  <div class="scroll-steps">
+    <div class="step" data-section="cumulative" data-step="0">
+      <div class="step-inner">
+        <div class="big-number orange" id="bn-cumulative"></div>
+        <h2>Prices don&rsquo;t come back down</h2>
+        <p>When inflation falls, it means prices are rising <em>more slowly</em> &mdash; not that they are falling. The price level is permanently higher. Everyday goods cost roughly a quarter more than they did at the start of 2020.</p>
+      </div>
+    </div>
+    <div class="step" data-section="cumulative" data-step="1">
+      <div class="step-inner">
+        <h2>Food hit hardest</h2>
+        <p>Food prices have risen by around 38% since January 2020. Housing and energy costs are up over 32%. These are the essentials that lower-income households spend the largest share of their budgets on.</p>
+      </div>
+    </div>
+  </div>
+  <div class="scroll-graphic">
+    <div class="chart-container" id="chart-cumulative"></div>
+  </div>
+</section>
+
+<!-- ====== SECTION 4: Where We Are Now ====== -->
+<section class="scroll-section" id="section-now">
+  <div class="scroll-steps">
+    <div class="step" data-section="now" data-step="0">
+      <div class="step-inner">
+        <h2>Back towards target &mdash; but not quite</h2>
+        <p id="now-text-rate">The headline CPIH rate has fallen sharply from its peak. But it remains above the 2% target, and some categories &mdash; particularly food &mdash; continue to run hot.</p>
+      </div>
+    </div>
+    <div class="step" data-section="now" data-step="1">
+      <div class="step-inner">
+        <h2>The damage is done</h2>
+        <p>Even if inflation returns to 2% tomorrow, the price level will not reset. A basket of goods that cost &pound;100 in January 2020 now costs around &pound;129. For food, it is closer to &pound;138. The squeeze on living standards is baked in.</p>
+      </div>
+    </div>
+  </div>
+  <div class="scroll-graphic">
+    <div class="chart-container" id="chart-now"></div>
+  </div>
+</section>
+
+</main>
+
+<footer class="site-footer" id="site-footer" style="display:none;">
+  <p><strong>Sources:</strong> ONS Consumer Prices Index including owner occupiers&rsquo; housing costs (CPIH), dataset cpih01.<br>
+  Data via <a href="https://stateofbritain.uk" target="_blank" rel="noopener">stateofbritain.uk</a>. Index: 2015 = 100.<br>
+  Contains public sector information licensed under the <a href="https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/" target="_blank" rel="noopener">Open Government Licence v3.0</a>.</p>
+</footer>
+
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script>
+(function() {
+"use strict";
+
+/* =========================================================
+   COLOURS & CONSTANTS
+   ========================================================= */
+const C = {
+  red: "#DC2626", redDark: "#B91C1C", redLight: "rgba(220,38,38,0.12)",
+  orange: "#EA580C", orangeLight: "rgba(234,88,12,0.10)",
+  amber: "#D97706", amberLight: "rgba(217,119,6,0.10)",
+  food: "#DC2626", housing: "#EA580C", transport: "#D97706", recreation: "#7C3AED",
+  foodLight: "rgba(220,38,38,0.12)", housingLight: "rgba(234,88,12,0.10)",
+  transportLight: "rgba(217,119,6,0.10)", recreationLight: "rgba(124,58,237,0.10)",
+  target: "#2563A0", targetLight: "rgba(37,99,160,0.10)",
+  faint: "#B0B0A8", ink: "#1A1A1A", secondary: "#3D3D3D", muted: "#555555",
+  grid: "#F0F0EB", bg: "#FAFAF7"
+};
+const DURATION = 600;
+const MOBILE = 768;
+
+/* =========================================================
+   TOOLTIP HELPER
+   ========================================================= */
+const ttEl = document.getElementById("tooltip");
+function showTooltip(html, event) {
+  ttEl.innerHTML = html;
+  ttEl.classList.add("visible");
+  const cx = event.touches ? event.touches[0].clientX : event.clientX;
+  const cy = event.touches ? event.touches[0].clientY : event.clientY;
+  const r = ttEl.getBoundingClientRect();
+  let x = cx + 14, y = cy - 10;
+  if (x + r.width > window.innerWidth - 10) x = cx - r.width - 14;
+  if (y + r.height > window.innerHeight - 10) y = cy - r.height - 10;
+  if (y < 10) y = 10;
+  if (x < 10) x = 10;
+  ttEl.style.left = x + "px";
+  ttEl.style.top = y + "px";
+}
+function hideTooltip() { ttEl.classList.remove("visible"); }
+
+/* =========================================================
+   HELPERS
+   ========================================================= */
+function fmtPct(v) { return d3.format(".1f")(v) + "%"; }
+function isMobile() { return window.innerWidth < MOBILE; }
+
+function chartDims(container) {
+  const w = container.clientWidth;
+  const h = Math.max(500, Math.min(600, window.innerHeight * 0.65));
+  const m = { top: 30, right: 80, bottom: 40, left: 54 };
+  return { width: w, height: h, margin: m, innerW: w - m.left - m.right, innerH: h - m.top - m.bottom };
+}
+
+function parseTime(t) {
+  const [y, m] = t.split("-").map(Number);
+  return new Date(y, m - 1, 1);
+}
+
+function monthLabel(t) {
+  const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const [y, m] = t.split("-").map(Number);
+  return months[m - 1] + " " + y;
+}
+
+/* =========================================================
+   DERIVED DATA
+   ========================================================= */
+let DATA, SERIES, RATES, AGGREGATES;
+
+// Compute year-on-year inflation rates from index data
+function computeRates(series) {
+  const rates = [];
+  for (let i = 12; i < series.length; i++) {
+    const cur = series[i];
+    const prev = series[i - 12];
+    const entry = {
+      time: cur.time,
+      label: cur.label,
+      date: parseTime(cur.time)
+    };
+    ["CP00", "CP01", "CP04", "CP07", "CP09"].forEach(k => {
+      entry[k] = ((cur[k] - prev[k]) / prev[k]) * 100;
+    });
+    rates.push(entry);
+  }
+  return rates;
+}
+
+/* =========================================================
+   DATA LOAD & INIT
+   ========================================================= */
+fetch("https://stateofbritain.uk/api/data/cpih.json")
+  .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
+  .then(d => { DATA = d; SERIES = d.series; AGGREGATES = d.aggregates; RATES = computeRates(SERIES); init(); })
+  .catch(err => {
+    document.getElementById("loading-screen").style.display = "none";
+    const es = document.getElementById("error-screen");
+    es.style.display = "flex";
+    document.getElementById("error-msg").textContent = "Failed to load data: " + err.message;
+  });
+
+function init() {
+  document.getElementById("loading-screen").classList.add("hidden");
+  setTimeout(() => { document.getElementById("loading-screen").style.display = "none"; }, 600);
+  document.getElementById("site-header").style.display = "";
+  document.getElementById("main-content").style.display = "";
+  document.getElementById("site-footer").style.display = "";
+
+  // Find peak CPIH rate
+  const peakEntry = RATES.reduce((max, d) => d.CP00 > max.CP00 ? d : max, RATES[0]);
+  document.getElementById("bn-peak").textContent = fmtPct(peakEntry.CP00);
+
+  // Cumulative price rise since Jan 2020
+  const jan2020 = SERIES.find(d => d.time === "2020-01");
+  const latest = SERIES[SERIES.length - 1];
+  const cumPct = ((latest.CP00 - jan2020.CP00) / jan2020.CP00) * 100;
+  document.getElementById("bn-cumulative").textContent = "+" + Math.round(cumPct) + "%";
+
+  buildAllCharts();
+  setupScrollObserver();
+  window.addEventListener("resize", debounce(rebuildAll, 250));
+}
+
+let resizeTimer;
+function debounce(fn, ms) {
+  return function() { clearTimeout(resizeTimer); resizeTimer = setTimeout(fn, ms); };
+}
+function rebuildAll() {
+  d3.selectAll("#chart-hook svg, #chart-sectors svg, #chart-cumulative svg, #chart-now svg").remove();
+  buildAllCharts();
+  document.querySelectorAll(".step-inner.active").forEach(el => {
+    const step = el.closest(".step");
+    updateChart(step.dataset.section, +step.dataset.step);
+  });
+}
+
+/* =========================================================
+   BUILD ALL CHARTS
+   ========================================================= */
+function buildAllCharts() {
+  buildHookChart();
+  buildSectorsChart();
+  buildCumulativeChart();
+  buildNowChart();
+}
+
+/* =========================================================
+   CHART 1: THE HOOK — Peak callout then full CPIH rate
+   ========================================================= */
+function buildHookChart() {
+  const container = document.getElementById("chart-hook");
+  const dim = chartDims(container);
+  const svg = d3.select(container).append("svg")
+    .attr("width", dim.width).attr("height", dim.height)
+    .attr("viewBox", "0 0 " + dim.width + " " + dim.height);
+  const g = svg.append("g").attr("transform", "translate(" + dim.margin.left + "," + dim.margin.top + ")");
+
+  const cpihRates = RATES;
+  const peakEntry = cpihRates.reduce((max, d) => d.CP00 > max.CP00 ? d : max, cpihRates[0]);
+
+  // --- BIG NUMBER VIEW (step 0) ---
+  const bigGroup = g.append("g").attr("class", "big-view");
+
+  // Draw a simplified sparkline behind the big number
+  const xSpark = d3.scaleTime()
+    .domain(d3.extent(cpihRates, d => d.date))
+    .range([0, dim.innerW]);
+  const ySpark = d3.scaleLinear()
+    .domain([d3.min(cpihRates, d => d.CP00) - 0.5, d3.max(cpihRates, d => d.CP00) + 1])
+    .range([dim.innerH, 0]);
+
+  // Filled area
+  const areaGen = d3.area()
+    .x(d => xSpark(d.date))
+    .y0(dim.innerH)
+    .y1(d => ySpark(d.CP00))
+    .curve(d3.curveMonotoneX);
+  bigGroup.append("path").datum(cpihRates)
+    .attr("d", areaGen)
+    .attr("fill", C.redLight);
+
+  // Line
+  const lineGen = d3.line().x(d => xSpark(d.date)).y(d => ySpark(d.CP00)).curve(d3.curveMonotoneX);
+  bigGroup.append("path").datum(cpihRates)
+    .attr("d", lineGen)
+    .attr("fill", "none").attr("stroke", C.red).attr("stroke-width", 2.5);
+
+  // Peak dot and annotation
+  bigGroup.append("circle")
+    .attr("cx", xSpark(peakEntry.date)).attr("cy", ySpark(peakEntry.CP00))
+    .attr("r", 6).attr("fill", C.red).attr("stroke", "#fff").attr("stroke-width", 2);
+  bigGroup.append("text").attr("class", "chart-annotation-bold")
+    .attr("x", xSpark(peakEntry.date) - 8).attr("y", ySpark(peakEntry.CP00) - 16)
+    .attr("text-anchor", "end").attr("fill", C.red)
+    .text(fmtPct(peakEntry.CP00) + " — " + monthLabel(peakEntry.time));
+
+  // 2% target line
+  bigGroup.append("line")
+    .attr("x1", 0).attr("x2", dim.innerW)
+    .attr("y1", ySpark(2)).attr("y2", ySpark(2))
+    .attr("stroke", C.target).attr("stroke-width", 1.5).attr("stroke-dasharray", "6,4");
+  bigGroup.append("text").attr("class", "chart-annotation")
+    .attr("x", dim.innerW).attr("y", ySpark(2) - 8)
+    .attr("text-anchor", "end").attr("fill", C.target)
+    .text("2% target");
+
+  // Minimal x axis
+  bigGroup.append("g").attr("class", "axis x-axis")
+    .attr("transform", "translate(0," + dim.innerH + ")")
+    .call(d3.axisBottom(xSpark).ticks(isMobile() ? 5 : 8).tickFormat(d3.timeFormat("%Y")).tickSize(0))
+    .call(function(g) { g.select(".domain").remove(); });
+
+  // Y axis
+  bigGroup.append("g").attr("class", "axis y-axis")
+    .call(d3.axisLeft(ySpark).ticks(6).tickFormat(function(d) { return d + "%"; }).tickSize(0))
+    .call(function(g) { g.select(".domain").remove(); });
+
+  // Grid
+  bigGroup.append("g").attr("class", "grid")
+    .call(d3.axisLeft(ySpark).ticks(6).tickSize(-dim.innerW).tickFormat(""))
+    .call(function(g) { g.select(".domain").remove(); })
+    .lower();
+
+  // --- FULL LINE VIEW (step 1) — same chart but with annotations ---
+  var lineGroup = g.append("g").attr("class", "line-view").style("opacity", 0).style("pointer-events", "none");
+
+  // Filled area
+  lineGroup.append("path").datum(cpihRates)
+    .attr("d", areaGen)
+    .attr("fill", C.redLight);
+
+  // Line
+  lineGroup.append("path").datum(cpihRates)
+    .attr("d", lineGen)
+    .attr("fill", "none").attr("stroke", C.red).attr("stroke-width", 2.5);
+
+  // 2% target line
+  lineGroup.append("line")
+    .attr("x1", 0).attr("x2", dim.innerW)
+    .attr("y1", ySpark(2)).attr("y2", ySpark(2))
+    .attr("stroke", C.target).attr("stroke-width", 1.5).attr("stroke-dasharray", "6,4");
+  lineGroup.append("text").attr("class", "chart-annotation")
+    .attr("x", dim.innerW).attr("y", ySpark(2) - 8)
+    .attr("text-anchor", "end").attr("fill", C.target)
+    .text("2% target");
+
+  // Calm period annotation
+  var calmX = xSpark(new Date(2016, 0, 1));
+  lineGroup.append("text").attr("class", "chart-annotation")
+    .attr("x", calmX).attr("y", ySpark(2) + 24)
+    .attr("text-anchor", "middle").attr("fill", C.muted)
+    .text("A decade near target");
+
+  // COVID annotation
+  var covidX = xSpark(new Date(2020, 3, 1));
+  lineGroup.append("text").attr("class", "chart-annotation")
+    .attr("x", covidX).attr("y", ySpark(0.5) + 16)
+    .attr("text-anchor", "middle").attr("fill", C.muted)
+    .text("COVID lockdowns");
+
+  // Energy crisis annotation
+  var crisisX = xSpark(new Date(2022, 3, 1));
+  var crisisEntry = cpihRates.find(function(d) { return d.time === "2022-04"; });
+  if (crisisEntry) {
+    lineGroup.append("text").attr("class", "chart-annotation")
+      .attr("x", crisisX + 6).attr("y", ySpark(crisisEntry.CP00) + 20)
+      .attr("text-anchor", "start").attr("fill", C.red)
+      .text("Energy crisis");
+  }
+
+  // Peak dot
+  lineGroup.append("circle")
+    .attr("cx", xSpark(peakEntry.date)).attr("cy", ySpark(peakEntry.CP00))
+    .attr("r", 5).attr("fill", C.red).attr("stroke", "#fff").attr("stroke-width", 2);
+  lineGroup.append("text").attr("class", "chart-annotation-bold")
+    .attr("x", xSpark(peakEntry.date) - 8).attr("y", ySpark(peakEntry.CP00) - 14)
+    .attr("text-anchor", "end").attr("fill", C.red)
+    .text("Peak " + fmtPct(peakEntry.CP00));
+
+  // Axes
+  lineGroup.append("g").attr("class", "axis x-axis")
+    .attr("transform", "translate(0," + dim.innerH + ")")
+    .call(d3.axisBottom(xSpark).ticks(isMobile() ? 5 : 8).tickFormat(d3.timeFormat("%Y")).tickSize(0))
+    .call(function(g) { g.select(".domain").remove(); });
+  lineGroup.append("g").attr("class", "axis y-axis")
+    .call(d3.axisLeft(ySpark).ticks(6).tickFormat(function(d) { return d + "%"; }).tickSize(0))
+    .call(function(g) { g.select(".domain").remove(); });
+  lineGroup.append("g").attr("class", "grid")
+    .call(d3.axisLeft(ySpark).ticks(6).tickSize(-dim.innerW).tickFormat(""))
+    .call(function(g) { g.select(".domain").remove(); })
+    .lower();
+
+  // Hover overlay for line view
+  var hoverRect = lineGroup.append("rect")
+    .attr("width", dim.innerW).attr("height", dim.innerH)
+    .attr("fill", "transparent").style("cursor", "crosshair");
+  var hoverLine = lineGroup.append("line")
+    .attr("y1", 0).attr("y2", dim.innerH)
+    .attr("stroke", "#999").attr("stroke-width", 1).attr("stroke-dasharray", "3,2")
+    .style("opacity", 0);
+  var hoverDot = lineGroup.append("circle").attr("r", 4).attr("fill", C.red).style("opacity", 0);
+
+  hoverRect.on("mousemove", function(event) {
+    var mx = d3.pointer(event, this)[0];
+    var dateAtMouse = xSpark.invert(mx);
+    var bisect = d3.bisector(function(d) { return d.date; }).left;
+    var idx = bisect(cpihRates, dateAtMouse, 1);
+    var d0 = cpihRates[idx - 1], d1 = cpihRates[idx];
+    if (!d0) return;
+    var d = (!d1 || dateAtMouse - d0.date < d1.date - dateAtMouse) ? d0 : d1;
+    hoverLine.attr("x1", xSpark(d.date)).attr("x2", xSpark(d.date)).style("opacity", 1);
+    hoverDot.attr("cx", xSpark(d.date)).attr("cy", ySpark(d.CP00)).style("opacity", 1);
+    showTooltip('<div class="tt-label">' + monthLabel(d.time) + '</div><div class="tt-value" style="color:' + C.red + '">CPIH: ' + fmtPct(d.CP00) + '</div>', event);
+  }).on("mouseleave", function() {
+    hoverLine.style("opacity", 0); hoverDot.style("opacity", 0); hideTooltip();
+  });
+
+  // Also add hover to big view
+  var hoverRect2 = bigGroup.append("rect")
+    .attr("width", dim.innerW).attr("height", dim.innerH)
+    .attr("fill", "transparent").style("cursor", "crosshair");
+  var hoverLine2 = bigGroup.append("line")
+    .attr("y1", 0).attr("y2", dim.innerH)
+    .attr("stroke", "#999").attr("stroke-width", 1).attr("stroke-dasharray", "3,2")
+    .style("opacity", 0);
+  var hoverDot2 = bigGroup.append("circle").attr("r", 4).attr("fill", C.red).style("opacity", 0);
+
+  hoverRect2.on("mousemove", function(event) {
+    var mx = d3.pointer(event, this)[0];
+    var dateAtMouse = xSpark.invert(mx);
+    var bisect = d3.bisector(function(d) { return d.date; }).left;
+    var idx = bisect(cpihRates, dateAtMouse, 1);
+    var d0 = cpihRates[idx - 1], d1 = cpihRates[idx];
+    if (!d0) return;
+    var d = (!d1 || dateAtMouse - d0.date < d1.date - dateAtMouse) ? d0 : d1;
+    hoverLine2.attr("x1", xSpark(d.date)).attr("x2", xSpark(d.date)).style("opacity", 1);
+    hoverDot2.attr("cx", xSpark(d.date)).attr("cy", ySpark(d.CP00)).style("opacity", 1);
+    showTooltip('<div class="tt-label">' + monthLabel(d.time) + '</div><div class="tt-value" style="color:' + C.red + '">CPIH: ' + fmtPct(d.CP00) + '</div>', event);
+  }).on("mouseleave", function() {
+    hoverLine2.style("opacity", 0); hoverDot2.style("opacity", 0); hideTooltip();
+  });
+}
+
+function updateHookChart(step) {
+  var svg = d3.select("#chart-hook svg");
+  if (step === 0) {
+    svg.select(".big-view").transition().duration(DURATION).style("opacity", 1).on("end", function() { d3.select(this).style("pointer-events", "all"); });
+    svg.select(".line-view").transition().duration(DURATION).style("opacity", 0).on("end", function() { d3.select(this).style("pointer-events", "none"); });
+  } else {
+    svg.select(".big-view").transition().duration(DURATION).style("opacity", 0).on("end", function() { d3.select(this).style("pointer-events", "none"); });
+    svg.select(".line-view").transition().duration(DURATION).style("opacity", 1).on("end", function() { d3.select(this).style("pointer-events", "all"); });
+  }
+}
+
+/* =========================================================
+   CHART 2: SECTOR BREAKDOWN — YoY rates by category
+   ========================================================= */
+function buildSectorsChart() {
+  var container = document.getElementById("chart-sectors");
+  var dim = chartDims(container);
+  var svg = d3.select(container).append("svg")
+    .attr("width", dim.width).attr("height", dim.height)
+    .attr("viewBox", "0 0 " + dim.width + " " + dim.height);
+  var g = svg.append("g").attr("transform", "translate(" + dim.margin.left + "," + dim.margin.top + ")");
+
+  var categories = [
+    { id: "CP01", label: "Food & drink", color: C.food },
+    { id: "CP00", label: "Overall CPIH", color: "#999" },
+    { id: "CP09", label: "Recreation", color: C.recreation }
+  ];
+
+  var categories2 = [
+    { id: "CP04", label: "Housing & energy", color: C.housing },
+    { id: "CP07", label: "Transport", color: C.transport },
+    { id: "CP00", label: "Overall CPIH", color: "#999" }
+  ];
+
+  var x = d3.scaleTime()
+    .domain(d3.extent(RATES, function(d) { return d.date; }))
+    .range([0, dim.innerW]);
+
+  var allVals = [];
+  RATES.forEach(function(d) {
+    allVals.push(d.CP00, d.CP01, d.CP04, d.CP07, d.CP09);
+  });
+  var yMin = Math.floor(d3.min(allVals)) - 1;
+  var yMax = Math.ceil(d3.max(allVals)) + 1;
+  var y = d3.scaleLinear().domain([yMin, yMax]).range([dim.innerH, 0]);
+
+  // --- FOOD VIEW (step 0) ---
+  var foodGroup = g.append("g").attr("class", "food-view");
+
+  // Grid
+  foodGroup.append("g").attr("class", "grid")
+    .call(d3.axisLeft(y).ticks(8).tickSize(-dim.innerW).tickFormat(""))
+    .call(function(g) { g.select(".domain").remove(); });
+
+  // Zero line
+  foodGroup.append("line")
+    .attr("x1", 0).attr("x2", dim.innerW)
+    .attr("y1", y(0)).attr("y2", y(0))
+    .attr("stroke", "#C0C0B8").attr("stroke-width", 1);
+
+  // 2% target
+  foodGroup.append("line")
+    .attr("x1", 0).attr("x2", dim.innerW)
+    .attr("y1", y(2)).attr("y2", y(2))
+    .attr("stroke", C.target).attr("stroke-width", 1).attr("stroke-dasharray", "4,3");
+
+  categories.forEach(function(cat) {
+    var lineGen = d3.line()
+      .x(function(d) { return x(d.date); })
+      .y(function(d) { return y(d[cat.id]); })
+      .curve(d3.curveMonotoneX);
+    foodGroup.append("path").datum(RATES)
+      .attr("d", lineGen)
+      .attr("fill", "none")
+      .attr("stroke", cat.color)
+      .attr("stroke-width", cat.id === "CP00" ? 1.5 : 2.5)
+      .attr("stroke-dasharray", cat.id === "CP00" ? "4,3" : "none");
+
+    // End label
+    var lastRate = RATES[RATES.length - 1];
+    foodGroup.append("text").attr("class", "chart-annotation-bold")
+      .attr("x", x(lastRate.date) + 6)
+      .attr("y", y(lastRate[cat.id]) + 4)
+      .attr("fill", cat.color)
+      .attr("font-size", "13px")
+      .text(cat.label);
+  });
+
+  // Peak food annotation
+  var peakFood = RATES.reduce(function(max, d) { return d.CP01 > max.CP01 ? d : max; }, RATES[0]);
+  foodGroup.append("circle")
+    .attr("cx", x(peakFood.date)).attr("cy", y(peakFood.CP01))
+    .attr("r", 5).attr("fill", C.food).attr("stroke", "#fff").attr("stroke-width", 2);
+  foodGroup.append("text").attr("class", "chart-annotation-bold")
+    .attr("x", x(peakFood.date) + 8).attr("y", y(peakFood.CP01) + 4)
+    .attr("fill", C.food).text(fmtPct(peakFood.CP01));
+
+  // Axes
+  foodGroup.append("g").attr("class", "axis x-axis")
+    .attr("transform", "translate(0," + dim.innerH + ")")
+    .call(d3.axisBottom(x).ticks(isMobile() ? 5 : 8).tickFormat(d3.timeFormat("%Y")).tickSize(0))
+    .call(function(g) { g.select(".domain").remove(); });
+  foodGroup.append("g").attr("class", "axis y-axis")
+    .call(d3.axisLeft(y).ticks(8).tickFormat(function(d) { return d + "%"; }).tickSize(0))
+    .call(function(g) { g.select(".domain").remove(); });
+
+  // Hover
+  var hoverRect = foodGroup.append("rect")
+    .attr("width", dim.innerW).attr("height", dim.innerH)
+    .attr("fill", "transparent").style("cursor", "crosshair");
+  var hoverLine = foodGroup.append("line")
+    .attr("y1", 0).attr("y2", dim.innerH)
+    .attr("stroke", "#999").attr("stroke-width", 1).attr("stroke-dasharray", "3,2")
+    .style("opacity", 0);
+
+  hoverRect.on("mousemove", function(event) {
+    var mx = d3.pointer(event, this)[0];
+    var dateAtMouse = x.invert(mx);
+    var bisect = d3.bisector(function(d) { return d.date; }).left;
+    var idx = bisect(RATES, dateAtMouse, 1);
+    var d0 = RATES[idx - 1], d1 = RATES[idx];
+    if (!d0) return;
+    var d = (!d1 || dateAtMouse - d0.date < d1.date - dateAtMouse) ? d0 : d1;
+    hoverLine.attr("x1", x(d.date)).attr("x2", x(d.date)).style("opacity", 1);
+    showTooltip('<div class="tt-label">' + monthLabel(d.time) + '</div>' +
+      '<div class="tt-value" style="color:' + C.food + '">Food: ' + fmtPct(d.CP01) + '</div>' +
+      '<div class="tt-value" style="color:' + C.recreation + '">Recreation: ' + fmtPct(d.CP09) + '</div>' +
+      '<div class="tt-value" style="color:#999">Overall: ' + fmtPct(d.CP00) + '</div>', event);
+  }).on("mouseleave", function() {
+    hoverLine.style("opacity", 0); hideTooltip();
+  });
+
+  // --- ENERGY VIEW (step 1) ---
+  var energyGroup = g.append("g").attr("class", "energy-view").style("opacity", 0).style("pointer-events", "none");
+
+  // Grid
+  energyGroup.append("g").attr("class", "grid")
+    .call(d3.axisLeft(y).ticks(8).tickSize(-dim.innerW).tickFormat(""))
+    .call(function(g) { g.select(".domain").remove(); });
+
+  // Zero line
+  energyGroup.append("line")
+    .attr("x1", 0).attr("x2", dim.innerW)
+    .attr("y1", y(0)).attr("y2", y(0))
+    .attr("stroke", "#C0C0B8").attr("stroke-width", 1);
+
+  // 2% target
+  energyGroup.append("line")
+    .attr("x1", 0).attr("x2", dim.innerW)
+    .attr("y1", y(2)).attr("y2", y(2))
+    .attr("stroke", C.target).attr("stroke-width", 1).attr("stroke-dasharray", "4,3");
+
+  categories2.forEach(function(cat) {
+    var lineGen = d3.line()
+      .x(function(d) { return x(d.date); })
+      .y(function(d) { return y(d[cat.id]); })
+      .curve(d3.curveMonotoneX);
+    energyGroup.append("path").datum(RATES)
+      .attr("d", lineGen)
+      .attr("fill", "none")
+      .attr("stroke", cat.color)
+      .attr("stroke-width", cat.id === "CP00" ? 1.5 : 2.5)
+      .attr("stroke-dasharray", cat.id === "CP00" ? "4,3" : "none");
+
+    // End label
+    var lastRate = RATES[RATES.length - 1];
+    energyGroup.append("text").attr("class", "chart-annotation-bold")
+      .attr("x", x(lastRate.date) + 6)
+      .attr("y", y(lastRate[cat.id]) + 4)
+      .attr("fill", cat.color)
+      .attr("font-size", "13px")
+      .text(cat.label);
+  });
+
+  // Peak housing annotation
+  var peakHousing = RATES.reduce(function(max, d) { return d.CP04 > max.CP04 ? d : max; }, RATES[0]);
+  energyGroup.append("circle")
+    .attr("cx", x(peakHousing.date)).attr("cy", y(peakHousing.CP04))
+    .attr("r", 5).attr("fill", C.housing).attr("stroke", "#fff").attr("stroke-width", 2);
+  energyGroup.append("text").attr("class", "chart-annotation-bold")
+    .attr("x", x(peakHousing.date) + 8).attr("y", y(peakHousing.CP04) + 4)
+    .attr("fill", C.housing).text(fmtPct(peakHousing.CP04));
+
+  // Peak transport annotation
+  var peakTransport = RATES.reduce(function(max, d) { return d.CP07 > max.CP07 ? d : max; }, RATES[0]);
+  energyGroup.append("circle")
+    .attr("cx", x(peakTransport.date)).attr("cy", y(peakTransport.CP07))
+    .attr("r", 5).attr("fill", C.transport).attr("stroke", "#fff").attr("stroke-width", 2);
+  energyGroup.append("text").attr("class", "chart-annotation-bold")
+    .attr("x", x(peakTransport.date) - 8).attr("y", y(peakTransport.CP07) - 14)
+    .attr("text-anchor", "end").attr("fill", C.transport).text(fmtPct(peakTransport.CP07));
+
+  // Apr 2022 price cap annotation
+  var capEntry = RATES.find(function(d) { return d.time === "2022-04"; });
+  if (capEntry) {
+    energyGroup.append("text").attr("class", "chart-annotation")
+      .attr("x", x(capEntry.date)).attr("y", y(capEntry.CP04) + 28)
+      .attr("text-anchor", "middle").attr("fill", C.muted)
+      .text("Price cap rises");
+  }
+
+  // Axes
+  energyGroup.append("g").attr("class", "axis x-axis")
+    .attr("transform", "translate(0," + dim.innerH + ")")
+    .call(d3.axisBottom(x).ticks(isMobile() ? 5 : 8).tickFormat(d3.timeFormat("%Y")).tickSize(0))
+    .call(function(g) { g.select(".domain").remove(); });
+  energyGroup.append("g").attr("class", "axis y-axis")
+    .call(d3.axisLeft(y).ticks(8).tickFormat(function(d) { return d + "%"; }).tickSize(0))
+    .call(function(g) { g.select(".domain").remove(); });
+
+  // Hover
+  var hoverRect2 = energyGroup.append("rect")
+    .attr("width", dim.innerW).attr("height", dim.innerH)
+    .attr("fill", "transparent").style("cursor", "crosshair");
+  var hoverLine2 = energyGroup.append("line")
+    .attr("y1", 0).attr("y2", dim.innerH)
+    .attr("stroke", "#999").attr("stroke-width", 1).attr("stroke-dasharray", "3,2")
+    .style("opacity", 0);
+
+  hoverRect2.on("mousemove", function(event) {
+    var mx = d3.pointer(event, this)[0];
+    var dateAtMouse = x.invert(mx);
+    var bisect = d3.bisector(function(d) { return d.date; }).left;
+    var idx = bisect(RATES, dateAtMouse, 1);
+    var d0 = RATES[idx - 1], d1 = RATES[idx];
+    if (!d0) return;
+    var d = (!d1 || dateAtMouse - d0.date < d1.date - dateAtMouse) ? d0 : d1;
+    hoverLine2.attr("x1", x(d.date)).attr("x2", x(d.date)).style("opacity", 1);
+    showTooltip('<div class="tt-label">' + monthLabel(d.time) + '</div>' +
+      '<div class="tt-value" style="color:' + C.housing + '">Housing & energy: ' + fmtPct(d.CP04) + '</div>' +
+      '<div class="tt-value" style="color:' + C.transport + '">Transport: ' + fmtPct(d.CP07) + '</div>' +
+      '<div class="tt-value" style="color:#999">Overall: ' + fmtPct(d.CP00) + '</div>', event);
+  }).on("mouseleave", function() {
+    hoverLine2.style("opacity", 0); hideTooltip();
+  });
+}
+
+function updateSectorsChart(step) {
+  var svg = d3.select("#chart-sectors svg");
+  if (step === 0) {
+    svg.select(".food-view").transition().duration(DURATION).style("opacity", 1).on("end", function() { d3.select(this).style("pointer-events", "all"); });
+    svg.select(".energy-view").transition().duration(DURATION).style("opacity", 0).on("end", function() { d3.select(this).style("pointer-events", "none"); });
+  } else {
+    svg.select(".food-view").transition().duration(DURATION).style("opacity", 0).on("end", function() { d3.select(this).style("pointer-events", "none"); });
+    svg.select(".energy-view").transition().duration(DURATION).style("opacity", 1).on("end", function() { d3.select(this).style("pointer-events", "all"); });
+  }
+}
+
+/* =========================================================
+   CHART 3: CUMULATIVE — Price index rebased to Jan 2020
+   ========================================================= */
+function buildCumulativeChart() {
+  var container = document.getElementById("chart-cumulative");
+  var dim = chartDims(container);
+  var svg = d3.select(container).append("svg")
+    .attr("width", dim.width).attr("height", dim.height)
+    .attr("viewBox", "0 0 " + dim.width + " " + dim.height);
+  var g = svg.append("g").attr("transform", "translate(" + dim.margin.left + "," + dim.margin.top + ")");
+
+  // Rebase all series to Jan 2020 = 100
+  var jan2020 = SERIES.find(function(d) { return d.time === "2020-01"; });
+  var rebasedAll = SERIES.map(function(d) {
+    return {
+      time: d.time,
+      date: parseTime(d.time),
+      CP00: (d.CP00 / jan2020.CP00) * 100,
+      CP01: (d.CP01 / jan2020.CP01) * 100,
+      CP04: (d.CP04 / jan2020.CP04) * 100,
+      CP07: (d.CP07 / jan2020.CP07) * 100,
+      CP09: (d.CP09 / jan2020.CP09) * 100
+    };
+  });
+
+  // Filter from Jan 2020 onwards
+  var rebased = rebasedAll.filter(function(d) { return d.time >= "2020-01"; });
+
+  var x = d3.scaleTime()
+    .domain(d3.extent(rebased, function(d) { return d.date; }))
+    .range([0, dim.innerW]);
+
+  var allVals = [];
+  rebased.forEach(function(d) {
+    allVals.push(d.CP00, d.CP01, d.CP04, d.CP07, d.CP09);
+  });
+  var yMax = Math.ceil(d3.max(allVals)) + 2;
+  var y = d3.scaleLinear().domain([96, yMax]).range([dim.innerH, 0]);
+
+  // --- OVERALL VIEW (step 0) ---
+  var overallGroup = g.append("g").attr("class", "overall-view");
+
+  // Grid
+  overallGroup.append("g").attr("class", "grid")
+    .call(d3.axisLeft(y).ticks(8).tickSize(-dim.innerW).tickFormat(""))
+    .call(function(g) { g.select(".domain").remove(); });
+
+  // 100 baseline
+  overallGroup.append("line")
+    .attr("x1", 0).attr("x2", dim.innerW)
+    .attr("y1", y(100)).attr("y2", y(100))
+    .attr("stroke", "#C0C0B8").attr("stroke-width", 1);
+  overallGroup.append("text").attr("class", "chart-annotation")
+    .attr("x", 4).attr("y", y(100) - 8).attr("fill", C.muted)
+    .text("Jan 2020 = 100");
+
+  // Area
+  var areaGen = d3.area()
+    .x(function(d) { return x(d.date); })
+    .y0(y(100))
+    .y1(function(d) { return y(d.CP00); })
+    .curve(d3.curveMonotoneX);
+  overallGroup.append("path").datum(rebased)
+    .attr("d", areaGen)
+    .attr("fill", C.redLight);
+
+  // Line
+  var lineGen = d3.line()
+    .x(function(d) { return x(d.date); })
+    .y(function(d) { return y(d.CP00); })
+    .curve(d3.curveMonotoneX);
+  overallGroup.append("path").datum(rebased)
+    .attr("d", lineGen)
+    .attr("fill", "none").attr("stroke", C.red).attr("stroke-width", 2.5);
+
+  // End label
+  var lastRebased = rebased[rebased.length - 1];
+  overallGroup.append("text").attr("class", "chart-annotation-bold")
+    .attr("x", x(lastRebased.date) + 6).attr("y", y(lastRebased.CP00) + 4)
+    .attr("fill", C.red)
+    .text(d3.format(".1f")(lastRebased.CP00));
+  overallGroup.append("text").attr("class", "chart-annotation")
+    .attr("x", x(lastRebased.date) + 6).attr("y", y(lastRebased.CP00) + 20)
+    .attr("fill", C.red)
+    .text("+" + d3.format(".0f")(lastRebased.CP00 - 100) + "%");
+
+  // Axes
+  overallGroup.append("g").attr("class", "axis x-axis")
+    .attr("transform", "translate(0," + dim.innerH + ")")
+    .call(d3.axisBottom(x).ticks(isMobile() ? 4 : 6).tickFormat(d3.timeFormat("%b '%y")).tickSize(0))
+    .call(function(g) { g.select(".domain").remove(); });
+  overallGroup.append("g").attr("class", "axis y-axis")
+    .call(d3.axisLeft(y).ticks(8).tickFormat(function(d) { return d; }).tickSize(0))
+    .call(function(g) { g.select(".domain").remove(); });
+
+  // Hover
+  var hoverRect = overallGroup.append("rect")
+    .attr("width", dim.innerW).attr("height", dim.innerH)
+    .attr("fill", "transparent").style("cursor", "crosshair");
+  var hoverLine = overallGroup.append("line")
+    .attr("y1", 0).attr("y2", dim.innerH)
+    .attr("stroke", "#999").attr("stroke-width", 1).attr("stroke-dasharray", "3,2")
+    .style("opacity", 0);
+  var hoverDot = overallGroup.append("circle").attr("r", 4).attr("fill", C.red).style("opacity", 0);
+
+  hoverRect.on("mousemove", function(event) {
+    var mx = d3.pointer(event, this)[0];
+    var dateAtMouse = x.invert(mx);
+    var bisect = d3.bisector(function(d) { return d.date; }).left;
+    var idx = bisect(rebased, dateAtMouse, 1);
+    var d0 = rebased[idx - 1], d1 = rebased[idx];
+    if (!d0) return;
+    var d = (!d1 || dateAtMouse - d0.date < d1.date - dateAtMouse) ? d0 : d1;
+    hoverLine.attr("x1", x(d.date)).attr("x2", x(d.date)).style("opacity", 1);
+    hoverDot.attr("cx", x(d.date)).attr("cy", y(d.CP00)).style("opacity", 1);
+    showTooltip('<div class="tt-label">' + monthLabel(d.time) + '</div>' +
+      '<div class="tt-value" style="color:' + C.red + '">Price level: ' + d3.format(".1f")(d.CP00) + ' (+ ' + d3.format(".1f")(d.CP00 - 100) + '%)</div>', event);
+  }).on("mouseleave", function() {
+    hoverLine.style("opacity", 0); hoverDot.style("opacity", 0); hideTooltip();
+  });
+
+  // --- BREAKDOWN VIEW (step 1) ---
+  var breakGroup = g.append("g").attr("class", "break-view").style("opacity", 0).style("pointer-events", "none");
+
+  // Grid
+  breakGroup.append("g").attr("class", "grid")
+    .call(d3.axisLeft(y).ticks(8).tickSize(-dim.innerW).tickFormat(""))
+    .call(function(g) { g.select(".domain").remove(); });
+
+  // 100 baseline
+  breakGroup.append("line")
+    .attr("x1", 0).attr("x2", dim.innerW)
+    .attr("y1", y(100)).attr("y2", y(100))
+    .attr("stroke", "#C0C0B8").attr("stroke-width", 1);
+  breakGroup.append("text").attr("class", "chart-annotation")
+    .attr("x", 4).attr("y", y(100) - 8).attr("fill", C.muted)
+    .text("Jan 2020 = 100");
+
+  var breakCats = [
+    { id: "CP01", label: "Food", color: C.food },
+    { id: "CP04", label: "Housing & energy", color: C.housing },
+    { id: "CP07", label: "Transport", color: C.transport },
+    { id: "CP00", label: "Overall", color: "#999" },
+    { id: "CP09", label: "Recreation", color: C.recreation }
+  ];
+
+  // Sort end labels by final value to avoid overlap
+  var lastPt = rebased[rebased.length - 1];
+  var labelPositions = breakCats.map(function(cat) {
+    return { id: cat.id, label: cat.label, color: cat.color, val: lastPt[cat.id] };
+  }).sort(function(a, b) { return b.val - a.val; });
+
+  breakCats.forEach(function(cat) {
+    var lineGen = d3.line()
+      .x(function(d) { return x(d.date); })
+      .y(function(d) { return y(d[cat.id]); })
+      .curve(d3.curveMonotoneX);
+    breakGroup.append("path").datum(rebased)
+      .attr("d", lineGen)
+      .attr("fill", "none")
+      .attr("stroke", cat.color)
+      .attr("stroke-width", cat.id === "CP00" ? 1.5 : 2.5)
+      .attr("stroke-dasharray", cat.id === "CP00" ? "4,3" : "none");
+  });
+
+  // Spread labels to avoid overlap
+  var labelSpacing = 16;
+  var sortedLabels = labelPositions.slice().sort(function(a, b) { return a.val - b.val; });
+  var placedY = [];
+  sortedLabels.forEach(function(lbl) {
+    var idealY = y(lbl.val);
+    var finalY = idealY;
+    placedY.forEach(function(py) {
+      if (Math.abs(finalY - py) < labelSpacing) {
+        finalY = py + labelSpacing;
+      }
+    });
+    placedY.push(finalY);
+    lbl.placedY = finalY;
+  });
+
+  sortedLabels.forEach(function(lbl) {
+    breakGroup.append("text").attr("class", "chart-annotation-bold")
+      .attr("x", x(lastPt.date) + 6)
+      .attr("y", lbl.placedY + 4)
+      .attr("fill", lbl.color)
+      .attr("font-size", "13px")
+      .text(lbl.label + " " + d3.format(".0f")(lbl.val));
+  });
+
+  // Axes
+  breakGroup.append("g").attr("class", "axis x-axis")
+    .attr("transform", "translate(0," + dim.innerH + ")")
+    .call(d3.axisBottom(x).ticks(isMobile() ? 4 : 6).tickFormat(d3.timeFormat("%b '%y")).tickSize(0))
+    .call(function(g) { g.select(".domain").remove(); });
+  breakGroup.append("g").attr("class", "axis y-axis")
+    .call(d3.axisLeft(y).ticks(8).tickFormat(function(d) { return d; }).tickSize(0))
+    .call(function(g) { g.select(".domain").remove(); });
+
+  // Hover
+  var hoverRect2 = breakGroup.append("rect")
+    .attr("width", dim.innerW).attr("height", dim.innerH)
+    .attr("fill", "transparent").style("cursor", "crosshair");
+  var hoverLine2 = breakGroup.append("line")
+    .attr("y1", 0).attr("y2", dim.innerH)
+    .attr("stroke", "#999").attr("stroke-width", 1).attr("stroke-dasharray", "3,2")
+    .style("opacity", 0);
+
+  hoverRect2.on("mousemove", function(event) {
+    var mx = d3.pointer(event, this)[0];
+    var dateAtMouse = x.invert(mx);
+    var bisect = d3.bisector(function(d) { return d.date; }).left;
+    var idx = bisect(rebased, dateAtMouse, 1);
+    var d0 = rebased[idx - 1], d1 = rebased[idx];
+    if (!d0) return;
+    var d = (!d1 || dateAtMouse - d0.date < d1.date - dateAtMouse) ? d0 : d1;
+    hoverLine2.attr("x1", x(d.date)).attr("x2", x(d.date)).style("opacity", 1);
+    showTooltip('<div class="tt-label">' + monthLabel(d.time) + '</div>' +
+      '<div class="tt-value" style="color:' + C.food + '">Food: ' + d3.format(".1f")(d.CP01) + ' (+' + d3.format(".1f")(d.CP01 - 100) + '%)</div>' +
+      '<div class="tt-value" style="color:' + C.housing + '">Housing: ' + d3.format(".1f")(d.CP04) + ' (+' + d3.format(".1f")(d.CP04 - 100) + '%)</div>' +
+      '<div class="tt-value" style="color:' + C.transport + '">Transport: ' + d3.format(".1f")(d.CP07) + ' (+' + d3.format(".1f")(d.CP07 - 100) + '%)</div>' +
+      '<div class="tt-value" style="color:#999">Overall: ' + d3.format(".1f")(d.CP00) + ' (+' + d3.format(".1f")(d.CP00 - 100) + '%)</div>' +
+      '<div class="tt-value" style="color:' + C.recreation + '">Recreation: ' + d3.format(".1f")(d.CP09) + ' (+' + d3.format(".1f")(d.CP09 - 100) + '%)</div>', event);
+  }).on("mouseleave", function() {
+    hoverLine2.style("opacity", 0); hideTooltip();
+  });
+}
+
+function updateCumulativeChart(step) {
+  var svg = d3.select("#chart-cumulative svg");
+  if (step === 0) {
+    svg.select(".overall-view").transition().duration(DURATION).style("opacity", 1).on("end", function() { d3.select(this).style("pointer-events", "all"); });
+    svg.select(".break-view").transition().duration(DURATION).style("opacity", 0).on("end", function() { d3.select(this).style("pointer-events", "none"); });
+  } else {
+    svg.select(".overall-view").transition().duration(DURATION).style("opacity", 0).on("end", function() { d3.select(this).style("pointer-events", "none"); });
+    svg.select(".break-view").transition().duration(DURATION).style("opacity", 1).on("end", function() { d3.select(this).style("pointer-events", "all"); });
+  }
+}
+
+/* =========================================================
+   CHART 4: WHERE WE ARE NOW — Latest rates bar + cumulative summary
+   ========================================================= */
+function buildNowChart() {
+  var container = document.getElementById("chart-now");
+  var dim = chartDims(container);
+  var h = Math.max(520, dim.height);
+  var m = { top: 30, right: 80, bottom: 40, left: 54 };
+  var innerW = dim.width - m.left - m.right;
+  var innerH = h - m.top - m.bottom;
+
+  var svg = d3.select(container).append("svg")
+    .attr("width", dim.width).attr("height", h)
+    .attr("viewBox", "0 0 " + dim.width + " " + h);
+  var g = svg.append("g").attr("transform", "translate(" + m.left + "," + m.top + ")");
+
+  var latestRate = RATES[RATES.length - 1];
+
+  // --- CURRENT RATES VIEW (step 0) ---
+  var ratesGroup = g.append("g").attr("class", "rates-view");
+
+  var catData = [
+    { label: "Food & drink", id: "CP01", color: C.food },
+    { label: "Housing & energy", id: "CP04", color: C.housing },
+    { label: "Overall CPIH", id: "CP00", color: C.red },
+    { label: "Transport", id: "CP07", color: C.transport },
+    { label: "Recreation", id: "CP09", color: C.recreation }
+  ].map(function(cat) {
+    cat.value = latestRate[cat.id];
+    return cat;
+  }).sort(function(a, b) { return b.value - a.value; });
+
+  var yBand = d3.scaleBand().domain(catData.map(function(d) { return d.label; })).range([0, innerH * 0.7]).padding(0.3);
+  var xBar = d3.scaleLinear().domain([d3.min(catData, function(d) { return d.value; }) - 0.5, d3.max(catData, function(d) { return d.value; }) + 1]).range([0, innerW]);
+
+  // 2% target line
+  ratesGroup.append("line")
+    .attr("x1", xBar(2)).attr("x2", xBar(2))
+    .attr("y1", -10).attr("y2", innerH * 0.7 + 10)
+    .attr("stroke", C.target).attr("stroke-width", 2).attr("stroke-dasharray", "6,4");
+  ratesGroup.append("text").attr("class", "chart-annotation")
+    .attr("x", xBar(2)).attr("y", -16)
+    .attr("text-anchor", "middle").attr("fill", C.target)
+    .text("2% target");
+
+  // Bars
+  ratesGroup.selectAll(".rate-bar").data(catData).enter()
+    .append("rect").attr("class", "rate-bar")
+    .attr("x", function(d) { return d.value >= 0 ? xBar(0) : xBar(d.value); })
+    .attr("y", function(d) { return yBand(d.label); })
+    .attr("width", function(d) { return Math.abs(xBar(d.value) - xBar(0)); })
+    .attr("height", yBand.bandwidth())
+    .attr("fill", function(d) { return d.color; })
+    .attr("rx", 3)
+    .attr("opacity", 0.85);
+
+  // Name labels
+  ratesGroup.selectAll(".rate-name").data(catData).enter()
+    .append("text").attr("class", "chart-annotation")
+    .attr("x", function(d) { return xBar(Math.max(0, d.value)) + 8; })
+    .attr("y", function(d) { return yBand(d.label) + yBand.bandwidth() / 2 - 6; })
+    .attr("fill", function(d) { return d.color; })
+    .attr("font-weight", 600)
+    .text(function(d) { return d.label; });
+
+  // Value labels
+  ratesGroup.selectAll(".rate-val").data(catData).enter()
+    .append("text").attr("class", "chart-annotation-bold")
+    .attr("x", function(d) { return xBar(Math.max(0, d.value)) + 8; })
+    .attr("y", function(d) { return yBand(d.label) + yBand.bandwidth() / 2 + 12; })
+    .attr("fill", function(d) { return d.color; })
+    .text(function(d) { return fmtPct(d.value); });
+
+  // Title
+  ratesGroup.append("text").attr("class", "chart-annotation-bold")
+    .attr("x", 0).attr("y", innerH * 0.7 + 40)
+    .attr("fill", C.ink)
+    .text("Latest rates: " + monthLabel(latestRate.time));
+
+  // Hover
+  ratesGroup.selectAll(".rate-bar")
+    .on("mousemove", function(event, d) {
+      var aboveTarget = d.value > 2;
+      showTooltip('<div class="tt-label">' + d.label + '</div>' +
+        '<div class="tt-value" style="color:' + d.color + '">' + fmtPct(d.value) + ' year-on-year</div>' +
+        '<div class="tt-value">' + (aboveTarget ? "Above" : "At or below") + ' the 2% target</div>', event);
+    })
+    .on("mouseleave", hideTooltip);
+
+  // --- CUMULATIVE SUMMARY BAR (step 1) ---
+  var summaryGroup = g.append("g").attr("class", "summary-view").style("opacity", 0).style("pointer-events", "none");
+
+  var jan2020 = SERIES.find(function(d) { return d.time === "2020-01"; });
+  var latestIndex = SERIES[SERIES.length - 1];
+
+  var cumData = [
+    { label: "Food & drink", color: C.food, pct: ((latestIndex.CP01 / jan2020.CP01) - 1) * 100 },
+    { label: "Housing & energy", color: C.housing, pct: ((latestIndex.CP04 / jan2020.CP04) - 1) * 100 },
+    { label: "Overall CPIH", color: C.red, pct: ((latestIndex.CP00 / jan2020.CP00) - 1) * 100 },
+    { label: "Transport", color: C.transport, pct: ((latestIndex.CP07 / jan2020.CP07) - 1) * 100 },
+    { label: "Recreation", color: C.recreation, pct: ((latestIndex.CP09 / jan2020.CP09) - 1) * 100 }
+  ].sort(function(a, b) { return b.pct - a.pct; });
+
+  var yCum = d3.scaleBand().domain(cumData.map(function(d) { return d.label; })).range([0, innerH * 0.7]).padding(0.3);
+  var xCum = d3.scaleLinear().domain([0, d3.max(cumData, function(d) { return d.pct; }) * 1.15]).range([0, innerW]);
+
+  // Bars
+  summaryGroup.selectAll(".cum-bar").data(cumData).enter()
+    .append("rect").attr("class", "cum-bar")
+    .attr("x", 0)
+    .attr("y", function(d) { return yCum(d.label); })
+    .attr("width", function(d) { return xCum(d.pct); })
+    .attr("height", yCum.bandwidth())
+    .attr("fill", function(d) { return d.color; })
+    .attr("rx", 3)
+    .attr("opacity", 0.85);
+
+  // Name labels
+  summaryGroup.selectAll(".cum-name").data(cumData).enter()
+    .append("text").attr("class", "chart-annotation")
+    .attr("x", function(d) { return xCum(d.pct) + 8; })
+    .attr("y", function(d) { return yCum(d.label) + yCum.bandwidth() / 2 - 6; })
+    .attr("fill", function(d) { return d.color; })
+    .attr("font-weight", 600)
+    .text(function(d) { return d.label; });
+
+  // Value labels
+  summaryGroup.selectAll(".cum-val").data(cumData).enter()
+    .append("text").attr("class", "chart-annotation-bold")
+    .attr("x", function(d) { return xCum(d.pct) + 8; })
+    .attr("y", function(d) { return yCum(d.label) + yCum.bandwidth() / 2 + 12; })
+    .attr("fill", function(d) { return d.color; })
+    .text(function(d) { return "+" + d3.format(".1f")(d.pct) + "%"; });
+
+  // Title
+  summaryGroup.append("text").attr("class", "chart-annotation-bold")
+    .attr("x", 0).attr("y", innerH * 0.7 + 40)
+    .attr("fill", C.ink)
+    .text("Total price rise since Jan 2020");
+
+  // Equiv cost
+  summaryGroup.append("text").attr("class", "chart-annotation")
+    .attr("x", 0).attr("y", innerH * 0.7 + 60)
+    .attr("fill", C.muted)
+    .text("A \u00a3100 basket in Jan 2020 now costs \u00a3" + d3.format(".0f")(100 + cumData.find(function(d) { return d.label === "Overall CPIH"; }).pct));
+
+  // Hover
+  summaryGroup.selectAll(".cum-bar")
+    .on("mousemove", function(event, d) {
+      var equiv = 100 + d.pct;
+      showTooltip('<div class="tt-label">' + d.label + '</div>' +
+        '<div class="tt-value" style="color:' + d.color + '">+' + d3.format(".1f")(d.pct) + '% since Jan 2020</div>' +
+        '<div class="tt-value">\u00a3100 then = \u00a3' + d3.format(".0f")(equiv) + ' now</div>', event);
+    })
+    .on("mouseleave", hideTooltip);
+}
+
+function updateNowChart(step) {
+  var svg = d3.select("#chart-now svg");
+  if (step === 0) {
+    svg.select(".rates-view").transition().duration(DURATION).style("opacity", 1).on("end", function() { d3.select(this).style("pointer-events", "all"); });
+    svg.select(".summary-view").transition().duration(DURATION).style("opacity", 0).on("end", function() { d3.select(this).style("pointer-events", "none"); });
+  } else {
+    svg.select(".rates-view").transition().duration(DURATION).style("opacity", 0).on("end", function() { d3.select(this).style("pointer-events", "none"); });
+    svg.select(".summary-view").transition().duration(DURATION).style("opacity", 1).on("end", function() { d3.select(this).style("pointer-events", "all"); });
+  }
+}
+
+/* =========================================================
+   UPDATE DISPATCHER
+   ========================================================= */
+function updateChart(section, step) {
+  switch (section) {
+    case "hook": updateHookChart(step); break;
+    case "sectors": updateSectorsChart(step); break;
+    case "cumulative": updateCumulativeChart(step); break;
+    case "now": updateNowChart(step); break;
+  }
+}
+
+/* =========================================================
+   SCROLLYTELLING — IntersectionObserver
+   ========================================================= */
+function setupScrollObserver() {
+  var steps = document.querySelectorAll(".step");
+  var observer = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      var inner = entry.target.querySelector(".step-inner");
+      if (entry.isIntersecting && entry.intersectionRatio >= 0.4) {
+        var section = entry.target.dataset.section;
+        document.querySelectorAll('.step[data-section="' + section + '"] .step-inner').forEach(function(el) { el.classList.remove("active"); });
+        inner.classList.add("active");
+        updateChart(section, +entry.target.dataset.step);
+      }
+    });
+  }, {
+    threshold: [0.4, 0.5, 0.6]
+  });
+
+  steps.forEach(function(step) { observer.observe(step); });
+
+  // Activate first step immediately
+  var firstStep = document.querySelector('.step[data-section="hook"][data-step="0"] .step-inner');
+  if (firstStep) firstStep.classList.add("active");
+}
+
+})();
+</script>
+</body>
+</html>

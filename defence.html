@@ -453,7 +453,7 @@ function isMobile() { return window.innerWidth < MOBILE; }
 function chartDims(container) {
   const w = container.clientWidth;
   const h = Math.max(500, Math.min(600, window.innerHeight * 0.65));
-  const m = { top: 30, right: 60, bottom: 40, left: 55 };
+  const m = { top: 40, right: 70, bottom: 40, left: 55 };
   return { width: w, height: h, margin: m, innerW: w - m.left - m.right, innerH: h - m.top - m.bottom };
 }
 
@@ -562,7 +562,7 @@ function buildHookChart() {
   barGroup.selectAll(".bar-label").data(categories).enter()
     .append("text").attr("class", "chart-annotation-bold")
     .attr("x", d => xBar(d.label) + xBar.bandwidth() / 2)
-    .attr("y", d => yBar(d.value) - 10)
+    .attr("y", d => yBar(d.value) - 14)
     .attr("text-anchor", "middle")
     .attr("fill", (d, i) => i === 0 ? C.primary : C.red)
     .text(d => fmtK(d.value));
@@ -619,11 +619,11 @@ function buildHookChart() {
 
   // Labels
   lineGroup.append("text").attr("class", "chart-annotation-bold")
-    .attr("x", xLine(first.year)).attr("y", yLine(first.total) - 14)
+    .attr("x", xLine(first.year)).attr("y", yLine(first.total) - 16)
     .attr("text-anchor", "start").attr("fill", C.red)
     .text(fmtK(first.total));
   lineGroup.append("text").attr("class", "chart-annotation-bold")
-    .attr("x", xLine(last.year) + 6).attr("y", yLine(last.total) + 5)
+    .attr("x", xLine(last.year) + 10).attr("y", yLine(last.total) + 5)
     .attr("fill", C.red)
     .text(fmtK(last.total));
 
@@ -717,7 +717,7 @@ function buildSpendingChart() {
   mainGroup.append("circle").attr("cx", x(first.year)).attr("cy", y(first.pct)).attr("r", 5)
     .attr("fill", C.primary).attr("stroke", "#fff").attr("stroke-width", 2);
   mainGroup.append("text").attr("class", "chart-annotation-bold")
-    .attr("x", x(first.year) + 8).attr("y", y(first.pct) - 10)
+    .attr("x", x(first.year) + 10).attr("y", y(first.pct) - 14)
     .attr("fill", C.primary).text(fmtPct(first.pct));
 
   // End label
@@ -725,18 +725,18 @@ function buildSpendingChart() {
   mainGroup.append("circle").attr("cx", x(last.year)).attr("cy", y(last.pct)).attr("r", 5)
     .attr("fill", C.primary).attr("stroke", "#fff").attr("stroke-width", 2);
   mainGroup.append("text").attr("class", "chart-annotation-bold")
-    .attr("x", x(last.year) + 8).attr("y", y(last.pct) + 5)
+    .attr("x", x(last.year) + 10).attr("y", y(last.pct) - 14)
     .attr("fill", C.primary).text(fmtPct(last.pct));
 
-  // Annotation: 2015 nadir
+  // Annotation: 2015 nadir — offset below with leader line
   const nadir = spData.find(d => d.year === 2015);
   mainGroup.append("text").attr("class", "chart-annotation")
-    .attr("x", x(2015)).attr("y", y(nadir.pct) + 22)
+    .attr("x", x(2015)).attr("y", y(nadir.pct) + 40)
     .attr("text-anchor", "middle").attr("fill", C.red)
     .text("Hit 2.0% floor");
   mainGroup.append("line")
     .attr("x1", x(2015)).attr("x2", x(2015))
-    .attr("y1", y(nadir.pct) + 6).attr("y2", y(nadir.pct) + 14)
+    .attr("y1", y(nadir.pct) + 8).attr("y2", y(nadir.pct) + 28)
     .attr("stroke", C.red).attr("stroke-width", 1).attr("stroke-dasharray", "3,2");
 
   // Axes
@@ -818,17 +818,21 @@ function buildSpendingChart() {
   zoomGroup.append("circle").attr("cx", x2(lastRecent.year)).attr("cy", y2(lastRecent.pct)).attr("r", 5)
     .attr("fill", C.primary).attr("stroke", "#fff").attr("stroke-width", 2);
   zoomGroup.append("text").attr("class", "chart-annotation-bold")
-    .attr("x", x2(lastRecent.year) + 8).attr("y", y2(lastRecent.pct) + 5)
+    .attr("x", x2(lastRecent.year) + 10).attr("y", y2(lastRecent.pct) - 14)
     .attr("fill", C.primary).text(fmtPct(lastRecent.pct));
 
-  // Gap annotation
+  // Gap annotation — placed in white space above gap, with leader line into shaded area
   const gapMidYear = 2018;
   const gapMidPct = spData.find(d => d.year === gapMidYear).pct;
   const gapMidY = (y2(gapMidPct) + y2(2.5)) / 2;
   zoomGroup.append("text").attr("class", "chart-annotation-bold")
-    .attr("x", x2(gapMidYear) + 4).attr("y", gapMidY + 4)
-    .attr("text-anchor", "start").attr("fill", C.red)
+    .attr("x", x2(gapMidYear)).attr("y", y2(2.5) - 28)
+    .attr("text-anchor", "middle").attr("fill", C.red)
     .text("Shortfall");
+  zoomGroup.append("line")
+    .attr("x1", x2(gapMidYear)).attr("x2", x2(gapMidYear))
+    .attr("y1", y2(2.5) - 16).attr("y2", gapMidY)
+    .attr("stroke", C.red).attr("stroke-width", 1).attr("stroke-dasharray", "3,2");
 
   // Axes
   zoomGroup.append("g").attr("class", "axis x-axis")
@@ -925,7 +929,7 @@ function buildPersonnelChart() {
     // End label
     const last = personnel[personnel.length - 1];
     stackGroup.append("text").attr("class", "chart-annotation-bold")
-      .attr("x", x(last.year) + 6).attr("y", y(last[s.key]) + 4)
+      .attr("x", x(last.year) + 10).attr("y", y(last[s.key]) + 4)
       .attr("fill", s.color).text(s.label + " " + fmtK(last[s.key]));
   });
 
@@ -989,7 +993,7 @@ function buildPersonnelChart() {
 
     const last = indexData[indexData.length - 1];
     indexGroup.append("text").attr("class", "chart-annotation-bold")
-      .attr("x", x(last.year) + 6).attr("y", yIdx(last.value) + 4)
+      .attr("x", x(last.year) + 10).attr("y", yIdx(last.value) + 4)
       .attr("fill", s.color)
       .text(s.label + " " + Math.round(last.value));
   });
@@ -1048,7 +1052,7 @@ function buildEquipmentChart() {
   const container = document.getElementById("chart-equipment");
   const dim = chartDims(container);
   const h = Math.max(520, dim.height);
-  const m = { top: 30, right: 80, bottom: 50, left: 10 };
+  const m = { top: 40, right: 90, bottom: 50, left: 10 };
   const innerW = dim.width - m.left - m.right;
   const innerH = h - m.top - m.bottom;
 
@@ -1063,7 +1067,7 @@ function buildEquipmentChart() {
   // --- Full view (step 0) ---
   const fullGroup = g.append("g").attr("class", "equip-full-view");
 
-  const yBand = d3.scaleBand().domain(eqData.map(d => d.category)).range([0, innerH]).padding(0.25);
+  const yBand = d3.scaleBand().domain(eqData.map(d => d.category)).range([0, innerH]).padding(0.35);
   const xScale = d3.scaleLinear().domain([0, 20]).range([0, innerW]);
 
   // Grid
@@ -1087,11 +1091,11 @@ function buildEquipmentChart() {
     })
     .on("mouseleave", hideTooltip);
 
-  // Category labels (above bars for readability)
+  // Category labels (above bars, not overlapping)
   fullGroup.selectAll(".cat-label").data(eqData).enter()
     .append("text").attr("class", "chart-annotation")
     .attr("x", 4)
-    .attr("y", d => yBand(d.category) + 14)
+    .attr("y", d => yBand(d.category) - 4)
     .attr("fill", (d, i) => i === 0 ? C.red : C.primary)
     .style("font-size", "13px").style("font-weight", "600")
     .text(d => d.category);
@@ -1099,16 +1103,10 @@ function buildEquipmentChart() {
   // Value labels
   fullGroup.selectAll(".val-label").data(eqData).enter()
     .append("text").attr("class", "chart-annotation-bold")
-    .attr("x", d => xScale(d.value) + 6)
+    .attr("x", d => xScale(d.value) + 10)
     .attr("y", d => yBand(d.category) + yBand.bandwidth() / 2 + 5)
     .attr("fill", (d, i) => i === 0 ? C.red : C.primary)
     .text(d => fmtBn(d.value));
-
-  // X-axis for equipment values
-  fullGroup.append("g").attr("class", "axis x-axis")
-    .attr("transform", `translate(0,${innerH})`)
-    .call(d3.axisBottom(xScale).ticks(5).tickFormat(d => "\u00a3" + d + "bn").tickSize(0))
-    .call(g => g.select(".domain").remove());
 
   // Total annotation
   fullGroup.append("text").attr("class", "chart-annotation-bold")
@@ -1136,11 +1134,11 @@ function buildEquipmentChart() {
     })
     .on("mouseleave", hideTooltip);
 
-  // Category labels (above bars for readability)
+  // Category labels (above bars, not overlapping)
   highlightGroup.selectAll(".cat-label").data(eqData).enter()
     .append("text").attr("class", "chart-annotation")
     .attr("x", 4)
-    .attr("y", d => yBand(d.category) + 14)
+    .attr("y", d => yBand(d.category) - 4)
     .attr("fill", (d, i) => i === 0 ? C.red : C.muted)
     .style("font-size", "13px").style("font-weight", "600")
     .text(d => d.category);
@@ -1148,23 +1146,22 @@ function buildEquipmentChart() {
   // Value labels
   highlightGroup.selectAll(".val-label").data(eqData).enter()
     .append("text").attr("class", "chart-annotation-bold")
-    .attr("x", d => xScale(d.value) + 6)
+    .attr("x", d => xScale(d.value) + 10)
     .attr("y", d => yBand(d.category) + yBand.bandwidth() / 2 + 5)
     .attr("fill", (d, i) => i === 0 ? C.red : C.muted)
     .text(d => fmtBn(d.value));
 
-  // Nuclear callout
+  // Nuclear callout — positioned in white space to the right, with leader line
   const nucY = yBand(eqData[0].category) + yBand.bandwidth() / 2;
+  const nucLabelX = xScale(eqData[0].value) + 10;
   highlightGroup.append("text").attr("class", "chart-annotation-bold")
-    .attr("x", xScale(eqData[0].value) + 6).attr("y", nucY - 24)
+    .attr("x", nucLabelX).attr("y", nucY - 30)
     .attr("fill", C.red).style("font-size", "14px")
     .text("28% of total plan");
-
-  // X-axis for equipment values
-  highlightGroup.append("g").attr("class", "axis x-axis")
-    .attr("transform", `translate(0,${innerH})`)
-    .call(d3.axisBottom(xScale).ticks(5).tickFormat(d => "\u00a3" + d + "bn").tickSize(0))
-    .call(g => g.select(".domain").remove());
+  highlightGroup.append("line")
+    .attr("x1", nucLabelX + 40).attr("x2", nucLabelX + 40)
+    .attr("y1", nucY - 18).attr("y2", nucY - 8)
+    .attr("stroke", C.red).attr("stroke-width", 1).attr("stroke-dasharray", "3,2");
 
   // Total
   highlightGroup.append("text").attr("class", "chart-annotation-bold")
@@ -1223,7 +1220,7 @@ function buildReservesChart() {
   resGroup.append("circle").attr("cx", x(peak.year)).attr("cy", y(peak.strength)).attr("r", 5)
     .attr("fill", C.secondary).attr("stroke", "#fff").attr("stroke-width", 2);
   resGroup.append("text").attr("class", "chart-annotation-bold")
-    .attr("x", x(peak.year)).attr("y", y(peak.strength) - 14)
+    .attr("x", x(peak.year)).attr("y", y(peak.strength) - 16)
     .attr("text-anchor", "middle").attr("fill", C.secondary)
     .text("Peak: " + fmtK(peak.strength));
 
@@ -1232,13 +1229,17 @@ function buildReservesChart() {
   resGroup.append("circle").attr("cx", x(last.year)).attr("cy", y(last.strength)).attr("r", 5)
     .attr("fill", C.red).attr("stroke", "#fff").attr("stroke-width", 2);
   resGroup.append("text").attr("class", "chart-annotation-bold")
-    .attr("x", x(last.year) + 8).attr("y", y(last.strength) + 5)
+    .attr("x", x(last.year) + 10).attr("y", y(last.strength) + 5)
     .attr("fill", C.red).text(fmtK(last.strength));
 
-  // Decline annotation
+  // Decline annotation — offset into white space with leader line
   resGroup.append("text").attr("class", "chart-annotation")
-    .attr("x", x(2023) + 4).attr("y", y(28.5))
-    .attr("fill", C.red).text("\u2193 Declining");
+    .attr("x", x(2023)).attr("y", y(33))
+    .attr("text-anchor", "middle").attr("fill", C.red).text("Declining");
+  resGroup.append("line")
+    .attr("x1", x(2023)).attr("x2", x(2023))
+    .attr("y1", y(32.2)).attr("y2", y(29.5))
+    .attr("stroke", C.red).attr("stroke-width", 1).attr("stroke-dasharray", "3,2");
 
   // Axes
   resGroup.append("g").attr("class", "axis x-axis")
@@ -1313,13 +1314,13 @@ function buildReservesChart() {
   // End labels
   const lastC = combData[combData.length - 1];
   combGroup.append("text").attr("class", "chart-annotation-bold")
-    .attr("x", xC(lastC.year) + 6).attr("y", yC(lastC.regulars) + 5)
+    .attr("x", xC(lastC.year) + 10).attr("y", yC(lastC.regulars) + 5)
     .attr("fill", C.primary).text("Regulars " + fmtK(lastC.regulars));
   combGroup.append("text").attr("class", "chart-annotation-bold")
-    .attr("x", xC(lastC.year) + 6).attr("y", yC(lastC.regulars + lastC.reserves) - 8)
+    .attr("x", xC(lastC.year) + 10).attr("y", yC(lastC.regulars + lastC.reserves) - 10)
     .attr("fill", C.secondary).text("+ Reserves " + fmtK(lastC.reserves));
   combGroup.append("text").attr("class", "chart-annotation-bold")
-    .attr("x", xC(lastC.year) + 6).attr("y", yC(lastC.regulars + lastC.reserves) + 20)
+    .attr("x", xC(lastC.year) + 10).attr("y", yC(lastC.regulars + lastC.reserves) + 22)
     .attr("fill", C.ink).style("font-size", "14px")
     .text("Total: " + fmtK(lastC.regulars + lastC.reserves));
 
@@ -1405,7 +1406,7 @@ function buildAmbitionChart() {
     .attr("y1", y(2)).attr("y2", y(2))
     .attr("stroke", C.red).attr("stroke-width", 1).attr("stroke-dasharray", "4,4").attr("opacity", 0.6);
   gapGroup.append("text").attr("class", "chart-annotation")
-    .attr("x", dim.innerW).attr("y", y(2) + 16).attr("text-anchor", "end")
+    .attr("x", dim.innerW).attr("y", y(2) - 8).attr("text-anchor", "end")
     .attr("fill", C.red).text("2% floor");
 
   // Shaded shortfall area from actual to 2.5%
@@ -1432,14 +1433,18 @@ function buildAmbitionChart() {
   gapGroup.append("circle").attr("cx", x(last.year)).attr("cy", y(last.pct)).attr("r", 5)
     .attr("fill", C.primary).attr("stroke", "#fff").attr("stroke-width", 2);
   gapGroup.append("text").attr("class", "chart-annotation-bold")
-    .attr("x", x(last.year) + 8).attr("y", y(last.pct) + 5)
+    .attr("x", x(last.year) + 10).attr("y", y(last.pct) - 14)
     .attr("fill", C.primary).text(fmtPct(last.pct));
 
-  // Gap label
+  // Gap label — positioned in white space above the 2.5% target, with leader line
   gapGroup.append("text").attr("class", "chart-annotation-bold")
-    .attr("x", x(2020)).attr("y", y(2.4)).attr("text-anchor", "middle")
+    .attr("x", x(2014)).attr("y", y(3.3)).attr("text-anchor", "middle")
     .attr("fill", C.red).style("font-size", "13px")
     .text("0.2pp gap = ~\u00a35bn/yr");
+  gapGroup.append("line")
+    .attr("x1", x(2014)).attr("x2", x(2018))
+    .attr("y1", y(3.2)).attr("y2", y(2.55))
+    .attr("stroke", C.red).attr("stroke-width", 1).attr("stroke-dasharray", "3,2");
 
   // Axes
   gapGroup.append("g").attr("class", "axis x-axis")
@@ -1502,26 +1507,30 @@ function buildAmbitionChart() {
   realGroup.append("circle").attr("cx", xR(low.year)).attr("cy", yR(low.value)).attr("r", 5)
     .attr("fill", C.red).attr("stroke", "#fff").attr("stroke-width", 2);
   realGroup.append("text").attr("class", "chart-annotation-bold")
-    .attr("x", xR(low.year)).attr("y", yR(low.value) + 22)
+    .attr("x", xR(low.year)).attr("y", yR(low.value) + 34)
     .attr("text-anchor", "middle").attr("fill", C.red)
     .text("Low: " + fmtBn(low.value));
+  realGroup.append("line")
+    .attr("x1", xR(low.year)).attr("x2", xR(low.year))
+    .attr("y1", yR(low.value) + 8).attr("y2", yR(low.value) + 22)
+    .attr("stroke", C.red).attr("stroke-width", 1).attr("stroke-dasharray", "3,2");
 
   // End label
   const lastR = realData[realData.length - 1];
   realGroup.append("circle").attr("cx", xR(lastR.year)).attr("cy", yR(lastR.value)).attr("r", 5)
     .attr("fill", C.primary).attr("stroke", "#fff").attr("stroke-width", 2);
   realGroup.append("text").attr("class", "chart-annotation-bold")
-    .attr("x", xR(lastR.year) + 8).attr("y", yR(lastR.value) + 5)
+    .attr("x", xR(lastR.year) + 10).attr("y", yR(lastR.value) - 14)
     .attr("fill", C.primary).text(fmtBn(lastR.value));
 
-  // Austerity annotation
+  // Austerity annotation — offset into white space above data
   realGroup.append("text").attr("class", "chart-annotation")
-    .attr("x", xR(2012)).attr("y", yR(45))
+    .attr("x", xR(2012)).attr("y", yR(52))
     .attr("text-anchor", "middle").attr("fill", C.muted)
     .text("Austerity cuts");
   realGroup.append("line")
     .attr("x1", xR(2012)).attr("x2", xR(2012))
-    .attr("y1", yR(44)).attr("y2", yR(42))
+    .attr("y1", yR(50.5)).attr("y2", yR(44))
     .attr("stroke", C.muted).attr("stroke-width", 1).attr("stroke-dasharray", "3,2");
 
   // Axes

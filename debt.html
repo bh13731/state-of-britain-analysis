@@ -427,7 +427,7 @@ function chartDims(container) {
   const w = container.clientWidth;
   const mobile = isMobile();
   const h = Math.max(mobile ? 380 : 500, Math.min(600, window.innerHeight * 0.65));
-  const m = { top: 30, right: mobile ? 50 : 70, bottom: 40, left: mobile ? 50 : 60 };
+  const m = { top: 40, right: mobile ? 50 : 70, bottom: 40, left: mobile ? 50 : 60 };
   return { width: w, height: h, margin: m, innerW: w - m.left - m.right, innerH: h - m.top - m.bottom };
 }
 
@@ -544,7 +544,7 @@ function buildScaleChart() {
   barGroup.selectAll(".comp-value")
     .data(comparisons).enter().append("text")
     .attr("class", "chart-annotation-bold")
-    .attr("x", d => xBar(d.value) + 8).attr("y", d => yBar(d.label) + yBar.bandwidth() / 2 + 5)
+    .attr("x", d => xBar(d.value) + 10).attr("y", d => yBar(d.label) + yBar.bandwidth() / 2 + 5)
     .attr("fill", d => d.color === C.crimson ? C.crimson : C.muted)
     .attr("font-weight", d => d.color === C.crimson ? 700 : 400)
     .text(d => fmtBnShort(d.value));
@@ -573,10 +573,14 @@ function buildScaleChart() {
     .call(d3.axisLeft(yLine).ticks(6).tickSize(-dim.innerW).tickFormat(""))
     .call(g => g.select(".domain").remove());
 
-  // Y axis
+  // Y axis — units on first tick only (Tufte: maximise data-ink ratio)
   lineGroup.append("g").attr("class", "axis y-axis")
-    .call(d3.axisLeft(yLine).ticks(6).tickFormat(d => "\u00a3" + d + "bn").tickSize(0))
+    .call(d3.axisLeft(yLine).ticks(6).tickFormat((d, i) => i === 0 ? "\u00a3" + d + "bn" : d).tickSize(0))
     .call(g => g.select(".domain").remove());
+  // Horizontal axis label above y-axis (Wilke: never rotate)
+  lineGroup.append("text").attr("class", "chart-annotation")
+    .attr("x", 0).attr("y", -14).attr("text-anchor", "start").attr("fill", C.muted)
+    .text("Annual debt interest, \u00a3bn");
 
   // X axis
   lineGroup.append("g").attr("class", "axis x-axis")
@@ -601,29 +605,32 @@ function buildScaleChart() {
     .attr("d", lineGen).attr("fill", "none").attr("stroke", C.crimson).attr("stroke-width", 2.5)
     .attr("stroke-dasharray", "6,4");
 
-  // Annotation: inflection point
+  // Annotation: inflection point — offset into white space with leader line (Cleveland/Knaflic)
   const yr2020 = agg.find(a => a.year === 2020);
+  const annotX = xLine(2012);
+  const annotY = Math.min(yLine(yr2020.debtInterest) - 70, 40);
   lineGroup.append("text").attr("class", "chart-annotation")
-    .attr("x", xLine(2017)).attr("y", yLine(yr2020.debtInterest) - 40)
-    .attr("text-anchor", "middle").attr("fill", C.crimsonDark)
+    .attr("x", annotX).attr("y", annotY)
+    .attr("text-anchor", "middle").attr("fill", C.crimsonDark).attr("font-weight", 600)
     .text("Rates spike,");
   lineGroup.append("text").attr("class", "chart-annotation")
-    .attr("x", xLine(2017)).attr("y", yLine(yr2020.debtInterest) - 25)
+    .attr("x", annotX).attr("y", annotY + 15)
     .attr("text-anchor", "middle").attr("fill", C.crimsonDark)
     .text("bill triples");
+  // Leader line from annotation to data point
   lineGroup.append("line")
-    .attr("x1", xLine(2020)).attr("x2", xLine(2020))
-    .attr("y1", yLine(yr2020.debtInterest) - 4).attr("y2", yLine(yr2020.debtInterest) + 4)
-    .attr("stroke", C.crimsonDark).attr("stroke-width", 1.5);
-  lineGroup.append("line")
-    .attr("x1", xLine(2017) + 35).attr("x2", xLine(2020) - 4)
-    .attr("y1", yLine(yr2020.debtInterest) - 22).attr("y2", yLine(yr2020.debtInterest) - 4)
+    .attr("x1", annotX + 30).attr("x2", xLine(2020) - 6)
+    .attr("y1", annotY + 18).attr("y2", yLine(yr2020.debtInterest) - 6)
     .attr("stroke", C.crimsonDark).attr("stroke-width", 1).attr("stroke-dasharray", "3,2");
+  // Data point marker
+  lineGroup.append("circle")
+    .attr("cx", xLine(2020)).attr("cy", yLine(yr2020.debtInterest))
+    .attr("r", 3).attr("fill", C.crimsonDark);
 
-  // Label at end
+  // Label at end — 10px padding from data point (Cleveland: 8px+ padding)
   const lastForecast = forecast[forecast.length - 1];
   lineGroup.append("text").attr("class", "chart-annotation-bold")
-    .attr("x", xLine(lastForecast.year) + 6).attr("y", yLine(lastForecast.debtInterest) + 4)
+    .attr("x", xLine(lastForecast.year) + 10).attr("y", yLine(lastForecast.debtInterest) + 4)
     .attr("fill", C.crimson).text(fmtBnShort(lastForecast.debtInterest));
 
   // Forecast label
@@ -631,12 +638,17 @@ function buildScaleChart() {
     .attr("x", xLine(2027)).attr("y", 12)
     .attr("text-anchor", "middle").attr("fill", C.muted).text("Forecast \u2192");
 
-  // Annotation: 1978 level
+  // Annotation: 1978 level — offset with leader line (Cleveland: 8px+ padding)
   const yr1978 = agg.find(a => a.year === 1978);
+  const yr1978AnnotY = yLine(yr1978.debtInterest) + 30;
   lineGroup.append("text").attr("class", "chart-annotation")
-    .attr("x", xLine(1982)).attr("y", yLine(yr1978.debtInterest) + 18)
+    .attr("x", xLine(1982)).attr("y", yr1978AnnotY)
     .attr("text-anchor", "start").attr("fill", C.muted)
     .text("\u00a36bn in 1978");
+  lineGroup.append("line")
+    .attr("x1", xLine(1980)).attr("x2", xLine(1978) + 4)
+    .attr("y1", yr1978AnnotY - 12).attr("y2", yLine(yr1978.debtInterest) + 6)
+    .attr("stroke", C.muted).attr("stroke-width", 1).attr("stroke-dasharray", "3,2");
 
   // Hover overlay
   const hoverRect = lineGroup.append("rect")
@@ -706,7 +718,7 @@ function buildCauseChart() {
     .call(g => g.select(".domain").remove());
 
   debtView.append("g").attr("class", "axis y-axis")
-    .call(d3.axisLeft(yDebt).ticks(6).tickFormat(d => d + "%").tickSize(0))
+    .call(d3.axisLeft(yDebt).ticks(6).tickFormat((d, i) => i === 0 ? d + "% of GDP" : d + "%").tickSize(0))
     .call(g => g.select(".domain").remove());
 
   debtView.append("g").attr("class", "axis x-axis")
@@ -750,17 +762,22 @@ function buildCauseChart() {
       .text(c.label);
   });
 
-  // 1990 low point annotation
+  // 1990 low point annotation — offset below with leader line (Cleveland)
   const d1990 = pctGDP.find(a => a.year === 1990);
+  const annot1990Y = yDebt(d1990.debt) + 35;
   debtView.append("text").attr("class", "chart-annotation")
-    .attr("x", xLine(1990)).attr("y", yDebt(d1990.debt) + 20)
+    .attr("x", xLine(1990)).attr("y", annot1990Y)
     .attr("text-anchor", "middle").attr("fill", C.muted)
     .text("22% in 1990");
+  debtView.append("line")
+    .attr("x1", xLine(1990)).attr("x2", xLine(1990))
+    .attr("y1", annot1990Y - 13).attr("y2", yDebt(d1990.debt) + 6)
+    .attr("stroke", C.muted).attr("stroke-width", 1).attr("stroke-dasharray", "3,2");
 
   // End label
   const lastPctF = forecastPct[forecastPct.length - 1];
   debtView.append("text").attr("class", "chart-annotation-bold")
-    .attr("x", xLine(lastPctF.year) + 6).attr("y", yDebt(lastPctF.debt) + 4)
+    .attr("x", xLine(lastPctF.year) + 10).attr("y", yDebt(lastPctF.debt) + 4)
     .attr("fill", C.amber).text(fmtPct(lastPctF.debt));
 
   debtView.append("text").attr("class", "chart-annotation")
@@ -805,18 +822,26 @@ function buildCauseChart() {
     .call(d3.axisLeft(yDebtStock).ticks(6).tickSize(-dim.innerW).tickFormat(""))
     .call(g => g.select(".domain").remove());
 
-  // Left axis (debt stock)
+  // Left axis (debt stock) — units on first tick only (Tufte)
   dualView.append("g").attr("class", "axis y-axis")
-    .call(d3.axisLeft(yDebtStock).ticks(6).tickFormat(d => "\u00a3" + d3.format(",")(d) + "bn").tickSize(0))
+    .call(d3.axisLeft(yDebtStock).ticks(6).tickFormat((d, i) => i === 0 ? "\u00a3" + d3.format(",")(d) + "bn" : d3.format(",")(d)).tickSize(0))
     .call(g => g.select(".domain").remove())
     .selectAll("text").attr("fill", C.amber);
+  // Horizontal label above left axis (Wilke)
+  dualView.append("text").attr("class", "chart-annotation")
+    .attr("x", 0).attr("y", -14).attr("text-anchor", "start").attr("fill", C.amber)
+    .text("Debt stock, \u00a3bn");
 
-  // Right axis (debt interest)
+  // Right axis (debt interest) — units on first tick only (Tufte)
   dualView.append("g").attr("class", "axis y-axis-right")
     .attr("transform", `translate(${dim.innerW},0)`)
-    .call(d3.axisRight(yInterest).ticks(6).tickFormat(d => "\u00a3" + d + "bn").tickSize(0))
+    .call(d3.axisRight(yInterest).ticks(6).tickFormat((d, i) => i === 0 ? "\u00a3" + d + "bn" : d).tickSize(0))
     .call(g => g.select(".domain").remove())
     .selectAll("text").attr("fill", C.crimson);
+  // Horizontal label above right axis (Wilke)
+  dualView.append("text").attr("class", "chart-annotation")
+    .attr("x", dim.innerW).attr("y", -14).attr("text-anchor", "end").attr("fill", C.crimson)
+    .text("Debt interest, \u00a3bn");
 
   // X axis
   dualView.append("g").attr("class", "axis x-axis")
@@ -840,13 +865,13 @@ function buildCauseChart() {
     .attr("d", lineInterest).attr("fill", "none").attr("stroke", C.crimson).attr("stroke-width", 2.5)
     .attr("stroke-dasharray", "6,4");
 
-  // Direct labels
+  // Direct labels — 10px padding from data (Cleveland: 8px+ minimum)
   const lastFA = forecastAgg[forecastAgg.length - 1];
   dualView.append("text").attr("class", "chart-annotation-bold")
-    .attr("x", xLine(lastFA.year) + 6).attr("y", yDebtStock(lastFA.debt) - 10)
+    .attr("x", xLine(lastFA.year) + 10).attr("y", yDebtStock(lastFA.debt) - 10)
     .attr("fill", C.amber).text("Debt stock");
   dualView.append("text").attr("class", "chart-annotation-bold")
-    .attr("x", xLine(lastFA.year) + 6).attr("y", yInterest(lastFA.debtInterest) + 16)
+    .attr("x", xLine(lastFA.year) + 10).attr("y", yInterest(lastFA.debtInterest) + 18)
     .attr("fill", C.crimson).text("Interest");
 
   // "Free money era" annotation
@@ -941,7 +966,7 @@ function buildQEChart() {
     .call(g => g.select(".domain").remove());
 
   apfView.append("g").attr("class", "axis y-axis")
-    .call(d3.axisLeft(yAPF).ticks(6).tickFormat(d => "\u00a3" + d + "bn").tickSize(0))
+    .call(d3.axisLeft(yAPF).ticks(6).tickFormat((d, i) => i === 0 ? "\u00a3" + d + "bn" : d).tickSize(0))
     .call(g => g.select(".domain").remove());
 
   apfView.append("g").attr("class", "axis x-axis")
@@ -970,12 +995,20 @@ function buildQEChart() {
     .attr("text-anchor", "middle").attr("fill", C.blue)
     .text(d => fmtBnShort(d.value));
 
-  // Peak annotation
+  // Peak annotation — offset into white space with leader line (Cleveland/Knaflic)
+  const peakBarX = xAPF("2022-23") + xAPF.bandwidth() / 2;
+  const peakBarY = yAPF(135.2);
+  const peakAnnotY = peakBarY - 50;
   apfView.append("text").attr("class", "chart-annotation")
-    .attr("x", xAPF("2022-23") + xAPF.bandwidth() / 2)
-    .attr("y", yAPF(135.2) - 30)
+    .attr("x", peakBarX)
+    .attr("y", peakAnnotY)
     .attr("text-anchor", "middle").attr("fill", C.blue).attr("font-weight", 600)
     .text("Bank Rate hits 5.25%");
+  // Leader line from annotation to bar top
+  apfView.append("line")
+    .attr("x1", peakBarX).attr("x2", peakBarX)
+    .attr("y1", peakAnnotY + 4).attr("y2", peakBarY - 10)
+    .attr("stroke", C.blue).attr("stroke-width", 1).attr("stroke-dasharray", "3,2");
 
   // Total annotation
   apfView.append("text").attr("class", "chart-annotation-bold")
@@ -1036,7 +1069,7 @@ function buildQEChart() {
   compView.selectAll(".dept-value")
     .data(deptComparisons).enter().append("text")
     .attr("class", "chart-annotation-bold")
-    .attr("x", d => xComp(d.value) + 8)
+    .attr("x", d => xComp(d.value) + 10)
     .attr("y", d => yComp(d.label) + yComp.bandwidth() / 2 + 5)
     .attr("fill", d => d.bold ? C.blue : C.muted)
     .attr("font-weight", d => d.bold ? 700 : 400)
@@ -1096,8 +1129,12 @@ function buildOutlookChart() {
     .call(g => g.select(".domain").remove());
 
   forecastView.append("g").attr("class", "axis y-axis")
-    .call(d3.axisLeft(yInterest).ticks(6).tickFormat(d => "\u00a3" + d + "bn").tickSize(0))
+    .call(d3.axisLeft(yInterest).ticks(6).tickFormat((d, i) => i === 0 ? "\u00a3" + d + "bn" : d).tickSize(0))
     .call(g => g.select(".domain").remove());
+  // Horizontal axis label above y-axis (Wilke)
+  forecastView.append("text").attr("class", "chart-annotation")
+    .attr("x", 0).attr("y", -14).attr("text-anchor", "start").attr("fill", C.muted)
+    .text("Annual debt interest, \u00a3bn");
 
   forecastView.append("g").attr("class", "axis x-axis")
     .attr("transform", `translate(0,${dim.innerH})`)
@@ -1126,7 +1163,7 @@ function buildOutlookChart() {
   // Annotations for key years
   const yr2030 = forecast[forecast.length - 1];
   forecastView.append("text").attr("class", "chart-annotation-bold")
-    .attr("x", xLine(yr2030.year) + 6).attr("y", yInterest(yr2030.debtInterest) + 4)
+    .attr("x", xLine(yr2030.year) + 10).attr("y", yInterest(yr2030.debtInterest) + 4)
     .attr("fill", C.crimson).text(fmtBnShort(yr2030.debtInterest));
 
   // "Doesn't come down" annotation
@@ -1193,7 +1230,7 @@ function buildOutlookChart() {
     .call(g => g.select(".domain").remove());
 
   pctView.append("g").attr("class", "axis y-axis")
-    .call(d3.axisLeft(yPct).ticks(7).tickFormat(d => d + "%").tickSize(0))
+    .call(d3.axisLeft(yPct).ticks(7).tickFormat((d, i) => i === 0 ? d + "% of receipts" : d + "%").tickSize(0))
     .call(g => g.select(".domain").remove());
 
   pctView.append("g").attr("class", "axis x-axis")
@@ -1226,16 +1263,17 @@ function buildOutlookChart() {
     .attr("stroke-dasharray", "6,4").attr("opacity", 0.5);
 
   // End labels
+  // End labels — 10px padding from data (Cleveland: 8px+ minimum)
   const lastPF = forecastPct[forecastPct.length - 1];
   pctView.append("text").attr("class", "chart-annotation-bold")
-    .attr("x", xLine(lastPF.year) + 6).attr("y", yPct(lastPF.pctReceipts) + 4)
+    .attr("x", xLine(lastPF.year) + 10).attr("y", yPct(lastPF.pctReceipts) + 4)
     .attr("fill", C.crimson).text(d3.format(".1f")(lastPF.pctReceipts) + "%");
   pctView.append("text").attr("class", "chart-annotation")
-    .attr("x", xLine(lastPF.year) + 6).attr("y", yPct(lastPF.pctReceipts) + 18)
+    .attr("x", xLine(lastPF.year) + 10).attr("y", yPct(lastPF.pctReceipts) + 18)
     .attr("fill", C.crimson).text("of tax revenue");
 
   pctView.append("text").attr("class", "chart-annotation")
-    .attr("x", xLine(lastPF.year) + 6).attr("y", yPct(lastPF.pctSpending) + 4)
+    .attr("x", xLine(lastPF.year) + 10).attr("y", yPct(lastPF.pctSpending) + 4)
     .attr("fill", C.crimsonDark).attr("opacity", 0.6)
     .text(d3.format(".1f")(lastPF.pctSpending) + "% of spending");
 
@@ -1258,12 +1296,17 @@ function buildOutlookChart() {
     .attr("x", xLine(lastHist.year) + 6).attr("y", 16)
     .attr("fill", C.muted).text("Forecast \u2192");
 
-  // Low point annotation
+  // Low point annotation — offset with leader line (Cleveland)
   const lowPoint = historicPct.reduce((min, d) => d.pctReceipts < min.pctReceipts ? d : min);
+  const lowAnnotY = yPct(lowPoint.pctReceipts) + 32;
   pctView.append("text").attr("class", "chart-annotation")
-    .attr("x", xLine(lowPoint.year)).attr("y", yPct(lowPoint.pctReceipts) + 18)
+    .attr("x", xLine(lowPoint.year)).attr("y", lowAnnotY)
     .attr("text-anchor", "middle").attr("fill", C.muted)
     .text(d3.format(".1f")(lowPoint.pctReceipts) + "% in " + lowPoint.year);
+  pctView.append("line")
+    .attr("x1", xLine(lowPoint.year)).attr("x2", xLine(lowPoint.year))
+    .attr("y1", lowAnnotY - 13).attr("y2", yPct(lowPoint.pctReceipts) + 6)
+    .attr("stroke", C.muted).attr("stroke-width", 1).attr("stroke-dasharray", "3,2");
 
   // Hover
   const hoverRect3 = pctView.append("rect")

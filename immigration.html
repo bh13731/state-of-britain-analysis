@@ -431,8 +431,8 @@ function chartDims(container) {
   const mobile = isMobile();
   const h = mobile ? Math.max(350, window.innerHeight * 0.52) : Math.max(500, Math.min(600, window.innerHeight * 0.65));
   const m = mobile
-    ? { top: 24, right: 40, bottom: 36, left: 44 }
-    : { top: 30, right: 60, bottom: 40, left: 55 };
+    ? { top: 32, right: 40, bottom: 36, left: 44 }
+    : { top: 38, right: 60, bottom: 40, left: 55 };
   return { width: w, height: h, margin: m, innerW: w - m.left - m.right, innerH: h - m.top - m.bottom };
 }
 
@@ -541,21 +541,21 @@ function buildHookChart() {
 
   // Bar labels
   bigGroup.append("text").attr("class", "chart-annotation-bold")
-    .attr("x", xBar("Immigration") + xBar.bandwidth() / 2).attr("y", yBar(peak.immigration) - 10)
+    .attr("x", xBar("Immigration") + xBar.bandwidth() / 2).attr("y", yBar(peak.immigration) - 14)
     .attr("text-anchor", "middle").attr("fill", C.orange).text(fmtK(peak.immigration));
   bigGroup.append("text").attr("class", "chart-annotation")
     .attr("x", xBar("Immigration") + xBar.bandwidth() / 2).attr("y", dim.innerH + 28)
     .attr("text-anchor", "middle").attr("fill", C.orange).attr("font-weight", 600).text("Arrivals");
 
   bigGroup.append("text").attr("class", "chart-annotation-bold")
-    .attr("x", xBar("Emigration") + xBar.bandwidth() / 2).attr("y", yBar(peak.emigration) - 10)
+    .attr("x", xBar("Emigration") + xBar.bandwidth() / 2).attr("y", yBar(peak.emigration) - 14)
     .attr("text-anchor", "middle").attr("fill", C.blue).text(fmtK(peak.emigration));
   bigGroup.append("text").attr("class", "chart-annotation")
     .attr("x", xBar("Emigration") + xBar.bandwidth() / 2).attr("y", dim.innerH + 28)
     .attr("text-anchor", "middle").attr("fill", C.blue).attr("font-weight", 600).text("Departures");
 
   bigGroup.append("text").attr("class", "chart-annotation-bold")
-    .attr("x", xBar("Net") + xBar.bandwidth() / 2).attr("y", yBar(peak.net) - 10)
+    .attr("x", xBar("Net") + xBar.bandwidth() / 2).attr("y", yBar(peak.net) - 14)
     .attr("text-anchor", "middle").attr("fill", C.orange).text(fmtK(peak.net));
   bigGroup.append("text").attr("class", "chart-annotation")
     .attr("x", xBar("Net") + xBar.bandwidth() / 2).attr("y", dim.innerH + 28)
@@ -618,31 +618,30 @@ function buildHookChart() {
     .call(d3.axisLeft(yLine).ticks(6).tickFormat(d => fmtK(d)).tickSize(0))
     .call(g => g.select(".domain").remove());
 
-  // Y-axis title
+  // Y-axis title (horizontal, above axis)
   lineGroup.append("text").attr("class", "chart-annotation")
-    .attr("transform", "rotate(-90)")
-    .attr("x", -dim.innerH / 2).attr("y", -42)
-    .attr("text-anchor", "middle").attr("fill", C.muted).text("Thousands");
+    .attr("x", 0).attr("y", -14)
+    .attr("text-anchor", "start").attr("fill", C.muted).text("Thousands");
 
   // End labels
   const last = netMig[netMig.length - 1];
   lineGroup.append("text").attr("class", "chart-annotation-bold")
-    .attr("x", xLine(last.year) + 6).attr("y", yLine(last.immigration) + 4)
+    .attr("x", xLine(last.year) + 10).attr("y", yLine(last.immigration) + 4)
     .attr("fill", C.orange).text("Immigration");
   lineGroup.append("text").attr("class", "chart-annotation-bold")
-    .attr("x", xLine(last.year) + 6).attr("y", yLine(last.emigration) + 4)
+    .attr("x", xLine(last.year) + 10).attr("y", yLine(last.emigration) + 4)
     .attr("fill", C.blue).text("Emigration");
   lineGroup.append("text").attr("class", "chart-annotation-bold")
-    .attr("x", xLine(last.year) + 6).attr("y", yLine(last.net) - 8)
+    .attr("x", xLine(last.year) + 10).attr("y", yLine(last.net) - 10)
     .attr("fill", C.muted).text("Net");
 
   // COVID annotation
   lineGroup.append("text").attr("class", "chart-annotation")
-    .attr("x", xLine(2020)).attr("y", yLine(304) - 24)
+    .attr("x", xLine(2020)).attr("y", yLine(304) - 36)
     .attr("text-anchor", "middle").attr("fill", C.muted).text("COVID");
   lineGroup.append("line")
     .attr("x1", xLine(2020)).attr("x2", xLine(2020))
-    .attr("y1", yLine(304) - 18).attr("y2", yLine(304) - 4)
+    .attr("y1", yLine(304) - 28).attr("y2", yLine(304) - 8)
     .attr("stroke", C.muted).attr("stroke-width", 1).attr("stroke-dasharray", "3,2");
 
   // 2022 peak annotation
@@ -650,7 +649,7 @@ function buildHookChart() {
     .attr("cx", xLine(2022)).attr("cy", yLine(1218)).attr("r", 4)
     .attr("fill", C.orange).attr("stroke", "#fff").attr("stroke-width", 2);
   lineGroup.append("text").attr("class", "chart-annotation-bold")
-    .attr("x", xLine(2022) - 8).attr("y", yLine(1218) - 14)
+    .attr("x", xLine(2022) - 10).attr("y", yLine(1218) - 18)
     .attr("text-anchor", "end").attr("fill", C.orange).text("1,218k peak");
 
   // Hover overlay
@@ -761,18 +760,17 @@ function buildBrexitChart() {
     .call(d3.axisLeft(yLine).ticks(8).tickFormat(d => fmtK(d)).tickSize(0))
     .call(g => g.select(".domain").remove());
 
-  // Y-axis title
+  // Y-axis title (horizontal, above axis)
   netGroup.append("text").attr("class", "chart-annotation")
-    .attr("transform", "rotate(-90)")
-    .attr("x", -dim.innerH / 2).attr("y", -42)
-    .attr("text-anchor", "middle").attr("fill", C.muted).text("Net migration (thousands)");
+    .attr("x", 0).attr("y", -14)
+    .attr("text-anchor", "start").attr("fill", C.muted).text("Net migration (thousands)");
 
   // Peak dot
   netGroup.append("circle")
     .attr("cx", xLine(2022)).attr("cy", yLine(710)).attr("r", 5)
     .attr("fill", C.orange).attr("stroke", "#fff").attr("stroke-width", 2);
   netGroup.append("text").attr("class", "chart-annotation-bold")
-    .attr("x", xLine(2022) - 8).attr("y", yLine(710) - 12)
+    .attr("x", xLine(2022) - 10).attr("y", yLine(710) - 18)
     .attr("text-anchor", "end").attr("fill", C.orange).text("710k peak");
 
   // 1990s average annotation
@@ -781,13 +779,13 @@ function buildBrexitChart() {
     .attr("y1", yLine(50)).attr("y2", yLine(50))
     .attr("stroke", C.blue).attr("stroke-width", 1.5).attr("stroke-dasharray", "4,3");
   netGroup.append("text").attr("class", "chart-annotation")
-    .attr("x", xLine(1994)).attr("y", yLine(50) - 10)
+    .attr("x", xLine(1994)).attr("y", yLine(50) - 14)
     .attr("text-anchor", "middle").attr("fill", C.blue).text("~50k in 1990s");
 
   // End label
   const last = netMig[netMig.length - 1];
   netGroup.append("text").attr("class", "chart-annotation-bold")
-    .attr("x", xLine(last.year) + 6).attr("y", yLine(last.net) + 5)
+    .attr("x", xLine(last.year) + 10).attr("y", yLine(last.net) - 10)
     .attr("fill", C.orange).text(fmtK(last.net));
 
   // Hover
@@ -932,18 +930,21 @@ function buildAsylumChart() {
     .call(d3.axisLeft(yApp).ticks(6).tickFormat(d => d + "k").tickSize(0))
     .call(g => g.select(".domain").remove());
 
-  // Y-axis title
+  // Y-axis title (horizontal, above axis)
   appGroup.append("text").attr("class", "chart-annotation")
-    .attr("transform", "rotate(-90)")
-    .attr("x", -dim.innerH / 2).attr("y", -42)
-    .attr("text-anchor", "middle").attr("fill", C.muted).text("Applications (thousands)");
+    .attr("x", 0).attr("y", -14)
+    .attr("text-anchor", "start").attr("fill", C.muted).text("Asylum applications");
 
   // 2001 peak annotation
   appGroup.append("circle")
     .attr("cx", x(2001)).attr("cy", yApp(71)).attr("r", 4)
     .attr("fill", C.orange).attr("stroke", "#fff").attr("stroke-width", 2);
+  appGroup.append("line")
+    .attr("x1", x(2001)).attr("x2", x(2001) + 10)
+    .attr("y1", yApp(71) - 8).attr("y2", yApp(71) - 22)
+    .attr("stroke", C.orange).attr("stroke-width", 1).attr("stroke-dasharray", "3,2");
   appGroup.append("text").attr("class", "chart-annotation-bold")
-    .attr("x", x(2001) + 8).attr("y", yApp(71) + 4)
+    .attr("x", x(2001) + 12).attr("y", yApp(71) - 24)
     .attr("fill", C.orange).text("71k (2001)");
 
   // 2022 peak annotation
@@ -951,13 +952,13 @@ function buildAsylumChart() {
     .attr("cx", x(2022)).attr("cy", yApp(74.8)).attr("r", 4)
     .attr("fill", C.orange).attr("stroke", "#fff").attr("stroke-width", 2);
   appGroup.append("text").attr("class", "chart-annotation-bold")
-    .attr("x", x(2022) - 8).attr("y", yApp(74.8) - 14)
+    .attr("x", x(2022) - 10).attr("y", yApp(74.8) - 18)
     .attr("text-anchor", "end").attr("fill", C.orange).text("74.8k (2022)");
 
   // End label
   const lastA = asylum[asylum.length - 1];
   appGroup.append("text").attr("class", "chart-annotation-bold")
-    .attr("x", x(lastA.year) + 6).attr("y", yApp(lastA.applications) + 5)
+    .attr("x", x(lastA.year) + 10).attr("y", yApp(lastA.applications) - 10)
     .attr("fill", C.orange).text(d3.format(".1f")(lastA.applications) + "k");
 
   // Hover
@@ -1028,19 +1029,18 @@ function buildAsylumChart() {
     .call(d3.axisLeft(yGrant).ticks(6).tickFormat(d => d + "k").tickSize(0))
     .call(g => g.select(".domain").remove());
 
-  // Y-axis title
+  // Y-axis title (horizontal, above axis)
   grantGroup.append("text").attr("class", "chart-annotation")
-    .attr("transform", "rotate(-90)")
-    .attr("x", -dim.innerH / 2).attr("y", -42)
-    .attr("text-anchor", "middle").attr("fill", C.muted).text("Thousands");
+    .attr("x", 0).attr("y", -14)
+    .attr("text-anchor", "start").attr("fill", C.muted).text("Thousands");
 
   // End labels
   const lastAs = asylum[asylum.length - 1];
   grantGroup.append("text").attr("class", "chart-annotation-bold")
-    .attr("x", x(lastAs.year) + 6).attr("y", yGrant(lastAs.applications) + 4)
+    .attr("x", x(lastAs.year) + 10).attr("y", yGrant(lastAs.applications) - 10)
     .attr("fill", C.orange).text("Applications");
   grantGroup.append("text").attr("class", "chart-annotation-bold")
-    .attr("x", x(lastAs.year) + 6).attr("y", yGrant(lastAs.grants) + 4)
+    .attr("x", x(lastAs.year) + 10).attr("y", yGrant(lastAs.grants) + 16)
     .attr("fill", C.blue).text("Grants");
 
   // Gap annotation
@@ -1048,10 +1048,15 @@ function buildAsylumChart() {
   const midD = asylum.find(d => d.year === midYear);
   if (midD) {
     const gapMid = (yGrant(midD.grants) + yGrant(midD.applications)) / 2;
+    // Place label in white space to the left, with a leader line pointing into the gap
     grantGroup.append("text").attr("class", "chart-annotation")
-      .attr("x", x(midYear) - 8).attr("y", gapMid + 4)
+      .attr("x", x(midYear) - 50).attr("y", gapMid - 24)
       .attr("text-anchor", "end").attr("fill", C.muted).attr("font-style", "italic")
       .text("Backlog");
+    grantGroup.append("line")
+      .attr("x1", x(midYear) - 48).attr("x2", x(midYear) - 12)
+      .attr("y1", gapMid - 20).attr("y2", gapMid)
+      .attr("stroke", C.muted).attr("stroke-width", 1).attr("stroke-dasharray", "3,2");
   }
 
   // Hover
@@ -1166,11 +1171,10 @@ function buildDemographicsChart() {
     .call(d3.axisLeft(yPop).ticks(8).tickFormat(d => (d >= 0 ? "+" : "") + fmtK(d)).tickSize(0))
     .call(g => g.select(".domain").remove());
 
-  // Y-axis title
+  // Y-axis title (horizontal, above axis)
   popGroup.append("text").attr("class", "chart-annotation")
-    .attr("transform", "rotate(-90)")
-    .attr("x", -dim.innerH / 2).attr("y", -42)
-    .attr("text-anchor", "middle").attr("fill", C.muted).text("Thousands per year");
+    .attr("x", 0).attr("y", -14)
+    .attr("text-anchor", "start").attr("fill", C.muted).text("Thousands per year");
 
   // Legend
   const legendY = 8;
@@ -1182,8 +1186,13 @@ function buildDemographicsChart() {
   // Annotation: natural change goes negative
   const negYear = popComp.find(d => d.naturalChange < 0);
   if (negYear) {
+    // Place annotation below bar with leader line to avoid overlapping data
+    popGroup.append("line")
+      .attr("x1", x(negYear.year)).attr("x2", x(negYear.year))
+      .attr("y1", yPop(negYear.naturalChange) + 10).attr("y2", yPop(negYear.naturalChange) + 28)
+      .attr("stroke", C.red).attr("stroke-width", 1).attr("stroke-dasharray", "3,2");
     popGroup.append("text").attr("class", "chart-annotation")
-      .attr("x", x(negYear.year)).attr("y", yPop(negYear.naturalChange) + 20)
+      .attr("x", x(negYear.year)).attr("y", yPop(negYear.naturalChange) + 42)
       .attr("text-anchor", "middle").attr("fill", C.red).attr("font-size", "13px")
       .text("Deaths > births");
   }
@@ -1247,10 +1256,10 @@ function buildDemographicsChart() {
   const lastFB = foreignBorn[foreignBorn.length - 1];
   const lastDep = depFiltered[depFiltered.length - 1];
   fbGroup.append("text").attr("class", "chart-annotation-bold")
-    .attr("x", xFB(lastFB.year) + 6).attr("y", yFB(lastFB.pct) - 10)
+    .attr("x", xFB(lastFB.year) + 10).attr("y", yFB(lastFB.pct) - 12)
     .attr("fill", C.orange).text(fmtPct(lastFB.pct) + " foreign-born");
   fbGroup.append("text").attr("class", "chart-annotation-bold")
-    .attr("x", xFB(lastDep.year) + 6).attr("y", yDep(lastDep.ratio) + 18)
+    .attr("x", xFB(lastDep.year) + 10).attr("y", yDep(lastDep.ratio) + 22)
     .attr("fill", C.blue).text(d3.format(".1f")(lastDep.ratio) + " dep. ratio");
 
   // Start labels
@@ -1259,7 +1268,7 @@ function buildDemographicsChart() {
     .attr("cx", xFB(firstFB.year)).attr("cy", yFB(firstFB.pct)).attr("r", 4)
     .attr("fill", C.orange).attr("stroke", "#fff").attr("stroke-width", 2);
   fbGroup.append("text").attr("class", "chart-annotation")
-    .attr("x", xFB(firstFB.year) + 8).attr("y", yFB(firstFB.pct) + 4)
+    .attr("x", xFB(firstFB.year) + 10).attr("y", yFB(firstFB.pct) - 10)
     .attr("fill", C.orange).text(fmtPct(firstFB.pct) + " (2004)");
 
   // Hover

@@ -598,7 +598,7 @@ function buildGapChart() {
   // X axis
   lineGroup.append("g").attr("class", "axis x-axis")
     .attr("transform", `translate(0,${dim.innerH})`)
-    .call(d3.axisBottom(xLine).ticks(10).tickFormat(d3.format("d")).tickSize(0))
+    .call(d3.axisBottom(xLine).ticks(isMobile() ? 5 : 10).tickFormat(d3.format("d")).tickSize(0))
     .call(g => g.select(".domain").remove());
 
   // Y axis
@@ -614,10 +614,10 @@ function buildGapChart() {
   // Labels at end
   const lastAgg = agg[agg.length - 1];
   lineGroup.append("text").attr("class", "chart-annotation-bold")
-    .attr("x", xLine(lastAgg.year) + 6).attr("y", yLine(lastAgg.tme) + 4)
+    .attr("x", xLine(lastAgg.year) + 10).attr("y", yLine(lastAgg.tme) + 4)
     .attr("fill", C.red).text("Spending");
   lineGroup.append("text").attr("class", "chart-annotation-bold")
-    .attr("x", xLine(lastAgg.year) + 6).attr("y", yLine(lastAgg.receipts) + 4)
+    .attr("x", xLine(lastAgg.year) + 10).attr("y", yLine(lastAgg.receipts) + 4)
     .attr("fill", C.green).text("Revenue");
 
   // Surplus annotation
@@ -729,18 +729,11 @@ function buildDebtChart() {
   // Axes
   debtGroup.append("g").attr("class", "axis x-axis")
     .attr("transform", `translate(0,${dim.innerH})`)
-    .call(d3.axisBottom(x).ticks(10).tickFormat(d3.format("d")).tickSize(0))
+    .call(d3.axisBottom(x).ticks(isMobile() ? 5 : 10).tickFormat(d3.format("d")).tickSize(0))
     .call(g => g.select(".domain").remove());
   debtGroup.append("g").attr("class", "axis y-axis")
-    .call(d3.axisLeft(yDebt).ticks(6).tickFormat(d => d + "%").tickSize(0))
+    .call(d3.axisLeft(yDebt).ticks(6).tickFormat((d, i) => i === 0 ? d + "% of GDP" : d + "%").tickSize(0))
     .call(g => g.select(".domain").remove());
-
-  // Y-axis title
-  debtGroup.append("text").attr("class", "chart-annotation")
-    .attr("transform", "rotate(-90)")
-    .attr("x", -dim.innerH / 2).attr("y", -42)
-    .attr("text-anchor", "middle").attr("fill", C.muted)
-    .text("Debt as % of GDP");
 
   // Annotations
   // Low point ~22% in 1990
@@ -753,24 +746,24 @@ function buildDebtChart() {
 
   // Financial crisis
   debtGroup.append("text").attr("class", "chart-annotation")
-    .attr("x", x(2009)).attr("y", yDebt(64) - 20).attr("text-anchor", "middle").attr("fill", C.amber)
+    .attr("x", x(2009)).attr("y", yDebt(64) - 30).attr("text-anchor", "middle").attr("fill", C.amber)
     .text("Financial crisis");
   debtGroup.append("line").attr("x1", x(2009)).attr("x2", x(2009))
-    .attr("y1", yDebt(64) - 14).attr("y2", yDebt(64) + 6)
+    .attr("y1", yDebt(64) - 24).attr("y2", yDebt(64) - 4)
     .attr("stroke", C.amber).attr("stroke-width", 1).attr("stroke-dasharray", "3,2");
 
   // COVID
   debtGroup.append("text").attr("class", "chart-annotation")
-    .attr("x", x(2020)).attr("y", yDebt(95) - 18).attr("text-anchor", "middle").attr("fill", C.amber)
+    .attr("x", x(2020)).attr("y", yDebt(95) - 28).attr("text-anchor", "middle").attr("fill", C.amber)
     .text("COVID");
   debtGroup.append("line").attr("x1", x(2020)).attr("x2", x(2020))
-    .attr("y1", yDebt(95) - 12).attr("y2", yDebt(95) + 4)
+    .attr("y1", yDebt(95) - 22).attr("y2", yDebt(95) - 4)
     .attr("stroke", C.amber).attr("stroke-width", 1).attr("stroke-dasharray", "3,2");
 
   // Current level
   const cur = pctGDP.find(d => d.year === 2024);
   debtGroup.append("text").attr("class", "chart-annotation-bold")
-    .attr("x", x(2030) + 6).attr("y", yDebt(pctGDP[pctGDP.length - 1].debt) + 5).attr("fill", C.amber)
+    .attr("x", x(2030) + 10).attr("y", yDebt(pctGDP[pctGDP.length - 1].debt) + 5).attr("fill", C.amber)
     .text(fmtPct(pctGDP[pctGDP.length - 1].debt));
 
   // Hover
@@ -838,33 +831,32 @@ function buildDebtChart() {
   // Axes
   intGroup.append("g").attr("class", "axis x-axis")
     .attr("transform", `translate(0,${dim.innerH})`)
-    .call(d3.axisBottom(x).ticks(10).tickFormat(d3.format("d")).tickSize(0))
+    .call(d3.axisBottom(x).ticks(isMobile() ? 5 : 10).tickFormat(d3.format("d")).tickSize(0))
     .call(g => g.select(".domain").remove());
   intGroup.append("g").attr("class", "axis y-axis")
     .call(d3.axisLeft(yInt).ticks(6).tickFormat(d => "\u00a3" + d + "bn").tickSize(0))
     .call(g => g.select(".domain").remove());
 
-  // Y-axis title
+  // Y-axis label (horizontal, above axis)
   intGroup.append("text").attr("class", "chart-annotation")
-    .attr("transform", "rotate(-90)")
-    .attr("x", -dim.innerH / 2).attr("y", -42)
-    .attr("text-anchor", "middle").attr("fill", C.muted)
-    .text("Annual debt interest");
+    .attr("x", 0).attr("y", -12)
+    .attr("text-anchor", "start").attr("fill", C.muted)
+    .text("Debt interest");
 
-  // Annotation: inflection
+  // Annotation: inflection (offset into white space with leader line)
   intGroup.append("text").attr("class", "chart-annotation")
-    .attr("x", x(2020) + 6).attr("y", yInt(agg.find(a => a.year === 2020).debtInterest) - 24)
+    .attr("x", x(2020) + 8).attr("y", yInt(agg.find(a => a.year === 2020).debtInterest) - 36)
     .attr("fill", C.blue).text("Rates spike");
   intGroup.append("line")
-    .attr("x1", x(2020) + 6).attr("x2", x(2020) + 6)
-    .attr("y1", yInt(agg.find(a => a.year === 2020).debtInterest) - 18)
+    .attr("x1", x(2020) + 8).attr("x2", x(2020) + 8)
+    .attr("y1", yInt(agg.find(a => a.year === 2020).debtInterest) - 30)
     .attr("y2", yInt(agg.find(a => a.year === 2020).debtInterest) - 4)
     .attr("stroke", C.blue).attr("stroke-width", 1).attr("stroke-dasharray", "3,2");
 
   // End label
   const lastAgg = agg[agg.length - 1];
   intGroup.append("text").attr("class", "chart-annotation-bold")
-    .attr("x", x(lastAgg.year) + 6).attr("y", yInt(lastAgg.debtInterest) + 5)
+    .attr("x", x(lastAgg.year) + 10).attr("y", yInt(lastAgg.debtInterest) + 5)
     .attr("fill", C.blue).text(fmtBnShort(lastAgg.debtInterest));
 
   // Hover
@@ -1207,38 +1199,39 @@ function buildOutlookChart() {
   // Axes
   outlookGroup.append("g").attr("class", "axis x-axis")
     .attr("transform", `translate(0,${innerH})`)
-    .call(d3.axisBottom(x).ticks(10).tickFormat(d3.format("d")).tickSize(0))
+    .call(d3.axisBottom(x).ticks(isMobile() ? 5 : 10).tickFormat(d3.format("d")).tickSize(0))
     .call(g => g.select(".domain").remove());
   outlookGroup.append("g").attr("class", "axis y-axis")
-    .call(d3.axisLeft(yDef).ticks(8).tickFormat(d => d + "%").tickSize(0))
+    .call(d3.axisLeft(yDef).ticks(8).tickFormat((d, i) => i === 0 ? d + "% of GDP" : d + "%").tickSize(0))
     .call(g => g.select(".domain").remove());
-
-  // Y-axis title
-  outlookGroup.append("text").attr("class", "chart-annotation")
-    .attr("transform", "rotate(-90)")
-    .attr("x", -innerH / 2).attr("y", -42)
-    .attr("text-anchor", "middle").attr("fill", C.muted)
-    .text("Borrowing as % of GDP");
 
   // Annotations
   const last = pctGDP[pctGDP.length - 1];
   outlookGroup.append("text").attr("class", "chart-annotation-bold")
-    .attr("x", x(last.year) + 6).attr("y", yDef(last.borrowing) + 5)
+    .attr("x", x(last.year) + 10).attr("y", yDef(last.borrowing) + 5)
     .attr("fill", C.red).text(fmtPct(last.borrowing));
 
-  // Annotation for narrowing
+  // Annotation for narrowing (offset into white space with leader line)
   outlookGroup.append("text").attr("class", "chart-annotation")
-    .attr("x", x(2028)).attr("y", yDef(last.borrowing) - 24)
+    .attr("x", x(2028)).attr("y", yDef(last.borrowing) - 48)
     .attr("text-anchor", "middle").attr("fill", C.red)
     .text("Narrowing to " + fmtPct(last.borrowing));
+  outlookGroup.append("line")
+    .attr("x1", x(2028)).attr("x2", x(2028))
+    .attr("y1", yDef(last.borrowing) - 42).attr("y2", yDef(last.borrowing) - 4)
+    .attr("stroke", C.red).attr("stroke-width", 1).attr("stroke-dasharray", "3,2");
 
-  // COVID peak
+  // COVID peak (offset above with leader line)
   const covid = pctGDP.find(d => d.year === 2020);
   if (covid) {
     outlookGroup.append("text").attr("class", "chart-annotation")
-      .attr("x", x(2020)).attr("y", yDef(covid.borrowing) - 12)
+      .attr("x", x(2020)).attr("y", yDef(covid.borrowing) - 32)
       .attr("text-anchor", "middle").attr("fill", C.red)
       .text("COVID: " + fmtPct(covid.borrowing));
+    outlookGroup.append("line")
+      .attr("x1", x(2020)).attr("x2", x(2020))
+      .attr("y1", yDef(covid.borrowing) - 26).attr("y2", yDef(covid.borrowing) - 4)
+      .attr("stroke", C.red).attr("stroke-width", 1).attr("stroke-dasharray", "3,2");
   }
 
   // Hover

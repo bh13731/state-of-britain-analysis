@@ -535,13 +535,20 @@ function buildHookChart() {
     .attr("fill", C.muted)
     .text("Avg. sewage spills per storm overflow");
 
-  // Annotation for 2024
+  // Annotation for 2024 — offset into white space with leader line
+  const annotY2024 = yBar(spillData[2].value) - 56;
   barGroup.append("text").attr("class", "chart-annotation")
-    .attr("x", xBar("2024") + xBar.bandwidth() / 2)
-    .attr("y", yBar(spillData[2].value) - 30)
-    .attr("text-anchor", "middle")
+    .attr("x", xBar("2024") + xBar.bandwidth() / 2 + 40)
+    .attr("y", annotY2024)
+    .attr("text-anchor", "start")
     .attr("fill", C.red).attr("font-weight", 600).attr("font-size", "13px")
     .text("Only 12.5% had zero spills");
+  barGroup.append("line")
+    .attr("x1", xBar("2024") + xBar.bandwidth() / 2 + 38)
+    .attr("y1", annotY2024 + 4)
+    .attr("x2", xBar("2024") + xBar.bandwidth() / 2)
+    .attr("y2", yBar(spillData[2].value) - 18)
+    .attr("stroke", C.red).attr("stroke-width", 1).attr("stroke-dasharray", "3,2");
 
   // === STEP 1: Pollution incidents line chart ===
   const lineGroup = g.append("g").attr("class", "line-view").style("opacity", 0);
@@ -576,23 +583,27 @@ function buildHookChart() {
   // Axes
   lineGroup.append("g").attr("class", "axis x-axis")
     .attr("transform", `translate(0,${dim.innerH})`)
-    .call(d3.axisBottom(xLine).ticks(pollData.length).tickFormat(d3.format("d")).tickSize(0))
+    .call(d3.axisBottom(xLine).ticks(Math.min(pollData.length, isMobile() ? 5 : 9)).tickFormat(d3.format("d")).tickSize(0))
     .call(g => g.select(".domain").remove());
   lineGroup.append("g").attr("class", "axis y-axis")
     .call(d3.axisLeft(yLine).ticks(6).tickFormat(d => fmtNum(d)).tickSize(0))
     .call(g => g.select(".domain").remove());
 
-  // End label
+  // End label — direct label on data point
   const lastPoll = pollData[pollData.length - 1];
   lineGroup.append("text").attr("class", "chart-annotation-bold")
-    .attr("x", xLine(lastPoll.year) + 8).attr("y", yLine(lastPoll.total) + 5)
+    .attr("x", xLine(lastPoll.year) + 10).attr("y", yLine(lastPoll.total) - 4)
     .attr("fill", C.red).text(fmtNum(lastPoll.total));
 
-  // 2024 annotation
+  // "Record high" annotation — offset into white space with leader line
   lineGroup.append("text").attr("class", "chart-annotation")
-    .attr("x", xLine(2024)).attr("y", yLine(lastPoll.total) - 20)
-    .attr("text-anchor", "middle").attr("fill", C.red).attr("font-weight", 600)
+    .attr("x", xLine(2024) - 40).attr("y", yLine(lastPoll.total) - 44)
+    .attr("text-anchor", "end").attr("fill", C.red).attr("font-weight", 600)
     .text("Record high");
+  lineGroup.append("line")
+    .attr("x1", xLine(2024) - 38).attr("y1", yLine(lastPoll.total) - 40)
+    .attr("x2", xLine(2024) - 4).attr("y2", yLine(lastPoll.total) - 8)
+    .attr("stroke", C.red).attr("stroke-width", 1).attr("stroke-dasharray", "3,2");
 
   // Title
   lineGroup.append("text").attr("class", "chart-annotation")
@@ -683,11 +694,11 @@ function buildPollutionChart() {
     })
     .on("mouseleave", hideTooltip);
 
-  // Value labels
+  // Value labels — 10px padding from bar top
   seriousGroup.selectAll(".serious-label").data(pollData).enter()
     .append("text").attr("class", "chart-annotation-bold")
     .attr("x", d => xBar(d.year) + xBar.bandwidth() / 2)
-    .attr("y", d => yBar(d.serious) - 8)
+    .attr("y", d => yBar(d.serious) - 10)
     .attr("text-anchor", "middle").attr("font-size", "13px")
     .attr("fill", (d, i) => i === pollData.length - 1 ? C.red : C.secondary)
     .text(d => d.serious);
@@ -697,13 +708,19 @@ function buildPollutionChart() {
     .attr("x", 0).attr("y", -10).attr("fill", C.muted)
     .text("Serious pollution incidents (Cat 1 & 2)");
 
-  // 2024 callout
+  // 2024 callout — offset into white space with leader line
   const last = pollData[pollData.length - 1];
+  const calloutX = xBar(last.year) + xBar.bandwidth() / 2 + 40;
+  const calloutY = yBar(last.serious) - 50;
   seriousGroup.append("text").attr("class", "chart-annotation")
-    .attr("x", xBar(last.year) + xBar.bandwidth() / 2)
-    .attr("y", yBar(last.serious) - 28)
-    .attr("text-anchor", "middle").attr("fill", C.red).attr("font-weight", 600).attr("font-size", "13px")
+    .attr("x", calloutX)
+    .attr("y", calloutY)
+    .attr("text-anchor", "start").attr("fill", C.red).attr("font-weight", 600).attr("font-size", "13px")
     .text("+60% vs 2023");
+  seriousGroup.append("line")
+    .attr("x1", calloutX - 2).attr("y1", calloutY + 4)
+    .attr("x2", xBar(last.year) + xBar.bandwidth() / 2 + 2).attr("y2", yBar(last.serious) - 18)
+    .attr("stroke", C.red).attr("stroke-width", 1).attr("stroke-dasharray", "3,2");
 
   // === STEP 1: Normalised pollution rate — sector performance metric ===
   const normGroup = g.append("g").attr("class", "norm-view").style("opacity", 0);
@@ -849,7 +866,7 @@ function buildLeakageChart() {
   // Axes
   trendGroup.append("g").attr("class", "axis x-axis")
     .attr("transform", `translate(0,${dim.innerH})`)
-    .call(d3.axisBottom(xLine).ticks(8).tickFormat(d3.format("d")).tickSize(0))
+    .call(d3.axisBottom(xLine).ticks(isMobile() ? 5 : 8).tickFormat(d3.format("d")).tickSize(0))
     .call(g => g.select(".domain").remove());
   trendGroup.append("g").attr("class", "axis y-axis")
     .call(d3.axisLeft(yLine).ticks(6).tickFormat(d => fmtNum(d)).tickSize(0))
@@ -860,28 +877,28 @@ function buildLeakageChart() {
     .attr("x", 0).attr("y", -10).attr("fill", C.muted)
     .text("Leakage, megalitres per day (Ml/d)");
 
-  // Start label
+  // Start label — no units (title already states Ml/d), 10px+ padding
   const first = parsed[0];
   trendGroup.append("text").attr("class", "chart-annotation-bold")
-    .attr("x", xLine(first.year) - 4).attr("y", yLine(first.value) - 10)
+    .attr("x", xLine(first.year) - 4).attr("y", yLine(first.value) - 12)
     .attr("text-anchor", "start").attr("fill", C.primary)
-    .text(fmtNum(first.value) + " Ml/d");
+    .text(fmtNum(first.value));
 
-  // End label
+  // End label — 10px+ padding from data point
   const last = parsed[parsed.length - 1];
   trendGroup.append("text").attr("class", "chart-annotation-bold")
-    .attr("x", xLine(last.year) + 8).attr("y", yLine(last.value) + 5)
+    .attr("x", xLine(last.year) + 10).attr("y", yLine(last.value) - 10)
     .attr("fill", C.primary)
     .text(fmtNum(last.value));
 
-  // Flatline annotation
+  // Flatline annotation — placed above data with leader line pointing down
   trendGroup.append("text").attr("class", "chart-annotation")
-    .attr("x", xLine(2018)).attr("y", yLine(3100) - 30)
-    .attr("text-anchor", "middle").attr("fill", C.secondary).attr("font-weight", 600)
+    .attr("x", xLine(2018) + 50).attr("y", yLine(3100) - 50)
+    .attr("text-anchor", "start").attr("fill", C.secondary).attr("font-weight", 600)
     .text("Progress stalls");
   trendGroup.append("line")
-    .attr("x1", xLine(2018)).attr("x2", xLine(2018))
-    .attr("y1", yLine(3100) - 24).attr("y2", yLine(3100) - 4)
+    .attr("x1", xLine(2018) + 48).attr("y1", yLine(3100) - 44)
+    .attr("x2", xLine(2018) + 4).attr("y2", yLine(3100) - 8)
     .attr("stroke", C.secondary).attr("stroke-width", 1).attr("stroke-dasharray", "3,2");
 
   // Hover

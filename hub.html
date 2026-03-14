@@ -23,8 +23,11 @@ body {
   padding: 80px 32px 120px;
 }
 
+/* ── Header ─────────────────────────────────────── */
 .hub-header {
-  margin-bottom: 64px;
+  margin-bottom: 48px;
+  padding-bottom: 40px;
+  border-bottom: 1px solid #E5E5E0;
 }
 
 .hub-kicker {
@@ -43,21 +46,64 @@ body {
   line-height: 1.1;
   letter-spacing: -0.025em;
   margin-bottom: 16px;
+  max-width: 700px;
 }
 
-.hub-header p {
-  font-size: 1.2rem;
+.hub-header .deck {
+  font-size: 1.15rem;
   color: #3D3D3D;
-  max-width: 600px;
+  max-width: 640px;
   line-height: 1.6;
+}
+
+.hub-header .read-guide {
+  margin-top: 20px;
+  font-size: 0.9rem;
+  color: #555555;
+  line-height: 1.6;
+  max-width: 640px;
+}
+
+/* ── Act sections ───────────────────────────────── */
+.act {
+  margin-bottom: 56px;
+}
+
+.act-header {
+  margin-bottom: 24px;
+}
+
+.act-number {
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: #8A8A82;
+  margin-bottom: 6px;
+}
+
+.act-header h2 {
+  font-family: 'Source Serif 4', Georgia, serif;
+  font-size: 1.7rem;
+  font-weight: 700;
+  line-height: 1.2;
+  margin-bottom: 8px;
+}
+
+.act-header p {
+  font-size: 1rem;
+  color: #555555;
+  max-width: 600px;
+  line-height: 1.55;
 }
 
 .stories {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 24px;
+  gap: 20px;
 }
 
+/* ── Story cards ────────────────────────────────── */
 .story-card {
   display: block;
   text-decoration: none;
@@ -65,7 +111,7 @@ body {
   background: #FFFFFF;
   border: 1px solid #E5E5E0;
   border-radius: 12px;
-  padding: 32px 28px;
+  padding: 28px 24px;
   transition: all 0.2s ease;
   position: relative;
   overflow: hidden;
@@ -80,9 +126,7 @@ body {
 .story-card::before {
   content: '';
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
+  top: 0; left: 0; right: 0;
   height: 4px;
 }
 
@@ -93,13 +137,20 @@ body {
 .story-card.immigration::before { background: #B45309; }
 .story-card.infrastructure::before { background: #475569; }
 .story-card.defence::before { background: #4A5D23; }
+.story-card.inflation::before { background: #DC2626; }
+.story-card.productivity::before { background: #4338CA; }
+.story-card.education::before { background: #0D9488; }
+.story-card.fertility::before { background: #9F1239; }
+.story-card.justice::before { background: #334155; }
+.story-card.energy::before { background: #059669; }
+.story-card.environment::before { background: #0891B2; }
 
 .story-card .card-kicker {
-  font-size: 0.82rem;
+  font-size: 0.78rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 
 .story-card.spending .card-kicker { color: #C53030; }
@@ -109,21 +160,28 @@ body {
 .story-card.immigration .card-kicker { color: #B45309; }
 .story-card.infrastructure .card-kicker { color: #475569; }
 .story-card.defence .card-kicker { color: #4A5D23; }
+.story-card.inflation .card-kicker { color: #DC2626; }
+.story-card.productivity .card-kicker { color: #4338CA; }
+.story-card.education .card-kicker { color: #0D9488; }
+.story-card.fertility .card-kicker { color: #9F1239; }
+.story-card.justice .card-kicker { color: #334155; }
+.story-card.energy .card-kicker { color: #059669; }
+.story-card.environment .card-kicker { color: #0891B2; }
 
-.story-card h2 {
+.story-card h3 {
   font-family: 'Source Serif 4', Georgia, serif;
-  font-size: 1.5rem;
+  font-size: 1.4rem;
   font-weight: 700;
   line-height: 1.25;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
   letter-spacing: -0.01em;
 }
 
 .story-card .card-desc {
-  font-size: 0.95rem;
+  font-size: 0.92rem;
   color: #555555;
   line-height: 1.55;
-  margin-bottom: 16px;
+  margin-bottom: 14px;
 }
 
 .story-card .card-cta {
@@ -135,19 +193,29 @@ body {
   gap: 4px;
 }
 
-.story-card:hover .card-cta {
-  gap: 8px;
+.story-card:hover .card-cta { gap: 8px; }
+.story-card .card-cta::after { content: '\2192'; transition: transform 0.2s; }
+.story-card:hover .card-cta::after { transform: translateX(2px); }
+
+/* ── Connector line between acts ────────────────── */
+.act-connector {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 40px 0;
+  color: #8A8A82;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+.act-connector::before,
+.act-connector::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: #E5E5E0;
 }
 
-.story-card .card-cta::after {
-  content: '\2192';
-  transition: transform 0.2s;
-}
-
-.story-card:hover .card-cta::after {
-  transform: translateX(2px);
-}
-
+/* ── Footer ─────────────────────────────────────── */
 .hub-footer {
   margin-top: 80px;
   padding-top: 24px;
@@ -157,14 +225,13 @@ body {
   line-height: 1.7;
 }
 
-.hub-footer a {
-  color: #2563A0;
-  text-decoration: none;
-}
+.hub-footer a { color: #2563A0; text-decoration: none; }
+.hub-footer a:hover { text-decoration: underline; }
 
 @media (max-width: 600px) {
   .hub { padding: 48px 16px 80px; }
   .stories { grid-template-columns: 1fr; }
+  .act-header h2 { font-size: 1.4rem; }
 }
 </style>
 </head>
@@ -173,66 +240,149 @@ body {
 <div class="hub">
   <header class="hub-header">
     <div class="hub-kicker">State of Britain</div>
-    <h1>Seven stories about a country under pressure</h1>
-    <p>Data-driven investigations into Britain's public finances, public services, and public infrastructure. Every chart draws from open government data.</p>
+    <h1>A country that can no longer afford itself</h1>
+    <p class="deck">Fourteen data-driven stories tracing a single thread: from the root causes of Britain's fiscal crisis, through the national accounts, to the services that are breaking &mdash; and the two areas where things are genuinely getting better.</p>
+    <p class="read-guide">Read in order for the full picture, or jump to any story. Every chart draws from open government data.</p>
   </header>
 
-  <div class="stories">
+  <!-- ═══════════ ACT 1: ROOT CAUSES ═══════════ -->
+  <section class="act">
+    <div class="act-header">
+      <div class="act-number">Part one</div>
+      <h2>The root causes</h2>
+      <p>Two structural forces explain almost everything that follows: an economy that stopped growing, and a population that stopped replacing itself.</p>
+    </div>
+    <div class="stories">
+      <a href="productivity.html" class="story-card productivity">
+        <div class="card-kicker">Productivity</div>
+        <h3>The lost decade</h3>
+        <p class="card-desc">Output per hour flatlined after 2008. If you can't produce more, you can't pay more. Everything else follows from this.</p>
+        <span class="card-cta">Read story</span>
+      </a>
+      <a href="fertility.html" class="story-card fertility">
+        <div class="card-kicker">Demographics</div>
+        <h3>The baby bust</h3>
+        <p class="card-desc">The fertility rate has fallen below 1.5 &mdash; the lowest ever. Fewer babies today means fewer workers tomorrow, and a pension system that can't sustain itself.</p>
+        <span class="card-cta">Read story</span>
+      </a>
+    </div>
+  </section>
 
-    <a href="index.html" class="story-card spending">
-      <div class="card-kicker">Public Finances</div>
-      <h2>Where the money goes</h2>
-      <p class="card-desc">Britain borrows &pound;153bn a year. Debt approaches 100% of GDP. A visual guide to how much the government raises, what it spends, and why the gap keeps growing.</p>
-      <span class="card-cta">Read story</span>
-    </a>
+  <div class="act-connector">which leads to</div>
 
-    <a href="debt.html" class="story-card debt">
-      <div class="card-kicker">Debt &amp; QE</div>
-      <h2>The bill</h2>
-      <p class="card-desc">&pound;106bn a year in debt interest &mdash; &pound;290m a day. The decade of &ldquo;free money&rdquo; is over, and the Bank of England&rsquo;s QE programme is losing billions. Taxpayers foot the bill.</p>
-      <span class="card-cta">Read story</span>
-    </a>
+  <!-- ═══════════ ACT 2: THE FISCAL TRAP ═══════════ -->
+  <section class="act">
+    <div class="act-header">
+      <div class="act-number">Part two</div>
+      <h2>The fiscal trap</h2>
+      <p>A slow-growing economy can't generate enough tax revenue to cover rising costs. So the government borrows &mdash; and the borrowing has consequences of its own.</p>
+    </div>
+    <div class="stories">
+      <a href="index.html" class="story-card spending">
+        <div class="card-kicker">Public Finances</div>
+        <h3>Where the money goes</h3>
+        <p class="card-desc">Britain borrows &pound;153bn a year. Debt approaches 100% of GDP. How much the government raises, what it spends, and why the gap keeps growing.</p>
+        <span class="card-cta">Read story</span>
+      </a>
+      <a href="debt.html" class="story-card debt">
+        <div class="card-kicker">Debt &amp; QE</div>
+        <h3>The bill</h3>
+        <p class="card-desc">&pound;106bn a year in debt interest &mdash; &pound;290m a day. The decade of &ldquo;free money&rdquo; is over, and QE losses are costing billions more.</p>
+        <span class="card-cta">Read story</span>
+      </a>
+      <a href="inflation.html" class="story-card inflation">
+        <div class="card-kicker">Cost of Living</div>
+        <h3>The squeeze</h3>
+        <p class="card-desc">The fastest price rises in 40 years. Everything costs more, permanently. Inflation fell, but the prices didn't.</p>
+        <span class="card-cta">Read story</span>
+      </a>
+    </div>
+  </section>
 
-    <a href="nhs.html" class="story-card nhs">
-      <div class="card-kicker">NHS</div>
-      <h2>The waiting game</h2>
-      <p class="card-desc">7.6 million people on the waiting list. A&E targets abandoned. The 18-week promise broken. How the health service stopped meeting its own standards.</p>
-      <span class="card-cta">Read story</span>
-    </a>
+  <div class="act-connector">which means</div>
 
-    <a href="water.html" class="story-card water">
-      <div class="card-kicker">Water</div>
-      <h2>Dirty water</h2>
-      <p class="card-desc">Sewage in rivers. Pollution incidents rising. Infrastructure crumbling. The scandal beneath Britain's waterways, told through the industry's own data.</p>
-      <span class="card-cta">Read story</span>
-    </a>
+  <!-- ═══════════ ACT 3: THE CONSEQUENCES ═══════════ -->
+  <section class="act">
+    <div class="act-header">
+      <div class="act-number">Part three</div>
+      <h2>The consequences</h2>
+      <p>When spending is squeezed, services break. These are the results &mdash; from waiting lists to court backlogs to sewage in rivers.</p>
+    </div>
+    <div class="stories">
+      <a href="nhs.html" class="story-card nhs">
+        <div class="card-kicker">NHS</div>
+        <h3>The waiting game</h3>
+        <p class="card-desc">7.6 million on the waiting list. A&E targets abandoned. How the health service stopped meeting its own standards.</p>
+        <span class="card-cta">Read story</span>
+      </a>
+      <a href="education.html" class="story-card education">
+        <div class="card-kicker">Education</div>
+        <h3>Falling behind</h3>
+        <p class="card-desc">PISA scores declining. Per-pupil funding cut in real terms. A generation educated on less.</p>
+        <span class="card-cta">Read story</span>
+      </a>
+      <a href="justice.html" class="story-card justice">
+        <div class="card-kicker">Justice</div>
+        <h3>Justice delayed</h3>
+        <p class="card-desc">Court backlogs at record highs. Prisons overflowing. A 5.5% charging rate. The system failing at every stage.</p>
+        <span class="card-cta">Read story</span>
+      </a>
+      <a href="defence.html" class="story-card defence">
+        <div class="card-kicker">Defence</div>
+        <h3>The defence gap</h3>
+        <p class="card-desc">The smallest military since Napoleon. NATO targets barely met. A shrinking force in a more dangerous world.</p>
+        <span class="card-cta">Read story</span>
+      </a>
+      <a href="infrastructure.html" class="story-card infrastructure">
+        <div class="card-kicker">Infrastructure</div>
+        <h3>Crumbling</h3>
+        <p class="card-desc">Potholes, late trains, patchy broadband. The physical fabric of the country deteriorating.</p>
+        <span class="card-cta">Read story</span>
+      </a>
+      <a href="water.html" class="story-card water">
+        <div class="card-kicker">Water</div>
+        <h3>Dirty water</h3>
+        <p class="card-desc">Sewage in rivers. Pollution rising. A privatised monopoly that stopped investing in the system.</p>
+        <span class="card-cta">Read story</span>
+      </a>
+      <a href="immigration.html" class="story-card immigration">
+        <div class="card-kicker">Immigration</div>
+        <h3>The migration surge</h3>
+        <p class="card-desc">Net migration tripled. Immigration fills the workforce gaps that low fertility and low productivity create &mdash; but generates pressures of its own.</p>
+        <span class="card-cta">Read story</span>
+      </a>
+    </div>
+  </section>
 
-    <a href="immigration.html" class="story-card immigration">
-      <div class="card-kicker">Immigration</div>
-      <h2>The migration surge</h2>
-      <p class="card-desc">Net migration tripled in three years. The asylum backlog exploded. How post-Brexit Britain ended up with higher immigration than ever before.</p>
-      <span class="card-cta">Read story</span>
-    </a>
+  <div class="act-connector">but</div>
 
-    <a href="infrastructure.html" class="story-card infrastructure">
-      <div class="card-kicker">Infrastructure</div>
-      <h2>Crumbling</h2>
-      <p class="card-desc">Potholes, late trains, and patchy broadband. A data-driven look at the state of Britain's roads, railways, and digital connections.</p>
-      <span class="card-cta">Read story</span>
-    </a>
-
-    <a href="defence.html" class="story-card defence">
-      <div class="card-kicker">Defence</div>
-      <h2>The defence gap</h2>
-      <p class="card-desc">The armed forces are at their smallest since Napoleon. NATO targets are barely met. Inside Britain's shrinking military in a more dangerous world.</p>
-      <span class="card-cta">Read story</span>
-    </a>
-
-  </div>
+  <!-- ═══════════ ACT 4: WHAT'S POSSIBLE ═══════════ -->
+  <section class="act">
+    <div class="act-header">
+      <div class="act-number">Part four</div>
+      <h2>What's possible</h2>
+      <p>Not everything is decline. In two areas, sustained policy commitment has delivered genuine transformation &mdash; proof that these problems aren't inevitable.</p>
+    </div>
+    <div class="stories">
+      <a href="energy.html" class="story-card energy">
+        <div class="card-kicker">Energy</div>
+        <h3>The green grid</h3>
+        <p class="card-desc">Coal generated a third of Britain's electricity in 1990. Now it's essentially zero. A quiet revolution in how Britain powers itself.</p>
+        <span class="card-cta">Read story</span>
+      </a>
+      <a href="environment.html" class="story-card environment">
+        <div class="card-kicker">Environment</div>
+        <h3>Clearing the air</h3>
+        <p class="card-desc">Emissions halved. Air pollution down 76%. EVs surging. Decarbonisation is working &mdash; but the hard part is just beginning.</p>
+        <span class="card-cta">Read story</span>
+      </a>
+    </div>
+  </section>
 
   <footer class="hub-footer">
-    <p>Data from <a href="https://stateofbritain.uk/api">stateofbritain.uk</a>, sourced from OBR, ONS, HM Treasury, NHS England, Ofwat, and MOD.
-    Licensed under the Open Government Licence v3.0.</p>
+    <p><strong>Sources:</strong> OBR, ONS, HM Treasury, NHS England, Ofwat, MOD, Home Office, Environment Agency, and others.<br>
+    Data via <a href="https://stateofbritain.uk/api">stateofbritain.uk</a>.
+    Contains public sector information licensed under the <a href="https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/">Open Government Licence v3.0</a>.</p>
   </footer>
 </div>
 

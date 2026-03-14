@@ -1,0 +1,1244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>State of Britain — Productivity</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background: #FAFAF7;
+  color: #1A1A1A;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---------- Loading / Error ---------- */
+#loading-screen {
+  position: fixed; inset: 0; z-index: 9999;
+  background: #FAFAF7;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  transition: opacity 0.5s;
+}
+#loading-screen.hidden { opacity: 0; pointer-events: none; }
+#loading-screen .spinner {
+  width: 40px; height: 40px;
+  border: 3px solid #E0E0DB; border-top-color: #4338CA;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+#loading-screen p { margin-top: 16px; color: #555555; font-size: 0.95rem; }
+#error-screen {
+  display: none; position: fixed; inset: 0; z-index: 9998;
+  background: #FAFAF7;
+  flex-direction: column; align-items: center; justify-content: center;
+}
+#error-screen h2 { font-family: 'Source Serif 4', serif; font-size: 1.8rem; margin-bottom: 8px; }
+#error-screen p { color: #555555; max-width: 400px; text-align: center; }
+
+/* ---------- Header ---------- */
+.site-header {
+  padding: 48px 32px 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.site-header .kicker {
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #4338CA;
+  margin-bottom: 8px;
+}
+.site-header h1 {
+  font-family: 'Source Serif 4', serif;
+  font-size: clamp(2rem, 5vw, 3.4rem);
+  font-weight: 700;
+  line-height: 1.15;
+  max-width: 700px;
+  color: #1A1A1A;
+}
+.site-header .deck {
+  margin-top: 12px;
+  font-size: 1.15rem;
+  color: #3D3D3D;
+  max-width: 600px;
+  line-height: 1.55;
+}
+
+/* ---------- Scroll sections ---------- */
+.scroll-section {
+  position: relative;
+  display: flex;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 32px;
+}
+.scroll-steps {
+  flex: 0 0 40%;
+  position: relative;
+  z-index: 2;
+}
+.scroll-graphic {
+  flex: 0 0 58%;
+  margin-left: 2%;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.scroll-graphic .chart-container {
+  width: 100%;
+  position: relative;
+}
+.step {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 40px 0;
+}
+.step-inner {
+  max-width: 420px;
+  opacity: 0.15;
+  transition: opacity 0.5s;
+}
+.step-inner.active {
+  opacity: 1;
+}
+.step-inner h2 {
+  font-family: 'Source Serif 4', serif;
+  font-size: clamp(1.6rem, 3vw, 2.8rem);
+  font-weight: 700;
+  line-height: 1.2;
+  margin-bottom: 16px;
+  color: #1A1A1A;
+}
+.step-inner p {
+  font-size: 1.15rem;
+  color: #3D3D3D;
+  line-height: 1.6;
+  margin-bottom: 12px;
+}
+.big-number {
+  font-family: 'Source Serif 4', serif;
+  font-size: clamp(3rem, 6vw, 5rem);
+  font-weight: 700;
+  line-height: 1.1;
+  margin-bottom: 8px;
+}
+.big-number.indigo { color: #4338CA; }
+.big-number.red { color: #C53030; }
+.big-number.amber { color: #A16B00; }
+
+/* ---------- Tooltip ---------- */
+.chart-tooltip {
+  position: fixed;
+  pointer-events: none;
+  background: #fff;
+  border: 1px solid #E0E0DB;
+  border-radius: 6px;
+  padding: 10px 14px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #1A1A1A;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  z-index: 1000;
+  opacity: 0;
+  transition: opacity 0.15s;
+  max-width: 280px;
+}
+.chart-tooltip.visible { opacity: 1; }
+.chart-tooltip .tt-label { font-weight: 600; margin-bottom: 2px; }
+.chart-tooltip .tt-value { color: #333333; }
+
+/* ---------- Chart annotation ---------- */
+.chart-annotation {
+  font-size: 13.5px;
+  fill: #555555;
+  font-family: 'Inter', sans-serif;
+}
+.chart-annotation-bold {
+  font-size: 14px;
+  font-weight: 600;
+  fill: #1A1A1A;
+  font-family: 'Inter', sans-serif;
+}
+
+/* ---------- Section divider ---------- */
+.section-divider {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 32px;
+  height: 1px;
+  background: transparent;
+}
+
+/* ---------- Footer ---------- */
+.site-footer {
+  max-width: 1200px;
+  margin: 80px auto 0;
+  padding: 32px 32px 48px;
+  border-top: 1px solid #E0E0DB;
+  font-size: 0.9rem;
+  color: #555555;
+  line-height: 1.7;
+}
+.site-footer a { color: #4338CA; text-decoration: none; }
+.site-footer a:hover { text-decoration: underline; }
+
+/* ---------- SVG common ---------- */
+.axis text {
+  font-family: 'Inter', sans-serif;
+  font-size: 13.5px;
+  fill: #555555;
+}
+.axis path, .axis line { stroke: none; }
+.grid line { stroke: #F0F0EB; stroke-width: 1; }
+.grid path { stroke: none; }
+
+/* ---------- Responsive ---------- */
+@media (max-width: 768px) {
+  .scroll-section {
+    flex-direction: column;
+    padding: 0 16px;
+  }
+  .scroll-steps {
+    flex: none;
+    width: 100%;
+  }
+  .scroll-graphic {
+    flex: none;
+    width: 100%;
+    margin-left: 0;
+    position: sticky;
+    top: 0;
+    height: 60vh;
+  }
+  .step {
+    min-height: 80vh;
+  }
+  .step-inner {
+    max-width: 100%;
+  }
+  .site-header {
+    padding: 32px 16px 20px;
+  }
+  .site-header h1 { font-size: 2rem; }
+  .site-footer { padding: 24px 16px 32px; }
+}
+</style>
+</head>
+<body>
+
+<div id="loading-screen">
+  <div class="spinner"></div>
+  <p>Loading productivity data&hellip;</p>
+</div>
+
+<div id="error-screen">
+  <h2>Something went wrong</h2>
+  <p id="error-msg">Could not load productivity data. Please refresh or try again later.</p>
+</div>
+
+<nav style="position:fixed;top:0;left:0;right:0;z-index:999;background:rgba(250,250,247,0.95);backdrop-filter:blur(8px);border-bottom:1px solid #E0E0DB;padding:10px 24px;font-size:14px;font-family:Inter,sans-serif;"><a href="hub.html" style="color:#2563A0;text-decoration:none;font-weight:500;">&larr; All stories</a><span style="margin:0 12px;color:#8A8A82;">|</span><span style="color:#555555;font-weight:600;">Productivity</span></nav>
+
+<div class="chart-tooltip" id="tooltip"></div>
+
+<header class="site-header" id="site-header" style="display:none;padding-top:72px;">
+  <div class="kicker">State of Britain</div>
+  <h1>The Lost Decade &mdash; Why Britain stopped getting richer</h1>
+  <p class="deck">Output per hour has barely grown since 2008. The &ldquo;productivity puzzle&rdquo; is the defining economic problem of our time &mdash; and the reason living standards have stagnated.</p>
+</header>
+
+<main id="main-content" style="display:none;">
+
+<!-- ====== SECTION 1: The Hook ====== -->
+<section class="scroll-section" id="section-hook">
+  <div class="scroll-steps">
+    <div class="step" data-section="hook" data-step="0">
+      <div class="step-inner">
+        <div class="big-number indigo" id="bn-growth">7%</div>
+        <h2>Sixteen years. Seven percent.</h2>
+        <p>Between 2008 and 2024, UK output per hour grew by just 7%. In the sixteen years <em>before</em> that, it grew by 45%. Something broke.</p>
+      </div>
+    </div>
+    <div class="step" data-section="hook" data-step="1">
+      <div class="step-inner">
+        <h2>If productivity had kept growing&hellip;</h2>
+        <p>If the pre-2008 trend had continued, output per hour would be roughly a third higher than it actually is today. That missing productivity is the gap between the economy we have and the economy we could have had.</p>
+      </div>
+    </div>
+  </div>
+  <div class="scroll-graphic">
+    <div class="chart-container" id="chart-hook"></div>
+  </div>
+</section>
+
+<!-- ====== SECTION 2: International Comparison ====== -->
+<section class="scroll-section" id="section-international">
+  <div class="scroll-steps">
+    <div class="step" data-section="international" data-step="0">
+      <div class="step-inner">
+        <h2>Britain fell behind its peers</h2>
+        <p>In 2000, UK productivity was close to France and Germany. By 2023, both had pulled ahead. The US &mdash; already more productive &mdash; widened the gap dramatically.</p>
+      </div>
+    </div>
+    <div class="step" data-section="international" data-step="1">
+      <div class="step-inner">
+        <h2>The league table</h2>
+        <p>Among major advanced economies, Britain produces $79.49 of output per hour worked. The US produces $97.05. France $87.30. Germany $93.72. Only Italy and Canada rank lower among the G7.</p>
+      </div>
+    </div>
+  </div>
+  <div class="scroll-graphic">
+    <div class="chart-container" id="chart-international"></div>
+  </div>
+</section>
+
+<!-- ====== SECTION 3: Sector Breakdown ====== -->
+<section class="scroll-section" id="section-sectors">
+  <div class="scroll-steps">
+    <div class="step" data-section="sectors" data-step="0">
+      <div class="step-inner">
+        <h2>A tale of two economies</h2>
+        <p>Mining, energy, and finance produce over &pound;100 per hour. Hospitality, agriculture, and the arts produce under &pound;30. The sectors that employ the most people are often the least productive.</p>
+      </div>
+    </div>
+    <div class="step" data-section="sectors" data-step="1">
+      <div class="step-inner">
+        <h2>The long tail of low productivity</h2>
+        <p>Accommodation and food services &mdash; Britain&rsquo;s fourth-largest employer &mdash; produces just &pound;23.19 per hour. Health and social care, which employs millions, manages only &pound;32.27. These are the sectors where productivity gains would matter most.</p>
+      </div>
+    </div>
+  </div>
+  <div class="scroll-graphic">
+    <div class="chart-container" id="chart-sectors"></div>
+  </div>
+</section>
+
+<!-- ====== SECTION 4: Why It Matters ====== -->
+<section class="scroll-section" id="section-matters">
+  <div class="scroll-steps">
+    <div class="step" data-section="matters" data-step="0">
+      <div class="step-inner">
+        <h2>Productivity is living standards</h2>
+        <p>If you can&rsquo;t produce more per hour, you can&rsquo;t pay people more. Real wages have stagnated since 2008 for exactly this reason. The productivity crisis <em>is</em> the cost-of-living crisis.</p>
+      </div>
+    </div>
+    <div class="step" data-section="matters" data-step="1">
+      <div class="step-inner">
+        <h2>And it&rsquo;s why public services are underfunded</h2>
+        <p>Government revenue depends on economic output. If the economy doesn&rsquo;t grow, tax receipts don&rsquo;t grow &mdash; but demand for the NHS, pensions, and schools keeps rising. The productivity gap is the root cause of Britain&rsquo;s fiscal squeeze.</p>
+        <p>Until Britain solves its productivity problem, the arguments over how to divide the pie will only get more bitter &mdash; because the pie isn&rsquo;t getting bigger.</p>
+      </div>
+    </div>
+  </div>
+  <div class="scroll-graphic">
+    <div class="chart-container" id="chart-matters"></div>
+  </div>
+</section>
+
+</main>
+
+<footer class="site-footer" id="site-footer" style="display:none;">
+  <p><strong>Sources:</strong> ONS Output per hour worked, UK (February 2026); OECD Productivity Database.<br>
+  Data via <a href="https://stateofbritain.uk" target="_blank" rel="noopener">stateofbritain.uk</a>.<br>
+  Contains public sector information licensed under the <a href="https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/" target="_blank" rel="noopener">Open Government Licence v3.0</a>.</p>
+</footer>
+
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script>
+(function() {
+"use strict";
+
+/* =========================================================
+   COLOURS & CONSTANTS
+   ========================================================= */
+const C = {
+  indigo: "#4338CA", indigoMed: "#6366F1", indigoLight: "rgba(67,56,202,0.12)",
+  indigoPale: "rgba(67,56,202,0.06)",
+  red: "#C53030", green: "#2E7D32", amber: "#A16B00",
+  usa: "#1D4ED8", france: "#DC2626", germany: "#B45309", oecd: "#6B7280",
+  gbr: "#4338CA",
+  faint: "#B0B0A8", ink: "#1A1A1A", secondary: "#3D3D3D", muted: "#555555",
+  grid: "#F0F0EB", bg: "#FAFAF7",
+  trendDash: "#9CA3AF"
+};
+const DURATION = 600;
+const MOBILE = 768;
+
+/* =========================================================
+   TOOLTIP HELPER
+   ========================================================= */
+const ttEl = document.getElementById("tooltip");
+function showTooltip(html, event) {
+  ttEl.innerHTML = html;
+  ttEl.classList.add("visible");
+  const cx = event.touches ? event.touches[0].clientX : event.clientX;
+  const cy = event.touches ? event.touches[0].clientY : event.clientY;
+  const r = ttEl.getBoundingClientRect();
+  let x = cx + 14, y = cy - 10;
+  if (x + r.width > window.innerWidth - 10) x = cx - r.width - 14;
+  if (y + r.height > window.innerHeight - 10) y = cy - r.height - 10;
+  if (y < 10) y = 10;
+  if (x < 10) x = 10;
+  ttEl.style.left = x + "px";
+  ttEl.style.top = y + "px";
+}
+function hideTooltip() { ttEl.classList.remove("visible"); }
+
+/* =========================================================
+   HELPERS
+   ========================================================= */
+function isMobile() { return window.innerWidth < MOBILE; }
+
+function chartDims(container) {
+  const w = container.clientWidth;
+  const h = Math.max(500, Math.min(600, window.innerHeight * 0.65));
+  const m = { top: 30, right: 80, bottom: 40, left: 62 };
+  return { width: w, height: h, margin: m, innerW: w - m.left - m.right, innerH: h - m.top - m.bottom };
+}
+
+function chartDimsBar(container) {
+  const w = container.clientWidth;
+  const h = Math.max(560, Math.min(700, window.innerHeight * 0.75));
+  const m = { top: 24, right: 80, bottom: 16, left: 280 };
+  if (isMobile()) { m.left = 160; m.right = 60; }
+  return { width: w, height: h, margin: m, innerW: w - m.left - m.right, innerH: h - m.top - m.bottom };
+}
+
+/* =========================================================
+   DATA LOAD & INIT
+   ========================================================= */
+let DATA;
+
+fetch("https://stateofbritain.uk/api/data/productivity.json")
+  .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
+  .then(d => { DATA = d; init(); })
+  .catch(err => {
+    document.getElementById("loading-screen").style.display = "none";
+    const es = document.getElementById("error-screen");
+    es.style.display = "flex";
+    document.getElementById("error-msg").textContent = "Failed to load data: " + err.message;
+  });
+
+function init() {
+  document.getElementById("loading-screen").classList.add("hidden");
+  setTimeout(() => { document.getElementById("loading-screen").style.display = "none"; }, 600);
+  document.getElementById("site-header").style.display = "";
+  document.getElementById("main-content").style.display = "";
+  document.getElementById("site-footer").style.display = "";
+
+  // Set big number: growth from 2008 to 2024
+  const idx2008 = DATA.indexSeries.find(d => d.year === 2008).index;
+  const idx2024 = DATA.indexSeries.find(d => d.year === 2024).index;
+  const growth = ((idx2024 - idx2008) / idx2008 * 100).toFixed(0);
+  document.getElementById("bn-growth").textContent = growth + "%";
+
+  buildAllCharts();
+  setupScrollObserver();
+  window.addEventListener("resize", debounce(rebuildAll, 250));
+}
+
+let resizeTimer;
+function debounce(fn, ms) {
+  return function() { clearTimeout(resizeTimer); resizeTimer = setTimeout(fn, ms); };
+}
+function rebuildAll() {
+  d3.selectAll("#chart-hook svg, #chart-international svg, #chart-sectors svg, #chart-matters svg").remove();
+  buildAllCharts();
+  document.querySelectorAll(".step-inner.active").forEach(el => {
+    const step = el.closest(".step");
+    const sec = step.dataset.section;
+    const idx = +step.dataset.step;
+    updateChart(sec, idx);
+  });
+}
+
+/* =========================================================
+   BUILD ALL CHARTS
+   ========================================================= */
+function buildAllCharts() {
+  buildHookChart();
+  buildInternationalChart();
+  buildSectorsChart();
+  buildMattersChart();
+}
+
+/* =========================================================
+   CHART 1: THE HOOK — Index series with counterfactual
+   ========================================================= */
+function buildHookChart() {
+  const container = document.getElementById("chart-hook");
+  const dim = chartDims(container);
+  const svg = d3.select(container).append("svg")
+    .attr("width", dim.width).attr("height", dim.height)
+    .attr("viewBox", "0 0 " + dim.width + " " + dim.height);
+  const g = svg.append("g").attr("transform", "translate(" + dim.margin.left + "," + dim.margin.top + ")");
+
+  const series = DATA.indexSeries;
+  const x = d3.scaleLinear().domain([1971, 2024]).range([0, dim.innerW]);
+  const yMax = 160;
+  const y = d3.scaleLinear().domain([0, yMax]).range([dim.innerH, 0]);
+
+  // Compute counterfactual trend from 1992-2008 growth rate
+  const idx1992 = series.find(d => d.year === 1992).index;
+  const idx2008 = series.find(d => d.year === 2008).index;
+  const annualGrowth = Math.pow(idx2008 / idx1992, 1 / 16) - 1;
+  const counterfactual = [];
+  for (let yr = 2008; yr <= 2024; yr++) {
+    counterfactual.push({ year: yr, index: idx2008 * Math.pow(1 + annualGrowth, yr - 2008) });
+  }
+
+  // ---- Step 0 view: basic index line ----
+  const basicGroup = g.append("g").attr("class", "basic-view");
+
+  // Grid
+  basicGroup.append("g").attr("class", "grid")
+    .call(d3.axisLeft(y).ticks(6).tickSize(-dim.innerW).tickFormat(""))
+    .call(function(g) { g.select(".domain").remove(); });
+
+  // X axis
+  basicGroup.append("g").attr("class", "axis x-axis")
+    .attr("transform", "translate(0," + dim.innerH + ")")
+    .call(d3.axisBottom(x).tickValues([1975, 1985, 1995, 2005, 2015, 2024]).tickFormat(d3.format("d")).tickSize(0))
+    .call(function(g) { g.select(".domain").remove(); });
+
+  // Y axis
+  basicGroup.append("g").attr("class", "axis y-axis")
+    .call(d3.axisLeft(y).ticks(6).tickSize(0).tickFormat(function(d) { return d; }))
+    .call(function(g) { g.select(".domain").remove(); });
+
+  // Y-axis label
+  basicGroup.append("text").attr("class", "chart-annotation")
+    .attr("transform", "rotate(-90)")
+    .attr("x", -dim.innerH / 2).attr("y", -44)
+    .attr("text-anchor", "middle").attr("fill", C.muted)
+    .text("Output per hour (index, 2023=100)");
+
+  // Main line
+  var lineGen = d3.line().x(function(d) { return x(d.year); }).y(function(d) { return y(d.index); }).curve(d3.curveMonotoneX);
+  basicGroup.append("path").datum(series)
+    .attr("d", lineGen).attr("fill", "none").attr("stroke", C.indigo).attr("stroke-width", 2.5);
+
+  // 2008 marker
+  var d2008 = series.find(function(d) { return d.year === 2008; });
+  basicGroup.append("circle").attr("cx", x(2008)).attr("cy", y(d2008.index)).attr("r", 4)
+    .attr("fill", C.indigo).attr("stroke", "#fff").attr("stroke-width", 2);
+  basicGroup.append("text").attr("class", "chart-annotation-bold")
+    .attr("x", x(2008)).attr("y", y(d2008.index) - 14)
+    .attr("text-anchor", "middle").attr("fill", C.indigo)
+    .text("2008 crisis");
+
+  // Shaded flatline region
+  var flatData = series.filter(function(d) { return d.year >= 2008; });
+  var flatArea = d3.area()
+    .x(function(d) { return x(d.year); })
+    .y0(dim.innerH)
+    .y1(function(d) { return y(d.index); })
+    .curve(d3.curveMonotoneX);
+  basicGroup.append("path").datum(flatData)
+    .attr("d", flatArea).attr("fill", C.indigoLight);
+
+  // End label
+  var last = series[series.length - 1];
+  basicGroup.append("text").attr("class", "chart-annotation-bold")
+    .attr("x", x(last.year) + 6).attr("y", y(last.index) + 4)
+    .attr("fill", C.indigo).text(last.index.toFixed(1));
+
+  // Hover overlay
+  var hoverRect = basicGroup.append("rect")
+    .attr("width", dim.innerW).attr("height", dim.innerH)
+    .attr("fill", "transparent").style("cursor", "crosshair");
+  var hoverLine = basicGroup.append("line")
+    .attr("y1", 0).attr("y2", dim.innerH)
+    .attr("stroke", "#999").attr("stroke-width", 1).attr("stroke-dasharray", "3,2")
+    .style("opacity", 0);
+  var hoverDot = basicGroup.append("circle").attr("r", 4).attr("fill", C.indigo).style("opacity", 0);
+
+  hoverRect.on("mousemove", function(event) {
+    var mx = d3.pointer(event, this)[0];
+    var year = Math.round(x.invert(mx));
+    var d = series.find(function(a) { return a.year === year; });
+    if (!d) return;
+    hoverLine.attr("x1", x(year)).attr("x2", x(year)).style("opacity", 1);
+    hoverDot.attr("cx", x(year)).attr("cy", y(d.index)).style("opacity", 1);
+    showTooltip('<div class="tt-label">' + d.year + '</div><div class="tt-value">Index: ' + d.index.toFixed(1) + '</div>', event);
+  }).on("mouseleave", function() {
+    hoverLine.style("opacity", 0); hoverDot.style("opacity", 0); hideTooltip();
+  });
+
+  // ---- Step 1 view: counterfactual trend (hidden) ----
+  var trendGroup = g.append("g").attr("class", "trend-view").style("opacity", 0);
+
+  // Grid
+  trendGroup.append("g").attr("class", "grid")
+    .call(d3.axisLeft(y).ticks(6).tickSize(-dim.innerW).tickFormat(""))
+    .call(function(g) { g.select(".domain").remove(); });
+
+  // X axis
+  trendGroup.append("g").attr("class", "axis x-axis")
+    .attr("transform", "translate(0," + dim.innerH + ")")
+    .call(d3.axisBottom(x).tickValues([1975, 1985, 1995, 2005, 2015, 2024]).tickFormat(d3.format("d")).tickSize(0))
+    .call(function(g) { g.select(".domain").remove(); });
+
+  // Y axis
+  trendGroup.append("g").attr("class", "axis y-axis")
+    .call(d3.axisLeft(y).ticks(6).tickSize(0).tickFormat(function(d) { return d; }))
+    .call(function(g) { g.select(".domain").remove(); });
+
+  // Actual line
+  trendGroup.append("path").datum(series)
+    .attr("d", lineGen).attr("fill", "none").attr("stroke", C.indigo).attr("stroke-width", 2.5);
+
+  // Counterfactual dashed line
+  var trendLine = d3.line().x(function(d) { return x(d.year); }).y(function(d) { return y(d.index); }).curve(d3.curveMonotoneX);
+  trendGroup.append("path").datum(counterfactual)
+    .attr("d", trendLine).attr("fill", "none").attr("stroke", C.trendDash).attr("stroke-width", 2.5)
+    .attr("stroke-dasharray", "8,5");
+
+  // Shaded gap between counterfactual and actual (2008-2024)
+  var gapArea = d3.area()
+    .x(function(d) { return x(d.year); })
+    .y0(function(d) {
+      var actual = series.find(function(s) { return s.year === d.year; });
+      return actual ? y(actual.index) : y(0);
+    })
+    .y1(function(d) { return y(d.index); })
+    .curve(d3.curveMonotoneX);
+  trendGroup.append("path").datum(counterfactual)
+    .attr("d", gapArea).attr("fill", "rgba(67,56,202,0.08)");
+
+  // Labels
+  var cfLast = counterfactual[counterfactual.length - 1];
+  trendGroup.append("text").attr("class", "chart-annotation-bold")
+    .attr("x", x(cfLast.year) + 6).attr("y", y(cfLast.index) + 4)
+    .attr("fill", C.trendDash).text("~" + cfLast.index.toFixed(0));
+  trendGroup.append("text").attr("class", "chart-annotation")
+    .attr("x", x(cfLast.year) + 6).attr("y", y(cfLast.index) + 18)
+    .attr("fill", C.trendDash).text("if trend continued");
+
+  trendGroup.append("text").attr("class", "chart-annotation-bold")
+    .attr("x", x(last.year) + 6).attr("y", y(last.index) + 4)
+    .attr("fill", C.indigo).text(last.index.toFixed(1));
+  trendGroup.append("text").attr("class", "chart-annotation")
+    .attr("x", x(last.year) + 6).attr("y", y(last.index) + 18)
+    .attr("fill", C.indigo).text("actual");
+
+  // Gap annotation arrow
+  var midYear = 2016;
+  var cfMid = counterfactual.find(function(d) { return d.year === midYear; });
+  var actMid = series.find(function(d) { return d.year === midYear; });
+  if (cfMid && actMid) {
+    var gapMidY0 = y(actMid.index);
+    var gapMidY1 = y(cfMid.index);
+    var gapMidX = x(midYear);
+    trendGroup.append("line")
+      .attr("x1", gapMidX).attr("x2", gapMidX)
+      .attr("y1", gapMidY0 - 4).attr("y2", gapMidY1 + 4)
+      .attr("stroke", C.indigo).attr("stroke-width", 1.5);
+    trendGroup.append("text").attr("class", "chart-annotation-bold")
+      .attr("x", gapMidX + 8).attr("y", (gapMidY0 + gapMidY1) / 2 + 5)
+      .attr("fill", C.indigo).attr("font-size", "13px")
+      .text("The lost output");
+  }
+}
+
+function updateHookChart(step) {
+  var container = document.getElementById("chart-hook");
+  var svg = d3.select(container).select("svg");
+  if (step === 0) {
+    svg.select(".basic-view").transition().duration(DURATION).style("opacity", 1).on("end", function() { d3.select(this).style("pointer-events", "all"); });
+    svg.select(".trend-view").transition().duration(DURATION).style("opacity", 0).on("end", function() { d3.select(this).style("pointer-events", "none"); });
+  } else {
+    svg.select(".basic-view").transition().duration(DURATION).style("opacity", 0).on("end", function() { d3.select(this).style("pointer-events", "none"); });
+    svg.select(".trend-view").transition().duration(DURATION).style("opacity", 1).on("end", function() { d3.select(this).style("pointer-events", "all"); });
+  }
+}
+
+/* =========================================================
+   CHART 2: INTERNATIONAL — Time series lines + bar chart
+   ========================================================= */
+function buildInternationalChart() {
+  var container = document.getElementById("chart-international");
+  var dim = chartDims(container);
+  var svg = d3.select(container).append("svg")
+    .attr("width", dim.width).attr("height", dim.height)
+    .attr("viewBox", "0 0 " + dim.width + " " + dim.height);
+  var g = svg.append("g").attr("transform", "translate(" + dim.margin.left + "," + dim.margin.top + ")");
+
+  var ts = DATA.timeSeries;
+  var countries = [
+    { key: "USA", label: "United States", color: C.usa },
+    { key: "DEU", label: "Germany", color: C.germany },
+    { key: "FRA", label: "France", color: C.france },
+    { key: "GBR", label: "United Kingdom", color: C.gbr },
+    { key: "OECD", label: "OECD Average", color: C.oecd }
+  ];
+
+  var x = d3.scaleLinear().domain([2000, 2023]).range([0, dim.innerW]);
+  var yMax = d3.max(ts, function(d) { return Math.max(d.USA || 0, d.DEU || 0, d.FRA || 0, d.GBR || 0); }) * 1.1;
+  var y = d3.scaleLinear().domain([0, yMax]).range([dim.innerH, 0]);
+
+  // ---- Step 0: Time series lines ----
+  var lineGroup = g.append("g").attr("class", "intl-line-view");
+
+  // Grid
+  lineGroup.append("g").attr("class", "grid")
+    .call(d3.axisLeft(y).ticks(6).tickSize(-dim.innerW).tickFormat(""))
+    .call(function(g) { g.select(".domain").remove(); });
+
+  // X axis
+  lineGroup.append("g").attr("class", "axis x-axis")
+    .attr("transform", "translate(0," + dim.innerH + ")")
+    .call(d3.axisBottom(x).ticks(8).tickFormat(d3.format("d")).tickSize(0))
+    .call(function(g) { g.select(".domain").remove(); });
+
+  // Y axis
+  lineGroup.append("g").attr("class", "axis y-axis")
+    .call(d3.axisLeft(y).ticks(6).tickSize(0).tickFormat(function(d) { return "$" + d; }))
+    .call(function(g) { g.select(".domain").remove(); });
+
+  // Y label
+  lineGroup.append("text").attr("class", "chart-annotation")
+    .attr("transform", "rotate(-90)")
+    .attr("x", -dim.innerH / 2).attr("y", -44)
+    .attr("text-anchor", "middle").attr("fill", C.muted)
+    .text("GDP per hour (USD, PPP)");
+
+  // Lines
+  countries.forEach(function(c) {
+    var lineData = ts.filter(function(d) { return d[c.key] != null; });
+    var lineGen = d3.line()
+      .x(function(d) { return x(d.year); })
+      .y(function(d) { return y(d[c.key]); })
+      .curve(d3.curveMonotoneX);
+    lineGroup.append("path").datum(lineData)
+      .attr("d", lineGen)
+      .attr("fill", "none")
+      .attr("stroke", c.color)
+      .attr("stroke-width", c.key === "GBR" ? 3 : 2)
+      .attr("stroke-dasharray", c.key === "OECD" ? "6,4" : "none")
+      .attr("opacity", c.key === "OECD" ? 0.7 : 1);
+
+    // End label
+    var lastVal = lineData[lineData.length - 1];
+    if (lastVal) {
+      var labelY = y(lastVal[c.key]);
+      lineGroup.append("text").attr("class", "chart-annotation-bold")
+        .attr("x", x(lastVal.year) + 6).attr("y", labelY + 4)
+        .attr("fill", c.color)
+        .attr("font-size", "13px")
+        .text(c.label === "United States" ? "US" : c.label === "United Kingdom" ? "UK" : c.label === "OECD Average" ? "OECD" : c.key);
+    }
+  });
+
+  // Hover
+  var hoverRect = lineGroup.append("rect")
+    .attr("width", dim.innerW).attr("height", dim.innerH)
+    .attr("fill", "transparent").style("cursor", "crosshair");
+  var hoverLine = lineGroup.append("line")
+    .attr("y1", 0).attr("y2", dim.innerH)
+    .attr("stroke", "#999").attr("stroke-width", 1).attr("stroke-dasharray", "3,2")
+    .style("opacity", 0);
+
+  var hoverDots = {};
+  countries.forEach(function(c) {
+    hoverDots[c.key] = lineGroup.append("circle").attr("r", 4).attr("fill", c.color).style("opacity", 0);
+  });
+
+  hoverRect.on("mousemove", function(event) {
+    var mx = d3.pointer(event, this)[0];
+    var year = Math.round(x.invert(mx));
+    var d = ts.find(function(a) { return a.year === year; });
+    if (!d) return;
+    hoverLine.attr("x1", x(year)).attr("x2", x(year)).style("opacity", 1);
+    var ttHtml = '<div class="tt-label">' + year + '</div>';
+    countries.forEach(function(c) {
+      if (d[c.key] != null) {
+        hoverDots[c.key].attr("cx", x(year)).attr("cy", y(d[c.key])).style("opacity", 1);
+        ttHtml += '<div class="tt-value" style="color:' + c.color + '">' + (c.label === "United Kingdom" ? "UK" : c.label === "United States" ? "US" : c.key) + ': $' + d[c.key].toFixed(1) + '</div>';
+      }
+    });
+    showTooltip(ttHtml, event);
+  }).on("mouseleave", function() {
+    hoverLine.style("opacity", 0);
+    countries.forEach(function(c) { hoverDots[c.key].style("opacity", 0); });
+    hideTooltip();
+  });
+
+  // ---- Step 1: Bar chart of 2023 levels (hidden) ----
+  var barGroup = g.append("g").attr("class", "intl-bar-view").style("opacity", 0).style("pointer-events", "none");
+
+  // Filter to key countries for the bar
+  var barCountries = DATA.international.filter(function(d) {
+    return ["USA", "DEU", "FRA", "GBR", "ITA", "CAN", "JPN", "OECD"].indexOf(d.countryCode) >= 0;
+  }).sort(function(a, b) { return b.usdPPP - a.usdPPP; });
+
+  var xBar = d3.scaleLinear().domain([0, d3.max(barCountries, function(d) { return d.usdPPP; }) * 1.12]).range([0, dim.innerW]);
+  var yBar = d3.scaleBand().domain(barCountries.map(function(d) { return d.country; })).range([0, dim.innerH]).padding(0.25);
+
+  // Grid
+  barGroup.append("g").attr("class", "grid")
+    .attr("transform", "translate(0,0)")
+    .call(d3.axisTop(xBar).ticks(5).tickSize(-dim.innerH).tickFormat(""))
+    .call(function(g) { g.select(".domain").remove(); });
+
+  // X axis
+  barGroup.append("g").attr("class", "axis x-axis")
+    .attr("transform", "translate(0," + dim.innerH + ")")
+    .call(d3.axisBottom(xBar).ticks(5).tickFormat(function(d) { return "$" + d; }).tickSize(0))
+    .call(function(g) { g.select(".domain").remove(); });
+
+  // Bars
+  barGroup.selectAll(".bar-intl")
+    .data(barCountries)
+    .enter().append("rect")
+    .attr("class", "bar-intl")
+    .attr("x", 0)
+    .attr("y", function(d) { return yBar(d.country); })
+    .attr("width", function(d) { return xBar(d.usdPPP); })
+    .attr("height", yBar.bandwidth())
+    .attr("fill", function(d) { return d.countryCode === "GBR" ? C.indigo : d.countryCode === "OECD" ? C.oecd : "#C7D2FE"; })
+    .attr("rx", 3)
+    .on("mousemove", function(event, d) {
+      showTooltip('<div class="tt-label">' + d.country + '</div><div class="tt-value">$' + d.usdPPP.toFixed(1) + ' per hour (PPP)</div>', event);
+    })
+    .on("mouseleave", hideTooltip);
+
+  // Country labels
+  barGroup.selectAll(".bar-label")
+    .data(barCountries)
+    .enter().append("text")
+    .attr("class", "chart-annotation-bold")
+    .attr("x", -8)
+    .attr("y", function(d) { return yBar(d.country) + yBar.bandwidth() / 2 + 5; })
+    .attr("text-anchor", "end")
+    .attr("fill", function(d) { return d.countryCode === "GBR" ? C.indigo : C.ink; })
+    .attr("font-size", "13px")
+    .text(function(d) { return d.country; });
+
+  // Value labels
+  barGroup.selectAll(".bar-val")
+    .data(barCountries)
+    .enter().append("text")
+    .attr("class", "chart-annotation-bold")
+    .attr("x", function(d) { return xBar(d.usdPPP) + 6; })
+    .attr("y", function(d) { return yBar(d.country) + yBar.bandwidth() / 2 + 5; })
+    .attr("fill", function(d) { return d.countryCode === "GBR" ? C.indigo : C.muted; })
+    .attr("font-size", "13px")
+    .text(function(d) { return "$" + d.usdPPP.toFixed(0); });
+}
+
+function updateInternationalChart(step) {
+  var container = document.getElementById("chart-international");
+  var svg = d3.select(container).select("svg");
+  if (step === 0) {
+    svg.select(".intl-line-view").transition().duration(DURATION).style("opacity", 1).on("end", function() { d3.select(this).style("pointer-events", "all"); });
+    svg.select(".intl-bar-view").transition().duration(DURATION).style("opacity", 0).on("end", function() { d3.select(this).style("pointer-events", "none"); });
+  } else {
+    svg.select(".intl-line-view").transition().duration(DURATION).style("opacity", 0).on("end", function() { d3.select(this).style("pointer-events", "none"); });
+    svg.select(".intl-bar-view").transition().duration(DURATION).style("opacity", 1).on("end", function() { d3.select(this).style("pointer-events", "all"); });
+  }
+}
+
+/* =========================================================
+   CHART 3: SECTOR BREAKDOWN — Horizontal bar chart
+   ========================================================= */
+function buildSectorsChart() {
+  var container = document.getElementById("chart-sectors");
+  var dim = chartDimsBar(container);
+  var svg = d3.select(container).append("svg")
+    .attr("width", dim.width).attr("height", dim.height)
+    .attr("viewBox", "0 0 " + dim.width + " " + dim.height);
+  var g = svg.append("g").attr("transform", "translate(" + dim.margin.left + "," + dim.margin.top + ")");
+
+  var sectors = DATA.sectorBreakdown.slice().sort(function(a, b) { return a.gbpPerHour - b.gbpPerHour; });
+
+  // Shorten long sector names
+  function shortName(s) {
+    var map = {
+      "Electricity, gas, steam and air conditioning supply": "Electricity & gas",
+      "Mining and quarrying": "Mining & quarrying",
+      "Financial and insurance activities": "Finance & insurance",
+      "Real estate activities excluding imputed rental": "Real estate",
+      "Water supply; sewerage, waste management and remediation activities": "Water & waste",
+      "Information and communication": "Info & comms",
+      "Public administration and defence; compulsory social security": "Public admin & defence",
+      "Professional, scientific and technical activities": "Professional services",
+      "Human health and social activities": "Health & social care",
+      "Transportation and storage": "Transport & storage",
+      "Administrative and support service activities": "Admin & support",
+      "Arts, entertainment and recreation": "Arts & recreation",
+      "Other service activities including households as employers": "Other services",
+      "Agriculture forestry and fishing": "Agriculture",
+      "Accommodation and food service activities": "Hospitality"
+    };
+    return map[s] || s;
+  }
+
+  var x = d3.scaleLinear().domain([0, 270]).range([0, dim.innerW]);
+  var yBand = d3.scaleBand().domain(sectors.map(function(d) { return shortName(d.sector); })).range([dim.innerH, 0]).padding(0.2);
+
+  // UK average line
+  var avgVal = DATA.levelSeries.find(function(d) { return d.year === 2024; }).gbpPerHour;
+
+  // ---- Step 0: all bars ----
+  var allGroup = g.append("g").attr("class", "sectors-all-view");
+
+  // Grid
+  allGroup.append("g").attr("class", "grid")
+    .call(d3.axisTop(x).ticks(5).tickSize(-dim.innerH).tickFormat(""))
+    .call(function(g) { g.select(".domain").remove(); });
+
+  // Average line
+  allGroup.append("line")
+    .attr("x1", x(avgVal)).attr("x2", x(avgVal))
+    .attr("y1", 0).attr("y2", dim.innerH)
+    .attr("stroke", C.indigo).attr("stroke-width", 1.5).attr("stroke-dasharray", "6,4");
+  allGroup.append("text").attr("class", "chart-annotation")
+    .attr("x", x(avgVal) + 4).attr("y", -6)
+    .attr("fill", C.indigo).attr("font-size", "12px")
+    .text("UK avg \u00a3" + avgVal.toFixed(0) + "/hr");
+
+  // Bars
+  allGroup.selectAll(".bar-sector")
+    .data(sectors)
+    .enter().append("rect")
+    .attr("class", "bar-sector")
+    .attr("x", 0)
+    .attr("y", function(d) { return yBand(shortName(d.sector)); })
+    .attr("width", function(d) { return x(d.gbpPerHour); })
+    .attr("height", yBand.bandwidth())
+    .attr("fill", function(d) { return d.gbpPerHour >= avgVal ? C.indigo : "#C7D2FE"; })
+    .attr("rx", 2)
+    .on("mousemove", function(event, d) {
+      showTooltip('<div class="tt-label">' + d.sector + '</div><div class="tt-value">\u00a3' + d.gbpPerHour.toFixed(2) + ' per hour</div>', event);
+    })
+    .on("mouseleave", hideTooltip);
+
+  // Sector labels
+  allGroup.selectAll(".sector-label")
+    .data(sectors)
+    .enter().append("text")
+    .attr("class", "chart-annotation")
+    .attr("x", -8)
+    .attr("y", function(d) { return yBand(shortName(d.sector)) + yBand.bandwidth() / 2 + 4; })
+    .attr("text-anchor", "end")
+    .attr("fill", C.ink)
+    .attr("font-size", "12.5px")
+    .text(function(d) { return shortName(d.sector); });
+
+  // Value labels
+  allGroup.selectAll(".sector-val")
+    .data(sectors)
+    .enter().append("text")
+    .attr("class", "chart-annotation-bold")
+    .attr("x", function(d) { return x(d.gbpPerHour) + 4; })
+    .attr("y", function(d) { return yBand(shortName(d.sector)) + yBand.bandwidth() / 2 + 4; })
+    .attr("fill", function(d) { return d.gbpPerHour >= avgVal ? C.indigo : C.muted; })
+    .attr("font-size", "12px")
+    .text(function(d) { return "\u00a3" + d.gbpPerHour.toFixed(0); });
+
+  // ---- Step 1: highlight bottom half ----
+  var highlightGroup = g.append("g").attr("class", "sectors-highlight-view").style("opacity", 0).style("pointer-events", "none");
+
+  // Grid
+  highlightGroup.append("g").attr("class", "grid")
+    .call(d3.axisTop(x).ticks(5).tickSize(-dim.innerH).tickFormat(""))
+    .call(function(g) { g.select(".domain").remove(); });
+
+  // Average line
+  highlightGroup.append("line")
+    .attr("x1", x(avgVal)).attr("x2", x(avgVal))
+    .attr("y1", 0).attr("y2", dim.innerH)
+    .attr("stroke", C.indigo).attr("stroke-width", 1.5).attr("stroke-dasharray", "6,4");
+  highlightGroup.append("text").attr("class", "chart-annotation")
+    .attr("x", x(avgVal) + 4).attr("y", -6)
+    .attr("fill", C.indigo).attr("font-size", "12px")
+    .text("UK avg \u00a3" + avgVal.toFixed(0) + "/hr");
+
+  var median = sectors[Math.floor(sectors.length / 2)].gbpPerHour;
+
+  // Bars - dim the top half
+  highlightGroup.selectAll(".bar-sector-hl")
+    .data(sectors)
+    .enter().append("rect")
+    .attr("class", "bar-sector-hl")
+    .attr("x", 0)
+    .attr("y", function(d) { return yBand(shortName(d.sector)); })
+    .attr("width", function(d) { return x(d.gbpPerHour); })
+    .attr("height", yBand.bandwidth())
+    .attr("fill", function(d) { return d.gbpPerHour < median ? C.red : "#E0E0DB"; })
+    .attr("opacity", function(d) { return d.gbpPerHour < median ? 1 : 0.4; })
+    .attr("rx", 2)
+    .on("mousemove", function(event, d) {
+      showTooltip('<div class="tt-label">' + d.sector + '</div><div class="tt-value">\u00a3' + d.gbpPerHour.toFixed(2) + ' per hour</div>', event);
+    })
+    .on("mouseleave", hideTooltip);
+
+  // Sector labels
+  highlightGroup.selectAll(".sector-label-hl")
+    .data(sectors)
+    .enter().append("text")
+    .attr("class", "chart-annotation")
+    .attr("x", -8)
+    .attr("y", function(d) { return yBand(shortName(d.sector)) + yBand.bandwidth() / 2 + 4; })
+    .attr("text-anchor", "end")
+    .attr("fill", function(d) { return d.gbpPerHour < median ? C.ink : C.faint; })
+    .attr("font-size", "12.5px")
+    .text(function(d) { return shortName(d.sector); });
+
+  // Value labels
+  highlightGroup.selectAll(".sector-val-hl")
+    .data(sectors)
+    .enter().append("text")
+    .attr("class", "chart-annotation-bold")
+    .attr("x", function(d) { return x(d.gbpPerHour) + 4; })
+    .attr("y", function(d) { return yBand(shortName(d.sector)) + yBand.bandwidth() / 2 + 4; })
+    .attr("fill", function(d) { return d.gbpPerHour < median ? C.red : C.faint; })
+    .attr("font-size", "12px")
+    .text(function(d) { return "\u00a3" + d.gbpPerHour.toFixed(0); });
+}
+
+function updateSectorsChart(step) {
+  var container = document.getElementById("chart-sectors");
+  var svg = d3.select(container).select("svg");
+  if (step === 0) {
+    svg.select(".sectors-all-view").transition().duration(DURATION).style("opacity", 1).on("end", function() { d3.select(this).style("pointer-events", "all"); });
+    svg.select(".sectors-highlight-view").transition().duration(DURATION).style("opacity", 0).on("end", function() { d3.select(this).style("pointer-events", "none"); });
+  } else {
+    svg.select(".sectors-all-view").transition().duration(DURATION).style("opacity", 0).on("end", function() { d3.select(this).style("pointer-events", "none"); });
+    svg.select(".sectors-highlight-view").transition().duration(DURATION).style("opacity", 1).on("end", function() { d3.select(this).style("pointer-events", "all"); });
+  }
+}
+
+/* =========================================================
+   CHART 4: WHY IT MATTERS — Output per hour (GBP) over time
+   ========================================================= */
+function buildMattersChart() {
+  var container = document.getElementById("chart-matters");
+  var dim = chartDims(container);
+  var svg = d3.select(container).append("svg")
+    .attr("width", dim.width).attr("height", dim.height)
+    .attr("viewBox", "0 0 " + dim.width + " " + dim.height);
+  var g = svg.append("g").attr("transform", "translate(" + dim.margin.left + "," + dim.margin.top + ")");
+
+  var series = DATA.levelSeries;
+  var x = d3.scaleLinear().domain([1971, 2024]).range([0, dim.innerW]);
+  var yMax = d3.max(series, function(d) { return d.gbpPerHour; }) * 1.1;
+  var y = d3.scaleLinear().domain([0, yMax]).range([dim.innerH, 0]);
+
+  // ---- Step 0: nominal GBP/hour line showing stagnation post-2008 ----
+  var nomGroup = g.append("g").attr("class", "matters-nom-view");
+
+  // Grid
+  nomGroup.append("g").attr("class", "grid")
+    .call(d3.axisLeft(y).ticks(6).tickSize(-dim.innerW).tickFormat(""))
+    .call(function(g) { g.select(".domain").remove(); });
+
+  // X axis
+  nomGroup.append("g").attr("class", "axis x-axis")
+    .attr("transform", "translate(0," + dim.innerH + ")")
+    .call(d3.axisBottom(x).tickValues([1975, 1985, 1995, 2005, 2015, 2024]).tickFormat(d3.format("d")).tickSize(0))
+    .call(function(g) { g.select(".domain").remove(); });
+
+  // Y axis
+  nomGroup.append("g").attr("class", "axis y-axis")
+    .call(d3.axisLeft(y).ticks(6).tickSize(0).tickFormat(function(d) { return "\u00a3" + d; }))
+    .call(function(g) { g.select(".domain").remove(); });
+
+  // Y label
+  nomGroup.append("text").attr("class", "chart-annotation")
+    .attr("transform", "rotate(-90)")
+    .attr("x", -dim.innerH / 2).attr("y", -44)
+    .attr("text-anchor", "middle").attr("fill", C.muted)
+    .text("Output per hour (\u00a3)");
+
+  // Line
+  var lineGen = d3.line().x(function(d) { return x(d.year); }).y(function(d) { return y(d.gbpPerHour); }).curve(d3.curveMonotoneX);
+  nomGroup.append("path").datum(series)
+    .attr("d", lineGen).attr("fill", "none").attr("stroke", C.indigo).attr("stroke-width", 2.5);
+
+  // Area under line
+  var areaGen = d3.area()
+    .x(function(d) { return x(d.year); })
+    .y0(dim.innerH)
+    .y1(function(d) { return y(d.gbpPerHour); })
+    .curve(d3.curveMonotoneX);
+  nomGroup.append("path").datum(series)
+    .attr("d", areaGen).attr("fill", C.indigoLight);
+
+  // Annotations: pre-2008 steep growth, post-2008 slow
+  var d2008 = series.find(function(d) { return d.year === 2008; });
+  nomGroup.append("circle").attr("cx", x(2008)).attr("cy", y(d2008.gbpPerHour)).attr("r", 4)
+    .attr("fill", C.indigo).attr("stroke", "#fff").attr("stroke-width", 2);
+
+  // Growth rates as annotations
+  var d1990 = series.find(function(d) { return d.year === 1990; });
+  var annPre = ((d2008.gbpPerHour / d1990.gbpPerHour) - 1) / 18 * 100;
+  nomGroup.append("text").attr("class", "chart-annotation-bold")
+    .attr("x", x(1999)).attr("y", y(20))
+    .attr("text-anchor", "middle").attr("fill", C.indigo)
+    .text("Rapid growth");
+  nomGroup.append("text").attr("class", "chart-annotation")
+    .attr("x", x(1999)).attr("y", y(20) + 16)
+    .attr("text-anchor", "middle").attr("fill", C.indigo)
+    .text("+" + annPre.toFixed(1) + "% per year");
+
+  var d2024 = series.find(function(d) { return d.year === 2024; });
+  var annPost = ((d2024.gbpPerHour / d2008.gbpPerHour) - 1) / 16 * 100;
+  nomGroup.append("text").attr("class", "chart-annotation-bold")
+    .attr("x", x(2016)).attr("y", y(42))
+    .attr("text-anchor", "middle").attr("fill", C.red)
+    .text("Stagnation");
+  nomGroup.append("text").attr("class", "chart-annotation")
+    .attr("x", x(2016)).attr("y", y(42) + 16)
+    .attr("text-anchor", "middle").attr("fill", C.red)
+    .text("+" + annPost.toFixed(1) + "% per year (nominal)");
+
+  // End label
+  var last = series[series.length - 1];
+  nomGroup.append("text").attr("class", "chart-annotation-bold")
+    .attr("x", x(last.year) + 6).attr("y", y(last.gbpPerHour) + 4)
+    .attr("fill", C.indigo).text("\u00a3" + last.gbpPerHour.toFixed(0));
+
+  // Hover
+  var hoverRect = nomGroup.append("rect")
+    .attr("width", dim.innerW).attr("height", dim.innerH)
+    .attr("fill", "transparent").style("cursor", "crosshair");
+  var hoverLine = nomGroup.append("line")
+    .attr("y1", 0).attr("y2", dim.innerH)
+    .attr("stroke", "#999").attr("stroke-width", 1).attr("stroke-dasharray", "3,2")
+    .style("opacity", 0);
+  var hoverDot = nomGroup.append("circle").attr("r", 4).attr("fill", C.indigo).style("opacity", 0);
+
+  hoverRect.on("mousemove", function(event) {
+    var mx = d3.pointer(event, this)[0];
+    var year = Math.round(x.invert(mx));
+    var d = series.find(function(a) { return a.year === year; });
+    if (!d) return;
+    hoverLine.attr("x1", x(year)).attr("x2", x(year)).style("opacity", 1);
+    hoverDot.attr("cx", x(year)).attr("cy", y(d.gbpPerHour)).style("opacity", 1);
+    showTooltip('<div class="tt-label">' + d.year + '</div><div class="tt-value">\u00a3' + d.gbpPerHour.toFixed(2) + ' per hour</div>', event);
+  }).on("mouseleave", function() {
+    hoverLine.style("opacity", 0); hoverDot.style("opacity", 0); hideTooltip();
+  });
+
+  // ---- Step 1: Same chart with "fiscal squeeze" annotation overlay ----
+  var fiscalGroup = g.append("g").attr("class", "matters-fiscal-view").style("opacity", 0).style("pointer-events", "none");
+
+  // Replicate the base chart
+  fiscalGroup.append("g").attr("class", "grid")
+    .call(d3.axisLeft(y).ticks(6).tickSize(-dim.innerW).tickFormat(""))
+    .call(function(g) { g.select(".domain").remove(); });
+
+  fiscalGroup.append("g").attr("class", "axis x-axis")
+    .attr("transform", "translate(0," + dim.innerH + ")")
+    .call(d3.axisBottom(x).tickValues([1975, 1985, 1995, 2005, 2015, 2024]).tickFormat(d3.format("d")).tickSize(0))
+    .call(function(g) { g.select(".domain").remove(); });
+
+  fiscalGroup.append("g").attr("class", "axis y-axis")
+    .call(d3.axisLeft(y).ticks(6).tickSize(0).tickFormat(function(d) { return "\u00a3" + d; }))
+    .call(function(g) { g.select(".domain").remove(); });
+
+  // Dimmed line
+  fiscalGroup.append("path").datum(series)
+    .attr("d", lineGen).attr("fill", "none").attr("stroke", C.indigo).attr("stroke-width", 2.5).attr("opacity", 0.3);
+  fiscalGroup.append("path").datum(series)
+    .attr("d", areaGen).attr("fill", C.indigoPale);
+
+  // Highlight the post-2008 flatline
+  var postSeries = series.filter(function(d) { return d.year >= 2008; });
+  fiscalGroup.append("path").datum(postSeries)
+    .attr("d", lineGen).attr("fill", "none").attr("stroke", C.red).attr("stroke-width", 3);
+
+  var postArea = d3.area()
+    .x(function(d) { return x(d.year); })
+    .y0(dim.innerH)
+    .y1(function(d) { return y(d.gbpPerHour); })
+    .curve(d3.curveMonotoneX);
+  fiscalGroup.append("path").datum(postSeries)
+    .attr("d", postArea).attr("fill", "rgba(197,48,48,0.08)");
+
+  // Big annotation box
+  var boxX = x(2010);
+  var boxY = y(yMax * 0.75);
+  fiscalGroup.append("rect")
+    .attr("x", boxX).attr("y", boxY)
+    .attr("width", dim.innerW - boxX - 10).attr("height", 80)
+    .attr("fill", "#fff").attr("stroke", "#E0E0DB").attr("rx", 8)
+    .attr("opacity", 0.95);
+  fiscalGroup.append("text").attr("class", "chart-annotation-bold")
+    .attr("x", boxX + 14).attr("y", boxY + 24)
+    .attr("fill", C.red).attr("font-size", "14px")
+    .text("Low productivity = low growth");
+  fiscalGroup.append("text").attr("class", "chart-annotation")
+    .attr("x", boxX + 14).attr("y", boxY + 44)
+    .attr("fill", C.secondary).attr("font-size", "13px")
+    .text("Low growth = less tax revenue");
+  fiscalGroup.append("text").attr("class", "chart-annotation")
+    .attr("x", boxX + 14).attr("y", boxY + 62)
+    .attr("fill", C.secondary).attr("font-size", "13px")
+    .text("Less revenue = underfunded services");
+}
+
+function updateMattersChart(step) {
+  var container = document.getElementById("chart-matters");
+  var svg = d3.select(container).select("svg");
+  if (step === 0) {
+    svg.select(".matters-nom-view").transition().duration(DURATION).style("opacity", 1).on("end", function() { d3.select(this).style("pointer-events", "all"); });
+    svg.select(".matters-fiscal-view").transition().duration(DURATION).style("opacity", 0).on("end", function() { d3.select(this).style("pointer-events", "none"); });
+  } else {
+    svg.select(".matters-nom-view").transition().duration(DURATION).style("opacity", 0).on("end", function() { d3.select(this).style("pointer-events", "none"); });
+    svg.select(".matters-fiscal-view").transition().duration(DURATION).style("opacity", 1).on("end", function() { d3.select(this).style("pointer-events", "all"); });
+  }
+}
+
+/* =========================================================
+   SCROLL OBSERVER
+   ========================================================= */
+function setupScrollObserver() {
+  var observer = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      var inner = entry.target.querySelector(".step-inner");
+      if (!inner) return;
+      if (entry.isIntersecting) {
+        inner.classList.add("active");
+        var sec = entry.target.dataset.section;
+        var idx = +entry.target.dataset.step;
+        updateChart(sec, idx);
+      } else {
+        inner.classList.remove("active");
+      }
+    });
+  }, { rootMargin: "-30% 0px -30% 0px" });
+
+  document.querySelectorAll(".step").forEach(function(step) {
+    observer.observe(step);
+  });
+}
+
+function updateChart(section, step) {
+  switch (section) {
+    case "hook": updateHookChart(step); break;
+    case "international": updateInternationalChart(step); break;
+    case "sectors": updateSectorsChart(step); break;
+    case "matters": updateMattersChart(step); break;
+  }
+}
+
+})();
+</script>
+</body>
+</html>

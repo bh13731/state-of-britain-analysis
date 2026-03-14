@@ -636,10 +636,14 @@ function buildHookChart() {
     .call(d3.axisLeft(y).ticks(6).tickFormat(d => fmtNum(d)).tickSize(0))
     .call(g => g.select(".domain").remove());
 
-  // End label
+  // End label — offset above the line with leader line
+  bgGroup.append("line")
+    .attr("x1", x(parseDate(latest.period))).attr("x2", x(parseDate(latest.period)))
+    .attr("y1", y(latest.totalWaiting) - 4).attr("y2", y(latest.totalWaiting) - 16)
+    .attr("stroke", C.teal).attr("stroke-width", 1);
   bgGroup.append("text").attr("class", "chart-annotation-bold")
     .attr("x", x(parseDate(latest.period)) + 6)
-    .attr("y", y(latest.totalWaiting) + 4)
+    .attr("y", y(latest.totalWaiting) - 20)
     .attr("fill", C.teal).text(fmtNum(latest.totalWaiting));
 
   // COVID annotation
@@ -746,16 +750,20 @@ function build18WeekChart() {
     .call(d3.axisLeft(y).ticks(6).tickFormat(d => d + "%").tickSize(0))
     .call(g => g.select(".domain").remove());
 
-  // End label
+  // End label — offset below with leader line to avoid sitting on the data line
+  earlyGroup.append("line")
+    .attr("x1", x(parseDate(latest.period))).attr("x2", x(parseDate(latest.period)))
+    .attr("y1", y(latest.pctWithin18) + 4).attr("y2", y(latest.pctWithin18) + 18)
+    .attr("stroke", C.red).attr("stroke-width", 1);
   earlyGroup.append("text").attr("class", "chart-annotation-bold")
     .attr("x", x(parseDate(latest.period)) + 6)
-    .attr("y", y(latest.pctWithin18) + 4)
+    .attr("y", y(latest.pctWithin18) + 30)
     .attr("fill", C.red).text(fmtPct(latest.pctWithin18));
 
-  // Start label
+  // Start label — offset above with enough clearance
   earlyGroup.append("text").attr("class", "chart-annotation")
-    .attr("x", x(parseDate(rtt[0].period)) - 4)
-    .attr("y", y(rtt[0].pctWithin18) - 10)
+    .attr("x", x(parseDate(rtt[0].period)) + 6)
+    .attr("y", y(rtt[0].pctWithin18) - 12)
     .attr("text-anchor", "start").attr("fill", C.teal)
     .text(fmtPct(rtt[0].pctWithin18));
 
@@ -818,8 +826,13 @@ function build18WeekChart() {
   dangerGroup.append("circle")
     .attr("cx", x(parseDate(lowest.period))).attr("cy", y(lowest.pctWithin18))
     .attr("r", 4).attr("fill", C.red);
+  // Leader line from dot to annotation in white space below
+  dangerGroup.append("line")
+    .attr("x1", x(parseDate(lowest.period))).attr("x2", x(parseDate(lowest.period)) + 12)
+    .attr("y1", y(lowest.pctWithin18) + 6).attr("y2", y(lowest.pctWithin18) + 22)
+    .attr("stroke", C.red).attr("stroke-width", 1);
   dangerGroup.append("text").attr("class", "chart-annotation-bold")
-    .attr("x", x(parseDate(lowest.period)) + 8).attr("y", y(lowest.pctWithin18) + 4)
+    .attr("x", x(parseDate(lowest.period)) + 14).attr("y", y(lowest.pctWithin18) + 34)
     .attr("fill", C.red).text("Low: " + fmtPct(lowest.pctWithin18));
 
   // Hover
@@ -918,23 +931,31 @@ function buildLongWaitChart() {
   // --- Step 1: Peak annotation ---
   const peakGroup = g.append("g").attr("class", "peak-view").style("opacity", 0);
 
-  // Peak annotation
+  // Peak annotation — leader line from dot to label in white space above
   peakGroup.append("circle")
     .attr("cx", x(parseDate(peak.period))).attr("cy", y(peak.over52weeks))
     .attr("r", 5).attr("fill", C.red);
-  peakGroup.append("text").attr("class", "chart-annotation-bold")
-    .attr("x", x(parseDate(peak.period)) - 8).attr("y", y(peak.over52weeks) - 12)
-    .attr("text-anchor", "end").attr("fill", C.red)
-    .text("Peak: " + fmtNumFull(peak.over52weeks));
+  peakGroup.append("line")
+    .attr("x1", x(parseDate(peak.period))).attr("x2", x(parseDate(peak.period)) - 14)
+    .attr("y1", y(peak.over52weeks) - 7).attr("y2", y(peak.over52weeks) - 22)
+    .attr("stroke", C.red).attr("stroke-width", 1);
   peakGroup.append("text").attr("class", "chart-annotation")
-    .attr("x", x(parseDate(peak.period)) - 8).attr("y", y(peak.over52weeks) - 28)
+    .attr("x", x(parseDate(peak.period)) - 16).attr("y", y(peak.over52weeks) - 38)
     .attr("text-anchor", "end").attr("fill", C.muted)
     .text(formatPeriod(peak.period));
+  peakGroup.append("text").attr("class", "chart-annotation-bold")
+    .attr("x", x(parseDate(peak.period)) - 16).attr("y", y(peak.over52weeks) - 24)
+    .attr("text-anchor", "end").attr("fill", C.red)
+    .text("Peak: " + fmtNumFull(peak.over52weeks));
 
-  // End label
+  // End label — offset above with leader line
+  peakGroup.append("line")
+    .attr("x1", x(parseDate(latest.period))).attr("x2", x(parseDate(latest.period)))
+    .attr("y1", y(latest.over52weeks) - 4).attr("y2", y(latest.over52weeks) - 18)
+    .attr("stroke", C.red).attr("stroke-width", 1);
   peakGroup.append("text").attr("class", "chart-annotation-bold")
     .attr("x", x(parseDate(latest.period)) + 6)
-    .attr("y", y(latest.over52weeks) + 4)
+    .attr("y", y(latest.over52weeks) - 22)
     .attr("fill", C.red).text(fmtNum(latest.over52weeks));
 
   // COVID marker
@@ -1024,32 +1045,43 @@ function buildMedianChart() {
     .call(d3.axisBottom(x).ticks(d3.timeYear.every(2)).tickFormat(d3.timeFormat("%Y")).tickSize(0))
     .call(g => g.select(".domain").remove());
 
-  // Y axis
+  // Y axis — unit label above axis instead of repeating in every tick
   trendGroup.append("g").attr("class", "axis y-axis")
-    .call(d3.axisLeft(y).ticks(6).tickFormat(d => d + " wks").tickSize(0))
+    .call(d3.axisLeft(y).ticks(6).tickFormat(d => d).tickSize(0))
     .call(g => g.select(".domain").remove());
+  trendGroup.append("text").attr("class", "chart-annotation")
+    .attr("x", -dim.margin.left + 4).attr("y", -12)
+    .attr("fill", C.muted).text("Weeks");
 
-  // Start annotation
+  // Start annotation — offset above with enough padding
   trendGroup.append("text").attr("class", "chart-annotation")
     .attr("x", x(parseDate(earliest.period)) + 6)
-    .attr("y", y(earliest.medianWait) - 10)
-    .attr("fill", C.teal).text(d3.format(".1f")(earliest.medianWait) + " weeks");
+    .attr("y", y(earliest.medianWait) - 12)
+    .attr("fill", C.teal).text(d3.format(".1f")(earliest.medianWait) + " wks");
 
   // --- Step 1: annotated with peak and latest ---
   const annotGroup = g.append("g").attr("class", "annot-view").style("opacity", 0);
 
-  // COVID peak annotation
+  // COVID peak annotation — leader line from dot to label in white space above
   annotGroup.append("circle")
     .attr("cx", x(parseDate(peak.period))).attr("cy", y(peak.medianWait))
     .attr("r", 5).attr("fill", C.red);
+  annotGroup.append("line")
+    .attr("x1", x(parseDate(peak.period))).attr("x2", x(parseDate(peak.period)) + 10)
+    .attr("y1", y(peak.medianWait) - 7).attr("y2", y(peak.medianWait) - 20)
+    .attr("stroke", C.red).attr("stroke-width", 1);
   annotGroup.append("text").attr("class", "chart-annotation-bold")
-    .attr("x", x(parseDate(peak.period)) + 8).attr("y", y(peak.medianWait) + 4)
+    .attr("x", x(parseDate(peak.period)) + 12).attr("y", y(peak.medianWait) - 24)
     .attr("fill", C.red).text("Peak: " + d3.format(".1f")(peak.medianWait) + " wks");
 
-  // End label
+  // End label — offset above with leader line
+  annotGroup.append("line")
+    .attr("x1", x(parseDate(latest.period))).attr("x2", x(parseDate(latest.period)))
+    .attr("y1", y(latest.medianWait) - 4).attr("y2", y(latest.medianWait) - 18)
+    .attr("stroke", C.teal).attr("stroke-width", 1);
   annotGroup.append("text").attr("class", "chart-annotation-bold")
     .attr("x", x(parseDate(latest.period)) + 6)
-    .attr("y", y(latest.medianWait) + 4)
+    .attr("y", y(latest.medianWait) - 22)
     .attr("fill", C.teal).text(d3.format(".1f")(latest.medianWait) + " wks");
 
   // COVID marker
@@ -1164,31 +1196,35 @@ function buildAEChart() {
     })
     .on("mouseleave", hideTooltip);
 
-  // Bar value labels - All types
+  // Bar value labels - All types (10px padding from bar top)
   barGroup.selectAll(".ae-val-all").data(ae).enter()
-    .append("text").attr("class", "chart-annotation-bold")
+    .append("text").attr("class", "chart-annotation-bold ae-val-all")
     .attr("x", d => x(d.period) + x.bandwidth() / 4 - 1)
-    .attr("y", d => y(d.pctWithin4Hours) - 8)
+    .attr("y", d => y(d.pctWithin4Hours) - 10)
     .attr("text-anchor", "middle")
-    .attr("fill", C.teal).attr("font-size", "13px")
-    .text(d => d3.format(".1f")(d.pctWithin4Hours) + "%");
+    .attr("fill", C.teal).attr("font-size", "12px")
+    .text(d => d3.format(".0f")(d.pctWithin4Hours));
 
-  // Bar value labels - Type 1
+  // Bar value labels - Type 1 (10px padding from bar top)
   barGroup.selectAll(".ae-val-t1").data(ae).enter()
-    .append("text").attr("class", "chart-annotation-bold")
+    .append("text").attr("class", "chart-annotation-bold ae-val-t1")
     .attr("x", d => x(d.period) + x.bandwidth() * 3 / 4 + 1)
-    .attr("y", d => y(d.pctWithin4HoursType1) - 8)
+    .attr("y", d => y(d.pctWithin4HoursType1) - 10)
     .attr("text-anchor", "middle")
-    .attr("fill", C.red).attr("font-size", "13px")
-    .text(d => d3.format(".1f")(d.pctWithin4HoursType1) + "%");
+    .attr("fill", C.red).attr("font-size", "12px")
+    .text(d => d3.format(".0f")(d.pctWithin4HoursType1));
 
-  // X axis
+  // X axis — use abbreviated format to prevent tick label overlap
   barGroup.append("g").attr("class", "axis x-axis")
     .attr("transform", `translate(0,${dim.innerH})`)
-    .call(d3.axisBottom(x).tickFormat(d => formatPeriod(d)).tickSize(0))
-    .call(g => g.select(".domain").remove());
+    .call(d3.axisBottom(x).tickFormat(d => {
+      const dt = parseDate(d);
+      return d3.timeFormat("%b '%y")(dt);
+    }).tickSize(0))
+    .call(g => g.select(".domain").remove())
+    .selectAll("text").style("text-anchor", "middle");
 
-  // Y axis
+  // Y axis — percent sign in ticks is sufficient; no separate title needed
   barGroup.append("g").attr("class", "axis y-axis")
     .call(d3.axisLeft(y).ticks(5).tickFormat(d => d + "%").tickSize(0))
     .call(g => g.select(".domain").remove());
@@ -1221,11 +1257,17 @@ function buildAEChart() {
     .attr("x", gapX + 10).attr("y", (gapY1 + gapY2) / 2 + 5)
     .attr("fill", C.red).text(d3.format(".1f")(95 - lastBar.pctWithin4Hours) + "pp gap");
 
-  // Winter crisis annotation
+  // Winter crisis annotation — placed in top white space with leader line to avoid bar overlap
   const winterQ = ae.find(d => d.period.endsWith("-01"));
   if (winterQ) {
+    const winterBarX = x(winterQ.period) + x.bandwidth() / 2;
+    const winterBarTopY = y(winterQ.pctWithin4HoursType1);
+    gapGroup.append("line")
+      .attr("x1", winterBarX).attr("x2", winterBarX)
+      .attr("y1", winterBarTopY - 14).attr("y2", 28)
+      .attr("stroke", C.red).attr("stroke-width", 1).attr("stroke-dasharray", "2,2");
     gapGroup.append("text").attr("class", "chart-annotation")
-      .attr("x", x(winterQ.period) + x.bandwidth() / 2).attr("y", y(winterQ.pctWithin4HoursType1) - 28)
+      .attr("x", winterBarX).attr("y", 20)
       .attr("text-anchor", "middle").attr("fill", C.red)
       .text("Winter pressure");
   }
@@ -1328,15 +1370,23 @@ function buildOutlookChart() {
     .call(g => g.select(".domain").remove())
     .selectAll("text").attr("fill", C.amber);
 
-  // End labels
+  // End labels — offset with leader lines to keep clear of data
+  overviewGroup.append("line")
+    .attr("x1", x(parseDate(latest.period))).attr("x2", x(parseDate(latest.period)))
+    .attr("y1", yPct(latest.pctWithin18) - 4).attr("y2", yPct(latest.pctWithin18) - 18)
+    .attr("stroke", C.teal).attr("stroke-width", 1);
   overviewGroup.append("text").attr("class", "chart-annotation-bold")
     .attr("x", x(parseDate(latest.period)) + 6)
-    .attr("y", yPct(latest.pctWithin18) - 8)
+    .attr("y", yPct(latest.pctWithin18) - 22)
     .attr("fill", C.teal).text(fmtPct(latest.pctWithin18) + " in 18wks");
 
+  overviewGroup.append("line")
+    .attr("x1", x(parseDate(latest.period))).attr("x2", x(parseDate(latest.period)))
+    .attr("y1", yCount(latest.totalWaiting) + 4).attr("y2", yCount(latest.totalWaiting) + 18)
+    .attr("stroke", C.amber).attr("stroke-width", 1);
   overviewGroup.append("text").attr("class", "chart-annotation-bold")
     .attr("x", x(parseDate(latest.period)) + 6)
-    .attr("y", yCount(latest.totalWaiting) + 16)
+    .attr("y", yCount(latest.totalWaiting) + 30)
     .attr("fill", C.amber).text(fmtNum(latest.totalWaiting) + " waiting");
 
   // COVID marker

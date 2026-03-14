@@ -164,12 +164,12 @@ body {
 
 /* ---------- Chart annotation ---------- */
 .chart-annotation {
-  font-size: 13.5px;
+  font-size: 13px;
   fill: #555555;
   font-family: 'Inter', sans-serif;
 }
 .chart-annotation-bold {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   fill: #1A1A1A;
   font-family: 'Inter', sans-serif;
@@ -200,7 +200,7 @@ body {
 /* ---------- SVG common ---------- */
 .axis text {
   font-family: 'Inter', sans-serif;
-  font-size: 13.5px;
+  font-size: 12px;
   fill: #555555;
 }
 .axis path, .axis line { stroke: none; }
@@ -276,7 +276,7 @@ body {
     <div class="step" data-section="gap" data-step="1">
       <div class="step-inner">
         <h2>The gap that never closes</h2>
-        <p>Government has spent more than it earned in all but three years since 1978. The late 1990s were the last time Britain ran a surplus.</p>
+        <p>Government has spent more than it earned in almost every year since 1978. A brief surplus around 1999&ndash;2001 was the exception, not the rule.</p>
       </div>
     </div>
   </div>
@@ -296,8 +296,8 @@ body {
     </div>
     <div class="step" data-section="debt" data-step="1">
       <div class="step-inner">
-        <h2>Debt now costs more than Defence</h2>
-        <p>Rising rates and inflation have tripled the interest bill in just three years. At &pound;140bn by 2030, debt interest will cost more than the entire Defence budget.</p>
+        <h2>Debt interest now exceeds Defence spending</h2>
+        <p>Rising gilt yields and inflation have sharply increased the interest bill. Debt interest already exceeds the entire Defence budget &mdash; and the OBR expects it to keep climbing.</p>
       </div>
     </div>
   </div>
@@ -501,18 +501,18 @@ function buildGapChart() {
   container._g = g;
   container._svg = svg;
 
+  // No standalone chart title needed — step text provides context
+
   // --- BAR VIEW (default, step 0) ---
   const barGroup = g.append("g").attr("class", "bar-view");
 
   // Y axis
   barGroup.append("g").attr("class", "axis y-axis")
-    .call(d3.axisLeft(yBar).ticks(6).tickFormat(d => "\u00a3" + d + "bn").tickSize(0))
+    .call(d3.axisLeft(yBar).ticks(6).tickFormat(d => d === 0 ? "0" : d).tickSize(0))
     .call(g => g.select(".domain").remove());
-
-  // Grid
-  barGroup.append("g").attr("class", "grid")
-    .call(d3.axisLeft(yBar).ticks(6).tickSize(-dim.innerW).tickFormat(""))
-    .call(g => g.select(".domain").remove());
+  barGroup.append("text").attr("class", "chart-annotation")
+    .attr("x", 0).attr("y", -12).attr("text-anchor", "start").attr("fill", C.muted)
+    .text("\u00a3bn");
 
   // Bars
   barGroup.append("rect")
@@ -603,21 +603,32 @@ function buildGapChart() {
 
   // Y axis
   lineGroup.append("g").attr("class", "axis y-axis")
-    .call(d3.axisLeft(yLine).ticks(6).tickFormat(d => "\u00a3" + d + "bn").tickSize(0))
+    .call(d3.axisLeft(yLine).ticks(6).tickFormat(d => d === 0 ? "0" : d).tickSize(0))
     .call(g => g.select(".domain").remove());
+  lineGroup.append("text").attr("class", "chart-annotation")
+    .attr("x", 0).attr("y", -12).attr("text-anchor", "start").attr("fill", C.muted)
+    .text("\u00a3bn");
 
   // Grid
   lineGroup.append("g").attr("class", "grid")
     .call(d3.axisLeft(yLine).ticks(6).tickSize(-dim.innerW).tickFormat(""))
     .call(g => g.select(".domain").remove());
 
-  // Labels at end
+  // Labels at end — enforce minimum 18px vertical separation to avoid overlap
   const lastAgg = agg[agg.length - 1];
+  let ySpend = yLine(lastAgg.tme) + 4;
+  let yRev = yLine(lastAgg.receipts) + 4;
+  const minSep = 18;
+  if (Math.abs(ySpend - yRev) < minSep) {
+    const mid = (ySpend + yRev) / 2;
+    ySpend = mid - minSep / 2;
+    yRev = mid + minSep / 2;
+  }
   lineGroup.append("text").attr("class", "chart-annotation-bold")
-    .attr("x", xLine(lastAgg.year) + 10).attr("y", yLine(lastAgg.tme) + 4)
+    .attr("x", xLine(lastAgg.year) + 10).attr("y", ySpend)
     .attr("fill", C.red).text("Spending");
   lineGroup.append("text").attr("class", "chart-annotation-bold")
-    .attr("x", xLine(lastAgg.year) + 10).attr("y", yLine(lastAgg.receipts) + 4)
+    .attr("x", xLine(lastAgg.year) + 10).attr("y", yRev)
     .attr("fill", C.green).text("Revenue");
 
   // Surplus annotation
@@ -664,7 +675,7 @@ function buildGapChart() {
     showTooltip(`<div class="tt-label">${d.fy}${d.forecast ? " (forecast)" : ""}</div>
       <div class="tt-value" style="color:${C.green}">Revenue: ${fmtBnShort(d.receipts)}</div>
       <div class="tt-value" style="color:${C.red}">Spending: ${fmtBnShort(d.tme)}</div>
-      <div class="tt-value" style="color:${d.borrowing > 0 ? C.red : C.green}">Borrowing: ${d.borrowing > 0 ? "" : "-"}${fmtBnShort(Math.abs(d.borrowing))}</div>`, event);
+      <div class="tt-value" style="color:${d.borrowing > 0 ? C.red : C.green}">${d.borrowing > 0 ? "Deficit" : "Surplus"}: ${fmtBnShort(Math.abs(d.borrowing))}</div>`, event);
   }).on("mouseleave", function() {
     hoverLine.style("opacity", 0); hoverDotR.style("opacity", 0); hoverDotE.style("opacity", 0);
     hideTooltip();
@@ -732,8 +743,11 @@ function buildDebtChart() {
     .call(d3.axisBottom(x).ticks(isMobile() ? 5 : 10).tickFormat(d3.format("d")).tickSize(0))
     .call(g => g.select(".domain").remove());
   debtGroup.append("g").attr("class", "axis y-axis")
-    .call(d3.axisLeft(yDebt).ticks(6).tickFormat((d, i) => i === 0 ? d + "% of GDP" : d + "%").tickSize(0))
+    .call(d3.axisLeft(yDebt).ticks(6).tickFormat(d => d === 0 ? "0" : d + "%").tickSize(0))
     .call(g => g.select(".domain").remove());
+  debtGroup.append("text").attr("class", "chart-annotation")
+    .attr("x", 0).attr("y", -12).attr("text-anchor", "start").attr("fill", C.muted)
+    .text("% of GDP");
 
   // Annotations
   // Low point ~22% in 1990
@@ -791,7 +805,7 @@ function buildDebtChart() {
 
   // --- DEBT INTEREST VIEW (step 1, hidden) ---
   const intGroup = g.append("g").attr("class", "debt-int-view").style("opacity", 0).style("pointer-events", "none");
-  const yInt = d3.scaleLinear().domain([0, 160]).range([dim.innerH, 0]);
+  const yInt = d3.scaleLinear().domain([0, d3.max(agg, d => d.debtInterest) * 1.18]).range([dim.innerH, 0]).nice();
 
   // Grid
   intGroup.append("g").attr("class", "grid")
@@ -834,24 +848,27 @@ function buildDebtChart() {
     .call(d3.axisBottom(x).ticks(isMobile() ? 5 : 10).tickFormat(d3.format("d")).tickSize(0))
     .call(g => g.select(".domain").remove());
   intGroup.append("g").attr("class", "axis y-axis")
-    .call(d3.axisLeft(yInt).ticks(6).tickFormat(d => "\u00a3" + d + "bn").tickSize(0))
+    .call(d3.axisLeft(yInt).ticks(6).tickFormat(d => d === 0 ? "0" : d).tickSize(0))
     .call(g => g.select(".domain").remove());
 
   // Y-axis label (horizontal, above axis)
   intGroup.append("text").attr("class", "chart-annotation")
     .attr("x", 0).attr("y", -12)
     .attr("text-anchor", "start").attr("fill", C.muted)
-    .text("Debt interest");
+    .text("Debt interest, \u00a3bn");
 
-  // Annotation: inflection (offset into white space with leader line)
-  intGroup.append("text").attr("class", "chart-annotation")
-    .attr("x", x(2020) + 8).attr("y", yInt(agg.find(a => a.year === 2020).debtInterest) - 36)
-    .attr("fill", C.blue).text("Rates spike");
-  intGroup.append("line")
-    .attr("x1", x(2020) + 8).attr("x2", x(2020) + 8)
-    .attr("y1", yInt(agg.find(a => a.year === 2020).debtInterest) - 30)
-    .attr("y2", yInt(agg.find(a => a.year === 2020).debtInterest) - 4)
-    .attr("stroke", C.blue).attr("stroke-width", 1).attr("stroke-dasharray", "3,2");
+  // Annotation: inflection — gilt yields surged from 2022, not 2020
+  const inflectionYear = 2022;
+  const inflectionD = agg.find(a => a.year === inflectionYear);
+  if (inflectionD) {
+    intGroup.append("text").attr("class", "chart-annotation")
+      .attr("x", x(inflectionYear)).attr("y", yInt(inflectionD.debtInterest) - 36)
+      .attr("text-anchor", "middle").attr("fill", C.blue).text("Gilt yields surge");
+    intGroup.append("line")
+      .attr("x1", x(inflectionYear)).attr("x2", x(inflectionYear))
+      .attr("y1", yInt(inflectionD.debtInterest) - 30).attr("y2", yInt(inflectionD.debtInterest) - 4)
+      .attr("stroke", C.blue).attr("stroke-width", 1).attr("stroke-dasharray", "3,2");
+  }
 
   // End label
   const lastAgg = agg[agg.length - 1];
@@ -876,8 +893,10 @@ function buildDebtChart() {
     if (!d) return;
     hoverLine2.attr("x1", x(year)).attr("x2", x(year)).style("opacity", 1);
     hoverDot2.attr("cx", x(year)).attr("cy", yInt(d.debtInterest)).style("opacity", 1);
+    const pctOfRev = d.receipts > 0 ? d3.format(".1f")(d.debtInterest / d.receipts * 100) : "—";
     showTooltip(`<div class="tt-label">${d.fy}${d.forecast ? " (forecast)" : ""}</div>
-      <div class="tt-value">Debt interest: ${fmtBnShort(d.debtInterest)}</div>`, event);
+      <div class="tt-value">Debt interest: ${fmtBnShort(d.debtInterest)}</div>
+      <div class="tt-value" style="color:#555555">${pctOfRev}% of revenue</div>`, event);
   }).on("mouseleave", function() {
     hoverLine2.style("opacity", 0); hoverDot2.style("opacity", 0); hideTooltip();
   });
@@ -1102,7 +1121,7 @@ function buildOutlookChart() {
     .on("mousemove", function(event, d) {
       const ctx = progContext[d.name] || "";
       showTooltip(`<div class="tt-label">${d.name}</div>
-        <div class="tt-value">Change: ${d.change >= 0 ? "+" : ""}${fmtBnShort(Math.abs(d.change))}</div>
+        <div class="tt-value">Change: ${d.change >= 0 ? "+" : "\u2212"}${fmtBnShort(Math.abs(d.change))}</div>
         <div class="tt-value">From ${firstFy} to ${lastFy}</div>
         ${ctx ? '<div class="tt-value" style="margin-top:4px;color:#555555;font-size:13px;">' + ctx + '</div>' : ''}`, event);
     })
@@ -1124,18 +1143,20 @@ function buildOutlookChart() {
   // Value labels at end of bar
   progGroup.selectAll(".prog-val").data(showProgs).enter()
     .append("text").attr("class", "chart-annotation-bold")
-    .attr("x", d => d.change >= 0 ? xProg(d.change) + 6 : xProg(0) + 6)
+    .attr("x", d => d.change >= 0 ? xProg(d.change) + 6 : xProg(d.change) - 6)
     .attr("y", d => yProg(d.name) + yProg.bandwidth() / 2 + 4.5)
+    .attr("text-anchor", d => d.change >= 0 ? "start" : "end")
     .attr("fill", d => d.change >= 0 ? C.red : C.green)
-    .text(d => (d.change >= 0 ? "+" : "-") + "\u00a3" + d3.format(".0f")(Math.abs(d.change)) + "bn");
+    .text(d => (d.change >= 0 ? "+" : "\u2212") + "\u00a3" + d3.format(".0f")(Math.abs(d.change)) + "bn");
 
-  // Context annotations for top 3
+  // Context annotations for top 3 — placed just below value labels
   let annotCount = 0;
   progGroup.selectAll(".prog-context").data(showProgs.filter(d => progContext[d.name] && annotCount++ < 3)).enter()
     .append("text").attr("class", "chart-annotation")
-    .attr("x", d => d.change >= 0 ? xProg(d.change) + 6 : xProg(0) + 6)
-    .attr("y", d => yProg(d.name) + yProg.bandwidth() / 2 + 18)
-    .attr("fill", C.muted).attr("font-size", "13px")
+    .attr("x", d => d.change >= 0 ? xProg(d.change) + 6 : xProg(d.change) - 6)
+    .attr("y", d => yProg(d.name) + yProg.bandwidth() / 2 + 17)
+    .attr("text-anchor", d => d.change >= 0 ? "start" : "end")
+    .attr("fill", C.muted).attr("font-size", "11px")
     .text(d => progContext[d.name]);
 
   // Period label
@@ -1202,8 +1223,11 @@ function buildOutlookChart() {
     .call(d3.axisBottom(x).ticks(isMobile() ? 5 : 10).tickFormat(d3.format("d")).tickSize(0))
     .call(g => g.select(".domain").remove());
   outlookGroup.append("g").attr("class", "axis y-axis")
-    .call(d3.axisLeft(yDef).ticks(8).tickFormat((d, i) => i === 0 ? d + "% of GDP" : d + "%").tickSize(0))
+    .call(d3.axisLeft(yDef).ticks(8).tickFormat(d => d === 0 ? "0" : d + "%").tickSize(0))
     .call(g => g.select(".domain").remove());
+  outlookGroup.append("text").attr("class", "chart-annotation")
+    .attr("x", 0).attr("y", -12).attr("text-anchor", "start").attr("fill", C.muted)
+    .text("Deficit, % of GDP");
 
   // Annotations
   const last = pctGDP[pctGDP.length - 1];

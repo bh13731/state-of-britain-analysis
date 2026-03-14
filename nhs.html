@@ -158,7 +158,7 @@ body {
   z-index: 1000;
   opacity: 0;
   transition: opacity 0.15s;
-  max-width: 260px;
+  max-width: 290px;
 }
 .chart-tooltip.visible { opacity: 1; }
 .chart-tooltip .tt-label { font-weight: 600; margin-bottom: 2px; }
@@ -443,8 +443,9 @@ function hideTooltip() { ttEl.classList.remove("visible"); }
    HELPERS
    ========================================================= */
 function fmtNum(v) {
-  if (v >= 1e6) return d3.format(".1f")(v / 1e6) + "m";
-  if (v >= 1e3) return d3.format(",")(Math.round(v / 1e3)) + "k";
+  if (v >= 1e6) return d3.format(".2f")(v / 1e6) + "m";
+  if (v >= 1e4) return d3.format(",")(Math.round(v / 1e3)) + "k";
+  if (v >= 1e3) return d3.format(".1f")(v / 1e3) + "k";
   return d3.format(",")(Math.round(v));
 }
 function fmtNumFull(v) { return d3.format(",")(Math.round(v)); }
@@ -466,7 +467,7 @@ function chartDims(container) {
   const w = container.clientWidth;
   const mob = window.innerWidth < 768;
   const h = mob ? Math.max(320, Math.min(440, window.innerHeight * 0.52)) : Math.max(500, Math.min(600, window.innerHeight * 0.65));
-  const m = { top: 30, right: 68, bottom: 44, left: 60 };
+  const m = { top: 36, right: 76, bottom: 44, left: 60 };
   return { width: w, height: h, margin: m, innerW: w - m.left - m.right, innerH: h - m.top - m.bottom };
 }
 
@@ -583,7 +584,8 @@ function buildHookChart() {
   const dim = chartDims(container);
   const svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
-    .attr("viewBox", `0 0 ${dim.width} ${dim.height}`);
+    .attr("viewBox", `0 0 ${dim.width} ${dim.height}`)
+    .attr("role", "img").attr("aria-label", "Line chart showing total NHS waiting list over time, rising from around 2.5 million to over 7 million");
   const g = svg.append("g").attr("transform", `translate(${dim.margin.left},${dim.margin.top})`);
 
   const rtt = DATA.rtt;
@@ -655,11 +657,11 @@ function buildHookChart() {
       .attr("stroke", C.muted).attr("stroke-width", 1).attr("stroke-dasharray", "4,3");
     bgGroup.append("text").attr("class", "chart-annotation")
       .attr("x", x(parseDate("2020-03")) + 6).attr("y", 14)
-      .attr("fill", C.muted).text("COVID");
+      .attr("fill", C.muted).text("Elective care suspended");
   }
 
-  // Initial state: step 0 shows faded chart
-  bgGroup.style("opacity", 0.2);
+  // Initial state: step 0 shows faded chart (0.35 reads as intentionally muted, not broken)
+  bgGroup.style("opacity", 0.35);
 
   // --- STEP 1: Full chart visible ---
   // (We toggle opacity on bgGroup)
@@ -670,15 +672,25 @@ function buildHookChart() {
 
   addHoverBehavior(hoverGroup, dim, x, rtt, function(d, event, cx) {
     hoverDot.attr("cx", cx).attr("cy", y(d.totalWaiting)).style("opacity", 1);
+    // Find year-ago value for context
+    const [yr, mo] = d.period.split("-");
+    const yoyPeriod = (parseInt(yr) - 1) + "-" + mo;
+    const yoyRow = rtt.find(r => r.period === yoyPeriod);
+    let yoyStr = "";
+    if (yoyRow) {
+      const pctChg = ((d.totalWaiting - yoyRow.totalWaiting) / yoyRow.totalWaiting * 100);
+      const sign = pctChg >= 0 ? "+" : "";
+      yoyStr = `<div class="tt-value" style="font-size:12px;color:${C.muted}">${sign}${d3.format(".1f")(pctChg)}% vs year ago</div>`;
+    }
     showTooltip(`<div class="tt-label">${formatPeriod(d.period)}</div>
-      <div class="tt-value">${fmtNumFull(d.totalWaiting)} waiting</div>`, event);
+      <div class="tt-value">${fmtNumFull(d.totalWaiting)} waiting</div>${yoyStr}`, event);
   });
 }
 
 function updateHookChart(step) {
   const svg = d3.select("#chart-hook svg");
   if (step === 0) {
-    svg.select(".hook-bg").transition().duration(DURATION).style("opacity", 0.2);
+    svg.select(".hook-bg").transition().duration(DURATION).style("opacity", 0.35);
     svg.select(".hook-hover").transition().duration(DURATION).style("opacity", 0);
   } else {
     svg.select(".hook-bg").transition().duration(DURATION).style("opacity", 1);
@@ -694,7 +706,8 @@ function build18WeekChart() {
   const dim = chartDims(container);
   const svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
-    .attr("viewBox", `0 0 ${dim.width} ${dim.height}`);
+    .attr("viewBox", `0 0 ${dim.width} ${dim.height}`)
+    .attr("role", "img").attr("aria-label", "Line chart showing percentage of patients treated within 18 weeks, falling from above 92% target to around 60%");
   const g = svg.append("g").attr("transform", `translate(${dim.margin.left},${dim.margin.top})`);
 
   const rtt = DATA.rtt;
@@ -730,14 +743,28 @@ function build18WeekChart() {
     .y(d => y(d.pctWithin18))
     .curve(d3.curveMonotoneX);
 
-  // Split data: above target and below
-  const aboveTarget = rtt.filter(d => d.pctWithin18 >= 92);
-  const belowTarget = rtt.filter(d => d.pctWithin18 < 92);
+  // Line coloured by whether target is met: teal above 92%, red below
+  // Use a gradient trick with a clipPath for clean colour transition
+  const lineId18 = "line-18wk-" + Math.random().toString(36).slice(2,8);
+  const defs = svg.append("defs");
+  // Clip paths relative to the inner chart group coordinate system
+  defs.append("clipPath").attr("id", lineId18 + "-above")
+    .attr("clipPathUnits", "userSpaceOnUse")
+    .append("rect").attr("x", -10).attr("y", -10)
+    .attr("width", dim.innerW + 20).attr("height", y(92) + 10);
+  defs.append("clipPath").attr("id", lineId18 + "-below")
+    .attr("clipPathUnits", "userSpaceOnUse")
+    .append("rect").attr("x", -10).attr("y", y(92))
+    .attr("width", dim.innerW + 20).attr("height", dim.innerH - y(92) + 10);
 
-  // Full line in teal
   earlyGroup.append("path").datum(rtt)
     .attr("d", line)
-    .attr("fill", "none").attr("stroke", C.teal).attr("stroke-width", 2.5);
+    .attr("fill", "none").attr("stroke", C.teal).attr("stroke-width", 2.5)
+    .attr("clip-path", `url(#${lineId18}-above)`);
+  earlyGroup.append("path").datum(rtt)
+    .attr("d", line)
+    .attr("fill", "none").attr("stroke", C.red).attr("stroke-width", 2.5)
+    .attr("clip-path", `url(#${lineId18}-below)`);
 
   // X axis
   earlyGroup.append("g").attr("class", "axis x-axis")
@@ -745,10 +772,15 @@ function build18WeekChart() {
     .call(d3.axisBottom(x).ticks(d3.timeYear.every(2)).tickFormat(d3.timeFormat("%Y")).tickSize(0))
     .call(g => g.select(".domain").remove());
 
-  // Y axis
+  // Y axis (starts at 40% -- add break marker for honesty)
   earlyGroup.append("g").attr("class", "axis y-axis")
     .call(d3.axisLeft(y).ticks(6).tickFormat(d => d + "%").tickSize(0))
     .call(g => g.select(".domain").remove());
+  // Axis-break zigzag at bottom to signal truncated scale
+  const breakY = dim.innerH;
+  earlyGroup.append("path")
+    .attr("d", `M${-8},${breakY - 6} L${-4},${breakY - 2} L${-8},${breakY + 2} L${-4},${breakY + 6}`)
+    .attr("fill", "none").attr("stroke", C.faint).attr("stroke-width", 1.5);
 
   // End label — offset below with leader line to avoid sitting on the data line
   earlyGroup.append("line")
@@ -806,20 +838,23 @@ function build18WeekChart() {
       .attr("stroke", C.red).attr("stroke-width", 1).attr("stroke-dasharray", "4,3");
     dangerGroup.append("text").attr("class", "chart-annotation")
       .attr("x", x(parseDate(breachPeriod)) + 6).attr("y", 14)
-      .attr("fill", C.red).text("Target breached");
+      .attr("fill", C.red).text("Demand outpaces capacity");
     dangerGroup.append("text").attr("class", "chart-annotation")
       .attr("x", x(parseDate(breachPeriod)) + 6).attr("y", 28)
-      .attr("fill", C.red).text(formatPeriod(breachPeriod));
+      .attr("fill", C.red).text("92% never met again (" + formatPeriod(breachPeriod) + ")");
   }
 
-  // COVID annotation
+  // COVID annotation -- explain the mechanism, not just the event
   dangerGroup.append("line")
     .attr("x1", x(parseDate("2020-03"))).attr("x2", x(parseDate("2020-03")))
     .attr("y1", 0).attr("y2", dim.innerH)
     .attr("stroke", C.muted).attr("stroke-width", 1).attr("stroke-dasharray", "4,3");
   dangerGroup.append("text").attr("class", "chart-annotation")
+    .attr("x", x(parseDate("2020-03")) + 6).attr("y", dim.innerH - 28)
+    .attr("fill", C.muted).text("Routine referrals");
+  dangerGroup.append("text").attr("class", "chart-annotation")
     .attr("x", x(parseDate("2020-03")) + 6).attr("y", dim.innerH - 14)
-    .attr("fill", C.muted).text("COVID");
+    .attr("fill", C.muted).text("halted");
 
   // Lowest point annotation
   const lowest = rtt.reduce((a, b) => a.pctWithin18 < b.pctWithin18 ? a : b);
@@ -865,7 +900,8 @@ function buildLongWaitChart() {
   const dim = chartDims(container);
   const svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
-    .attr("viewBox", `0 0 ${dim.width} ${dim.height}`);
+    .attr("viewBox", `0 0 ${dim.width} ${dim.height}`)
+    .attr("role", "img").attr("aria-label", "Area chart showing patients waiting over 52 weeks, spiking from near-zero pre-COVID to over 400,000 at peak");
   const g = svg.append("g").attr("transform", `translate(${dim.margin.left},${dim.margin.top})`);
 
   const rtt = DATA.rtt;
@@ -958,14 +994,17 @@ function buildLongWaitChart() {
     .attr("y", y(latest.over52weeks) - 22)
     .attr("fill", C.red).text(fmtNum(latest.over52weeks));
 
-  // COVID marker
+  // COVID marker -- explain the mechanism
   peakGroup.append("line")
     .attr("x1", x(parseDate("2020-03"))).attr("x2", x(parseDate("2020-03")))
     .attr("y1", 0).attr("y2", dim.innerH)
     .attr("stroke", C.muted).attr("stroke-width", 1).attr("stroke-dasharray", "4,3");
   peakGroup.append("text").attr("class", "chart-annotation")
     .attr("x", x(parseDate("2020-03")) + 6).attr("y", 14)
-    .attr("fill", C.muted).text("COVID");
+    .attr("fill", C.muted).text("Operations cancelled;");
+  peakGroup.append("text").attr("class", "chart-annotation")
+    .attr("x", x(parseDate("2020-03")) + 6).attr("y", 28)
+    .attr("fill", C.muted).text("backlog balloons");
 
   // Hover
   const hoverGroup = g.append("g").attr("class", "lw-hover");
@@ -995,7 +1034,8 @@ function buildMedianChart() {
   const dim = chartDims(container);
   const svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
-    .attr("viewBox", `0 0 ${dim.width} ${dim.height}`);
+    .attr("viewBox", `0 0 ${dim.width} ${dim.height}`)
+    .attr("role", "img").attr("aria-label", "Line chart showing median NHS wait in weeks, doubling from around 6 weeks to over 14 weeks");
   const g = svg.append("g").attr("transform", `translate(${dim.margin.left},${dim.margin.top})`);
 
   const rtt = DATA.rtt;
@@ -1045,13 +1085,14 @@ function buildMedianChart() {
     .call(d3.axisBottom(x).ticks(d3.timeYear.every(2)).tickFormat(d3.timeFormat("%Y")).tickSize(0))
     .call(g => g.select(".domain").remove());
 
-  // Y axis — unit label above axis instead of repeating in every tick
+  // Y axis — include unit on first and last ticks for unambiguous reading
+  const yTicks = y.ticks(6);
   trendGroup.append("g").attr("class", "axis y-axis")
-    .call(d3.axisLeft(y).ticks(6).tickFormat(d => d).tickSize(0))
+    .call(d3.axisLeft(y).ticks(6).tickFormat((d, i) => {
+      if (i === 0 || i === yTicks.length - 1) return d + " wks";
+      return d;
+    }).tickSize(0))
     .call(g => g.select(".domain").remove());
-  trendGroup.append("text").attr("class", "chart-annotation")
-    .attr("x", -dim.margin.left + 4).attr("y", -12)
-    .attr("fill", C.muted).text("Weeks");
 
   // Start annotation — offset above with enough padding
   trendGroup.append("text").attr("class", "chart-annotation")
@@ -1084,14 +1125,17 @@ function buildMedianChart() {
     .attr("y", y(latest.medianWait) - 22)
     .attr("fill", C.teal).text(d3.format(".1f")(latest.medianWait) + " wks");
 
-  // COVID marker
+  // COVID marker -- explain the mechanism
   annotGroup.append("line")
     .attr("x1", x(parseDate("2020-03"))).attr("x2", x(parseDate("2020-03")))
     .attr("y1", 0).attr("y2", dim.innerH)
     .attr("stroke", C.muted).attr("stroke-width", 1).attr("stroke-dasharray", "4,3");
   annotGroup.append("text").attr("class", "chart-annotation")
     .attr("x", x(parseDate("2020-03")) + 6).attr("y", 14)
-    .attr("fill", C.muted).text("COVID");
+    .attr("fill", C.muted).text("Queues freeze as");
+  annotGroup.append("text").attr("class", "chart-annotation")
+    .attr("x", x(parseDate("2020-03")) + 6).attr("y", 28)
+    .attr("fill", C.muted).text("hospitals pivot to COVID");
 
   // Reference line at ~6 weeks (early average)
   const earlyAvg = d3.mean(rtt.filter(d => d.period < "2015-01"), d => d.medianWait);
@@ -1131,7 +1175,8 @@ function buildAEChart() {
   const dim = chartDims(container);
   const svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
-    .attr("viewBox", `0 0 ${dim.width} ${dim.height}`);
+    .attr("viewBox", `0 0 ${dim.width} ${dim.height}`)
+    .attr("role", "img").attr("aria-label", "Paired bar chart showing A&E 4-hour performance, both all types and major departments, consistently below the 95% target");
   const g = svg.append("g").attr("transform", `translate(${dim.margin.left},${dim.margin.top})`);
 
   const ae = DATA.ae;
@@ -1188,7 +1233,7 @@ function buildAEChart() {
     .attr("y", d => y(d.pctWithin4HoursType1))
     .attr("width", x.bandwidth() / 2 - 2)
     .attr("height", d => dim.innerH - y(d.pctWithin4HoursType1))
-    .attr("fill", C.red).attr("rx", 2).attr("opacity", 0.7)
+    .attr("fill", C.red).attr("rx", 2)
     .on("mousemove", function(event, d) {
       showTooltip(`<div class="tt-label">${formatPeriod(d.period)} &mdash; Type 1 (Major A&amp;E)</div>
         <div class="tt-value" style="color:${C.red}">${fmtPct(d.pctWithin4HoursType1)} within 4 hours</div>
@@ -1196,23 +1241,23 @@ function buildAEChart() {
     })
     .on("mouseleave", hideTooltip);
 
-  // Bar value labels - All types (10px padding from bar top)
+  // Bar value labels - All types (10px padding from bar top; include % for unambiguous reading)
   barGroup.selectAll(".ae-val-all").data(ae).enter()
     .append("text").attr("class", "chart-annotation-bold ae-val-all")
     .attr("x", d => x(d.period) + x.bandwidth() / 4 - 1)
     .attr("y", d => y(d.pctWithin4Hours) - 10)
     .attr("text-anchor", "middle")
     .attr("fill", C.teal).attr("font-size", "12px")
-    .text(d => d3.format(".0f")(d.pctWithin4Hours));
+    .text(d => d3.format(".0f")(d.pctWithin4Hours) + "%");
 
-  // Bar value labels - Type 1 (10px padding from bar top)
+  // Bar value labels - Type 1 (10px padding from bar top; include % for unambiguous reading)
   barGroup.selectAll(".ae-val-t1").data(ae).enter()
     .append("text").attr("class", "chart-annotation-bold ae-val-t1")
     .attr("x", d => x(d.period) + x.bandwidth() * 3 / 4 + 1)
     .attr("y", d => y(d.pctWithin4HoursType1) - 10)
     .attr("text-anchor", "middle")
     .attr("fill", C.red).attr("font-size", "12px")
-    .text(d => d3.format(".0f")(d.pctWithin4HoursType1));
+    .text(d => d3.format(".0f")(d.pctWithin4HoursType1) + "%");
 
   // X axis — use abbreviated format to prevent tick label overlap
   barGroup.append("g").attr("class", "axis x-axis")
@@ -1233,7 +1278,7 @@ function buildAEChart() {
   const legend = barGroup.append("g").attr("transform", `translate(${dim.innerW - 200}, ${dim.innerH - 60})`);
   legend.append("rect").attr("x", 0).attr("y", 0).attr("width", 14).attr("height", 14).attr("fill", C.teal).attr("rx", 2);
   legend.append("text").attr("class", "chart-annotation").attr("x", 20).attr("y", 11).text("All A&E types");
-  legend.append("rect").attr("x", 0).attr("y", 22).attr("width", 14).attr("height", 14).attr("fill", C.red).attr("rx", 2).attr("opacity", 0.7);
+  legend.append("rect").attr("x", 0).attr("y", 22).attr("width", 14).attr("height", 14).attr("fill", C.red).attr("rx", 2);
   legend.append("text").attr("class", "chart-annotation").attr("x", 20).attr("y", 33).text("Type 1 (major)");
 
   // --- Step 1: Highlight the gap ---
@@ -1269,7 +1314,7 @@ function buildAEChart() {
     gapGroup.append("text").attr("class", "chart-annotation")
       .attr("x", winterBarX).attr("y", 20)
       .attr("text-anchor", "middle").attr("fill", C.red)
-      .text("Winter pressure");
+      .text("Flu + cold surge beds");
   }
 }
 
@@ -1290,7 +1335,8 @@ function buildOutlookChart() {
   const dim = chartDims(container);
   const svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
-    .attr("viewBox", `0 0 ${dim.width} ${dim.height}`);
+    .attr("viewBox", `0 0 ${dim.width} ${dim.height}`)
+    .attr("role", "img").attr("aria-label", "Summary chart overlaying 18-week performance and total waiting list, followed by a scorecard of all key NHS metrics");
   const g = svg.append("g").attr("transform", `translate(${dim.margin.left},${dim.margin.top})`);
 
   const rtt = DATA.rtt;
@@ -1358,17 +1404,25 @@ function buildOutlookChart() {
     .call(d3.axisBottom(x).ticks(d3.timeYear.every(2)).tickFormat(d3.timeFormat("%Y")).tickSize(0))
     .call(g => g.select(".domain").remove());
 
-  // Left Y axis (%)
+  // Left Y axis (%) -- labelled for clarity
   overviewGroup.append("g").attr("class", "axis y-axis")
     .call(d3.axisLeft(yPct).ticks(6).tickFormat(d => d + "%").tickSize(0))
     .call(g => g.select(".domain").remove());
+  overviewGroup.append("text").attr("class", "chart-annotation")
+    .attr("x", -dim.margin.left + 4).attr("y", -12)
+    .attr("fill", C.teal).attr("font-weight", 600)
+    .text("% within 18 wks");
 
-  // Right Y axis (count)
+  // Right Y axis (count) -- labelled and colour-coded to match line
   overviewGroup.append("g").attr("class", "axis y-axis-right")
     .attr("transform", `translate(${dim.innerW},0)`)
     .call(d3.axisRight(yCount).ticks(5).tickFormat(d => fmtNum(d)).tickSize(0))
     .call(g => g.select(".domain").remove())
     .selectAll("text").attr("fill", C.amber);
+  overviewGroup.append("text").attr("class", "chart-annotation")
+    .attr("x", dim.innerW + dim.margin.right - 4).attr("y", -12)
+    .attr("text-anchor", "end").attr("fill", C.amber).attr("font-weight", 600)
+    .text("Total waiting");
 
   // End labels — offset with leader lines to keep clear of data
   overviewGroup.append("line")
@@ -1396,7 +1450,7 @@ function buildOutlookChart() {
     .attr("stroke", C.muted).attr("stroke-width", 1).attr("stroke-dasharray", "4,3");
   overviewGroup.append("text").attr("class", "chart-annotation")
     .attr("x", x(parseDate("2020-03")) + 6).attr("y", 14)
-    .attr("fill", C.muted).text("COVID");
+    .attr("fill", C.muted).text("Mar 2020");
 
   // Hover
   const hoverDotPct = overviewGroup.append("circle").attr("class", "hover-dot").attr("r", 4).attr("fill", C.teal).style("opacity", 0);
@@ -1406,9 +1460,11 @@ function buildOutlookChart() {
     hoverDotPct.attr("cx", cx).attr("cy", yPct(d.pctWithin18)).style("opacity", 1);
     hoverDotWait.attr("cx", cx).attr("cy", yCount(d.totalWaiting)).style("opacity", 1);
     showTooltip(`<div class="tt-label">${formatPeriod(d.period)}</div>
-      <div class="tt-value" style="color:${C.teal}">${fmtPct(d.pctWithin18)} within 18 weeks</div>
-      <div class="tt-value" style="color:${C.amber}">${fmtNumFull(d.totalWaiting)} waiting</div>
-      <div class="tt-value">${d3.format(".1f")(d.medianWait)} wks median | ${fmtNumFull(d.over52weeks)} over 52wks</div>`, event);
+      <div class="tt-value" style="color:${C.teal};font-weight:600">${fmtPct(d.pctWithin18)} within 18 weeks</div>
+      <div class="tt-value" style="color:${C.amber};font-weight:600">${fmtNumFull(d.totalWaiting)} on waiting list</div>
+      <hr style="border:none;border-top:1px solid #E0E0DB;margin:4px 0">
+      <div class="tt-value" style="font-size:12px;color:${C.muted}">Median wait: ${d3.format(".1f")(d.medianWait)} wks</div>
+      <div class="tt-value" style="font-size:12px;color:${C.muted}">Over 52 wks: ${fmtNumFull(d.over52weeks)}</div>`, event);
   });
 
   // --- Step 1: Scorecard view ---

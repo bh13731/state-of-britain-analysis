@@ -171,7 +171,7 @@ body {
   font-family: 'Inter', sans-serif;
 }
 .chart-annotation-bold {
-  font-size: 13.5px;
+  font-size: 13px;
   font-weight: 600;
   fill: #1A1A1A;
   font-family: 'Inter', sans-serif;
@@ -206,7 +206,7 @@ body {
   fill: #595959;
 }
 .axis path, .axis line { stroke: none; }
-.grid line { stroke: #F0F0EB; stroke-width: 1; }
+.grid line { stroke: #F5F5F0; stroke-width: 0.5; }
 .grid path { stroke: none; }
 
 /* ---------- Responsive ---------- */
@@ -474,7 +474,9 @@ function buildHookChart() {
   const dim = chartDims(container);
   const svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
-    .attr("viewBox", `0 0 ${dim.width} ${dim.height}`);
+    .attr("viewBox", `0 0 ${dim.width} ${dim.height}`)
+    .attr("role", "img")
+    .attr("aria-label", "Chart showing sewage spill rates and pollution incidents over time");
   const g = svg.append("g").attr("transform", `translate(${dim.margin.left},${dim.margin.top})`);
 
   // === STEP 0: Storm overflow spills bar chart ===
@@ -487,7 +489,7 @@ function buildHookChart() {
   ];
 
   const xBar = d3.scaleBand().domain(spillData.map(d => d.label)).range([0, dim.innerW]).padding(0.4);
-  const yBar = d3.scaleLinear().domain([0, 40]).range([dim.innerH, 0]);
+  const yBar = d3.scaleLinear().domain([0, d3.max(spillData, d => d.value) * 1.3]).nice().range([dim.innerH, 0]);
 
   // Grid
   barGroup.append("g").attr("class", "grid")
@@ -597,12 +599,12 @@ function buildHookChart() {
 
   // "Record high" annotation — offset into white space with leader line
   lineGroup.append("text").attr("class", "chart-annotation")
-    .attr("x", xLine(2024) - 40).attr("y", yLine(lastPoll.total) - 44)
+    .attr("x", xLine(lastPoll.year) - 40).attr("y", yLine(lastPoll.total) - 44)
     .attr("text-anchor", "end").attr("fill", C.red).attr("font-weight", 600)
     .text("Record high");
   lineGroup.append("line")
-    .attr("x1", xLine(2024) - 38).attr("y1", yLine(lastPoll.total) - 40)
-    .attr("x2", xLine(2024) - 4).attr("y2", yLine(lastPoll.total) - 8)
+    .attr("x1", xLine(lastPoll.year) - 38).attr("y1", yLine(lastPoll.total) - 40)
+    .attr("x2", xLine(lastPoll.year) - 4).attr("y2", yLine(lastPoll.total) - 8)
     .attr("stroke", C.red).attr("stroke-width", 1).attr("stroke-dasharray", "3,2");
 
   // Title
@@ -654,7 +656,9 @@ function buildPollutionChart() {
   const dim = chartDims(container);
   const svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
-    .attr("viewBox", `0 0 ${dim.width} ${dim.height}`);
+    .attr("viewBox", `0 0 ${dim.width} ${dim.height}`)
+    .attr("role", "img")
+    .attr("aria-label", "Chart showing serious pollution incidents and normalised pollution rates");
   const g = svg.append("g").attr("transform", `translate(${dim.margin.left},${dim.margin.top})`);
 
   const pollData = DATA.pollutionIncidents;
@@ -708,15 +712,19 @@ function buildPollutionChart() {
     .attr("x", 0).attr("y", -10).attr("fill", C.muted)
     .text("Serious pollution incidents (Cat 1 & 2)");
 
-  // 2024 callout — offset into white space with leader line
+  // Callout — offset into white space with leader line
   const last = pollData[pollData.length - 1];
+  const prev = pollData[pollData.length - 2];
+  const pctChange = prev && prev.serious > 0 ? Math.round((last.serious - prev.serious) / prev.serious * 100) : null;
   const calloutX = xBar(last.year) + xBar.bandwidth() / 2 + 40;
   const calloutY = yBar(last.serious) - 50;
+  if (pctChange !== null) {
   seriousGroup.append("text").attr("class", "chart-annotation")
     .attr("x", calloutX)
     .attr("y", calloutY)
     .attr("text-anchor", "start").attr("fill", C.red).attr("font-weight", 600).attr("font-size", "13px")
-    .text("+60% vs 2023");
+    .text((pctChange > 0 ? "+" : "") + pctChange + "% vs " + prev.year);
+  }
   seriousGroup.append("line")
     .attr("x1", calloutX - 2).attr("y1", calloutY + 4)
     .attr("x2", xBar(last.year) + xBar.bandwidth() / 2 + 2).attr("y2", yBar(last.serious) - 18)
@@ -748,11 +756,11 @@ function buildPollutionChart() {
     .append("rect").attr("class", "norm-bar")
     .attr("x", d => xNorm(d.label)).attr("y", d => yNorm(d.value))
     .attr("width", xNorm.bandwidth()).attr("height", d => dim.innerH - yNorm(d.value))
-    .attr("fill", (d, i) => i === 0 ? C.primary : C.red)
+    .attr("fill", (d, i) => i === 0 ? C.secondary : C.red)
     .attr("rx", 3)
     .on("mousemove", function(event, d) {
       showTooltip(`<div class="tt-label">${d.label.replace('\n', ' ')}</div>
-        <div class="tt-value">${fmtDec(d.value, 2)} incidents per 10,000km of sewer</div>`, event);
+        <div class="tt-value">${fmtDec(d.value, 1)} incidents per 10,000km of sewer</div>`, event);
     })
     .on("mouseleave", hideTooltip);
 
@@ -762,7 +770,7 @@ function buildPollutionChart() {
     .attr("x", d => xNorm(d.label) + xNorm.bandwidth() / 2)
     .attr("y", d => yNorm(d.value) - 10)
     .attr("text-anchor", "middle")
-    .attr("fill", (d, i) => i === 0 ? C.primary : C.red)
+    .attr("fill", (d, i) => i === 0 ? C.secondary : C.red)
     .text(d => fmtDec(d.value, 1));
 
   // X axis labels (multiline)
@@ -825,7 +833,9 @@ function buildLeakageChart() {
   const dim = chartDims(container);
   const svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
-    .attr("viewBox", `0 0 ${dim.width} ${dim.height}`);
+    .attr("viewBox", `0 0 ${dim.width} ${dim.height}`)
+    .attr("role", "img")
+    .attr("aria-label", "Chart showing national leakage trend and company leakage performance");
   const g = svg.append("g").attr("transform", `translate(${dim.margin.left},${dim.margin.top})`);
 
   // === STEP 0: National leakage trend line ===
@@ -969,13 +979,10 @@ function buildLeakageChart() {
     })
     .on("mouseleave", hideTooltip);
 
-  // Company name labels
+  // Company name labels — always anchored left of the zero line for consistent alignment
   compGroup.selectAll(".comp-name").data(compData).enter()
     .append("text").attr("class", "chart-annotation")
-    .attr("x", d => {
-      if (d.latest >= 0) return xComp(0) - 8;
-      return xComp(d.latest) - 8;
-    })
+    .attr("x", xComp(0) - 8)
     .attr("y", d => yComp(d.company) + yComp.bandwidth() / 2 + 4.5)
     .attr("text-anchor", "end")
     .attr("fill", d => d.latest > 0 ? C.red : C.ink)
@@ -986,11 +993,12 @@ function buildLeakageChart() {
       return d.company.length > maxLen ? d.company.slice(0, maxLen - 1) + "\u2026" : d.company;
     });
 
-  // Value labels
+  // Value labels — always placed at the end of the bar, outside
   compGroup.selectAll(".leak-val").data(compData).enter()
     .append("text").attr("class", "chart-annotation-bold")
-    .attr("x", d => d.latest >= 0 ? xComp(d.latest) + 6 : xComp(0) + 6)
+    .attr("x", d => d.latest >= 0 ? xComp(d.latest) + 6 : xComp(d.latest) - 6)
     .attr("y", d => yComp(d.company) + yComp.bandwidth() / 2 + 4.5)
+    .attr("text-anchor", d => d.latest >= 0 ? "start" : "end")
     .attr("fill", d => d.latest > 0 ? C.red : C.green)
     .attr("font-size", "13px")
     .text(d => (d.latest > 0 ? "+" : "") + fmtDec(d.latest, 1) + "%");
@@ -1003,12 +1011,12 @@ function buildLeakageChart() {
   // Legend
   compGroup.append("text").attr("class", "chart-annotation")
     .attr("x", xComp(0) - 8).attr("y", innerH2 + 18)
-    .attr("text-anchor", "end").attr("fill", C.red).attr("font-size", "13px")
-    .text("\u2190 Worse (leaking more)");
+    .attr("text-anchor", "end").attr("fill", C.green).attr("font-size", "13px")
+    .text("\u2190 Better (leaking less)");
   compGroup.append("text").attr("class", "chart-annotation")
     .attr("x", xComp(0) + 8).attr("y", innerH2 + 18)
-    .attr("fill", C.green).attr("font-size", "13px")
-    .text("Better (leaking less) \u2192");
+    .attr("fill", C.red).attr("font-size", "13px")
+    .text("Worse (leaking more) \u2192");
 }
 
 function updateLeakageChart(step) {
@@ -1035,7 +1043,9 @@ function buildSystemChart() {
 
   const svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", h)
-    .attr("viewBox", `0 0 ${dim.width} ${h}`);
+    .attr("viewBox", `0 0 ${dim.width} ${h}`)
+    .attr("role", "img")
+    .attr("aria-label", "Chart showing sector performance metrics and Ofwat company league table");
   const g = svg.append("g").attr("transform", `translate(${m.left},${m.top})`);
 
   // === STEP 0: Sector performance metrics diverging bar ===
@@ -1055,15 +1065,12 @@ function buildSystemChart() {
     .attr("stroke", "#D0D0C8").attr("stroke-width", 1);
 
   // Determine which direction is "bad" for each metric
-  // Positive change is bad for: pollution, supply interruptions
-  // Negative change is bad for: customer satisfaction
-  // Negative change is good for: sewer collapses, CRI, flooding, leakage, mains repairs, per capita consumption, unplanned outage
+  // For most operational metrics (pollution, collapses, flooding, leakage, interruptions, CRI, outage, mains repairs),
+  // an increase is worsening. For satisfaction/compliance/services register, a decrease is worsening.
   function isWorsening(d) {
-    const badIfUp = ["Pollution incidents", "Supply interruptions"];
-    const badIfDown = ["Customer satisfaction", "Treatment works compliance", "Priority services register"];
-    if (badIfUp.includes(d.metric)) return d.change > 0;
-    if (badIfDown.includes(d.metric)) return d.change < 0;
-    return false; // default: decreases are improvements
+    const goodIfUp = ["Customer satisfaction", "Treatment works compliance", "Priority services register"];
+    if (goodIfUp.includes(d.metric)) return d.change < 0;
+    return d.change > 0; // default: increases are worsening for operational failure metrics
   }
 
   // Bars
@@ -1083,10 +1090,10 @@ function buildSystemChart() {
     })
     .on("mouseleave", hideTooltip);
 
-  // Metric name labels
+  // Metric name labels — consistently anchored left of the zero line
   metricsGroup.selectAll(".metric-name").data(metrics).enter()
     .append("text").attr("class", "chart-annotation")
-    .attr("x", d => d.change >= 0 ? xMetric(0) - 8 : xMetric(d.change) - 8)
+    .attr("x", xMetric(0) - 8)
     .attr("y", d => yMetric(d.metric) + yMetric.bandwidth() / 2 + 4.5)
     .attr("text-anchor", "end")
     .attr("fill", C.ink)
@@ -1097,11 +1104,12 @@ function buildSystemChart() {
       return d.metric.length > maxLen ? d.metric.slice(0, maxLen - 1) + "\u2026" : d.metric;
     });
 
-  // Value labels
+  // Value labels — placed at the end of each bar, outside
   metricsGroup.selectAll(".metric-val").data(metrics).enter()
     .append("text").attr("class", "chart-annotation-bold")
-    .attr("x", d => d.change >= 0 ? xMetric(d.change) + 6 : xMetric(0) + 6)
+    .attr("x", d => d.change >= 0 ? xMetric(d.change) + 6 : xMetric(d.change) - 6)
     .attr("y", d => yMetric(d.metric) + yMetric.bandwidth() / 2 + 4.5)
+    .attr("text-anchor", d => d.change >= 0 ? "start" : "end")
     .attr("fill", d => isWorsening(d) ? C.red : C.green)
     .attr("font-size", "13px")
     .text(d => (d.change > 0 ? "+" : "") + d.change + "%");
@@ -1115,11 +1123,21 @@ function buildSystemChart() {
   metricsGroup.append("text").attr("class", "chart-annotation")
     .attr("x", xMetric(0) - 8).attr("y", innerH + 18)
     .attr("text-anchor", "end").attr("fill", C.muted).attr("font-size", "13px")
-    .text("\u2190 Decline");
+    .text("\u2190 Decrease");
   metricsGroup.append("text").attr("class", "chart-annotation")
     .attr("x", xMetric(0) + 8).attr("y", innerH + 18)
     .attr("fill", C.muted).attr("font-size", "13px")
-    .text("Improvement \u2192");
+    .text("Increase \u2192");
+
+  // Colour legend
+  metricsGroup.append("circle").attr("cx", innerW - 110).attr("cy", innerH + 14).attr("r", 5).attr("fill", C.red);
+  metricsGroup.append("text").attr("class", "chart-annotation")
+    .attr("x", innerW - 100).attr("y", innerH + 18).attr("fill", C.muted).attr("font-size", "12px")
+    .text("Worsening");
+  metricsGroup.append("circle").attr("cx", innerW - 30).attr("cy", innerH + 14).attr("r", 5).attr("fill", C.green);
+  metricsGroup.append("text").attr("class", "chart-annotation")
+    .attr("x", innerW - 20).attr("y", innerH + 18).attr("fill", C.muted).attr("font-size", "12px")
+    .text("Improving");
 
   // === STEP 1: Company league table ===
   const leagueGroup = g.append("g").attr("class", "league-view").style("opacity", 0);

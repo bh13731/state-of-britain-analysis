@@ -174,6 +174,17 @@ body {
   fill: #1A1A1A;
   font-family: 'Inter', sans-serif;
 }
+.chart-title {
+  font-size: 15px;
+  font-weight: 600;
+  fill: #1A1A1A;
+  font-family: 'Inter', sans-serif;
+}
+.axis-break {
+  font-size: 18px;
+  fill: #999;
+  font-family: 'Inter', sans-serif;
+}
 
 /* ---------- Section divider ---------- */
 .section-divider {
@@ -423,7 +434,6 @@ function hideTooltip() { ttEl.classList.remove("visible"); }
 function fmtK(v) { return d3.format(",.1f")(v) + "k"; }
 function fmtM(v) { return d3.format(",.2f")(v) + "m"; }
 function fmtPct(v) { return d3.format(".1f")(v) + "%"; }
-function fmtInt(v) { return d3.format(",")(Math.round(v * 1000)); }
 
 function isMobile() { return window.innerWidth < MOBILE; }
 
@@ -462,7 +472,7 @@ function init() {
 
   // Set big numbers
   document.getElementById("bn-charge-rate").textContent = DATA.snapshot.chargeRate + "%";
-  document.getElementById("bn-backlog").textContent = Math.round(DATA.snapshot.courtBacklog) + "k";
+  document.getElementById("bn-backlog").textContent = d3.format(".0f")(DATA.snapshot.courtBacklog) + "k";
 
   buildAllCharts();
   setupScrollObserver();
@@ -503,7 +513,9 @@ function buildHookChart() {
   const dim = chartDims(container);
   const svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
-    .attr("viewBox", "0 0 " + dim.width + " " + dim.height);
+    .attr("viewBox", "0 0 " + dim.width + " " + dim.height)
+    .attr("role", "img")
+    .attr("aria-label", "Chart showing the collapse of the charge rate from 16% in 2014-15 to 5.5% in 2023-24");
   const g = svg.append("g").attr("transform", "translate(" + dim.margin.left + "," + dim.margin.top + ")");
 
   const chargeData = DATA.chargeRate;
@@ -608,9 +620,9 @@ function buildHookChart() {
     .call(function(g) { g.select(".domain").remove(); });
 
   // Title
-  lineGroup.append("text").attr("class", "chart-annotation")
+  lineGroup.append("text").attr("class", "chart-title")
     .attr("x", dim.innerW / 2).attr("y", -10)
-    .attr("text-anchor", "middle").attr("fill", C.muted)
+    .attr("text-anchor", "middle")
     .text("Charge rate (% of recorded crimes leading to charge)");
 
   // Hover
@@ -636,14 +648,23 @@ function buildHookChart() {
   });
 }
 
+function sequentialSwap(svg, showSel, hideSel) {
+  var hideEl = svg.select(hideSel);
+  var showEl = svg.select(showSel);
+  hideEl.transition().duration(DURATION / 2).style("opacity", 0).on("end", function() {
+    d3.select(this).style("pointer-events", "none");
+    showEl.transition().duration(DURATION / 2).style("opacity", 1).on("end", function() {
+      d3.select(this).style("pointer-events", "all");
+    });
+  });
+}
+
 function updateHookChart(step) {
   var svg = d3.select("#chart-hook svg");
   if (step === 0) {
-    svg.select(".big-view").transition().duration(DURATION).style("opacity", 1).on("end", function() { d3.select(this).style("pointer-events", "all"); });
-    svg.select(".line-view").transition().duration(DURATION).style("opacity", 0).on("end", function() { d3.select(this).style("pointer-events", "none"); });
+    sequentialSwap(svg, ".big-view", ".line-view");
   } else {
-    svg.select(".big-view").transition().duration(DURATION).style("opacity", 0).on("end", function() { d3.select(this).style("pointer-events", "none"); });
-    svg.select(".line-view").transition().duration(DURATION).style("opacity", 1).on("end", function() { d3.select(this).style("pointer-events", "all"); });
+    sequentialSwap(svg, ".line-view", ".big-view");
   }
 }
 
@@ -655,7 +676,9 @@ function buildPoliceChart() {
   var dim = chartDims(container);
   var svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
-    .attr("viewBox", "0 0 " + dim.width + " " + dim.height);
+    .attr("viewBox", "0 0 " + dim.width + " " + dim.height)
+    .attr("role", "img")
+    .attr("aria-label", "Chart showing police officer numbers in England and Wales from 2003 to 2024");
   var g = svg.append("g").attr("transform", "translate(" + dim.margin.left + "," + dim.margin.top + ")");
 
   var policeData = DATA.policeWorkforce;
@@ -748,10 +771,16 @@ function buildPoliceChart() {
     .call(d3.axisLeft(yScale).ticks(6).tickFormat(function(d) { return d + "k"; }).tickSize(0))
     .call(function(g) { g.select(".domain").remove(); });
 
+  // Axis-break indicator (y-axis does not start at zero)
+  officerGroup.append("text").attr("class", "axis-break")
+    .attr("x", -8).attr("y", dim.innerH + 4)
+    .attr("text-anchor", "middle")
+    .text("\u2E17");
+
   // Title
-  officerGroup.append("text").attr("class", "chart-annotation")
+  officerGroup.append("text").attr("class", "chart-title")
     .attr("x", dim.innerW / 2).attr("y", -10)
-    .attr("text-anchor", "middle").attr("fill", C.muted)
+    .attr("text-anchor", "middle")
     .text("Police officers (thousands), England & Wales");
 
   // --- FULL WORKFORCE STACKED VIEW (step 1, hidden) ---
@@ -785,19 +814,22 @@ function buildPoliceChart() {
   stackGroup.append("path").datum(policeData).attr("d", areaStaff).attr("fill", "#64748B");
   stackGroup.append("path").datum(policeData).attr("d", areaPcsos).attr("fill", "#94A3B8");
 
-  // Direct labels
+  // Direct labels -- placed inside the stacked areas for legibility
   var lastP = policeData[policeData.length - 1];
-  var labelX = xScale(lastP.year) + 6;
+  var labelX = xScale(lastP.year) - 10;
   stackGroup.append("text").attr("class", "chart-annotation-bold")
     .attr("x", labelX).attr("y", yStack(lastP.officers / 2))
+    .attr("text-anchor", "end")
     .attr("fill", "#fff").attr("font-size", "13px")
     .text("Officers " + fmtK(lastP.officers));
   stackGroup.append("text").attr("class", "chart-annotation-bold")
     .attr("x", labelX).attr("y", yStack(lastP.officers + lastP.staff / 2))
+    .attr("text-anchor", "end")
     .attr("fill", "#fff").attr("font-size", "13px")
     .text("Staff " + fmtK(lastP.staff));
   stackGroup.append("text").attr("class", "chart-annotation-bold")
     .attr("x", labelX).attr("y", yStack(lastP.officers + lastP.staff + lastP.pcsos / 2))
+    .attr("text-anchor", "end")
     .attr("fill", C.ink).attr("font-size", "13px")
     .text("PCSOs " + fmtK(lastP.pcsos));
 
@@ -810,9 +842,9 @@ function buildPoliceChart() {
     .call(d3.axisLeft(yStack).ticks(6).tickFormat(function(d) { return d + "k"; }).tickSize(0))
     .call(function(g) { g.select(".domain").remove(); });
 
-  stackGroup.append("text").attr("class", "chart-annotation")
+  stackGroup.append("text").attr("class", "chart-title")
     .attr("x", dim.innerW / 2).attr("y", -10)
-    .attr("text-anchor", "middle").attr("fill", C.muted)
+    .attr("text-anchor", "middle")
     .text("Total police workforce (thousands)");
 
   // Hover on officer view
@@ -853,11 +885,9 @@ function buildPoliceChart() {
 function updatePoliceChart(step) {
   var svg = d3.select("#chart-police svg");
   if (step === 0) {
-    svg.select(".officer-view").transition().duration(DURATION).style("opacity", 1).on("end", function() { d3.select(this).style("pointer-events", "all"); });
-    svg.select(".stack-view").transition().duration(DURATION).style("opacity", 0).on("end", function() { d3.select(this).style("pointer-events", "none"); });
+    sequentialSwap(svg, ".officer-view", ".stack-view");
   } else {
-    svg.select(".officer-view").transition().duration(DURATION).style("opacity", 0).on("end", function() { d3.select(this).style("pointer-events", "none"); });
-    svg.select(".stack-view").transition().duration(DURATION).style("opacity", 1).on("end", function() { d3.select(this).style("pointer-events", "all"); });
+    sequentialSwap(svg, ".stack-view", ".officer-view");
   }
 }
 
@@ -869,7 +899,9 @@ function buildCrimeChart() {
   var dim = chartDims(container);
   var svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
-    .attr("viewBox", "0 0 " + dim.width + " " + dim.height);
+    .attr("viewBox", "0 0 " + dim.width + " " + dim.height)
+    .attr("role", "img")
+    .attr("aria-label", "Chart comparing survey-based and police-recorded crime trends in England and Wales");
   var g = svg.append("g").attr("transform", "translate(" + dim.margin.left + "," + dim.margin.top + ")");
 
   var crimeData = DATA.crimeSeries;
@@ -904,13 +936,21 @@ function buildCrimeChart() {
   lineGroup.append("path").datum(crimeData)
     .attr("d", recLine).attr("fill", "none").attr("stroke", C.red).attr("stroke-width", 2.5);
 
-  // Direct labels
+  // Direct labels -- separate vertically if the two series are close
   var lastCrime = crimeData[crimeData.length - 1];
+  var csewY = yScale(lastCrime.csew);
+  var recY = yScale(lastCrime.recorded);
+  var minSep = 18;
+  if (Math.abs(csewY - recY) < minSep) {
+    var mid = (csewY + recY) / 2;
+    csewY = mid - minSep / 2;
+    recY = mid + minSep / 2;
+  }
   lineGroup.append("text").attr("class", "chart-annotation-bold")
-    .attr("x", xScale(parseFinYear(lastCrime.year)) + 6).attr("y", yScale(lastCrime.csew) + 4)
+    .attr("x", xScale(parseFinYear(lastCrime.year)) + 6).attr("y", csewY + 4)
     .attr("fill", C.green).text("CSEW " + d3.format(".1f")(lastCrime.csew) + "m");
   lineGroup.append("text").attr("class", "chart-annotation-bold")
-    .attr("x", xScale(parseFinYear(lastCrime.year)) + 6).attr("y", yScale(lastCrime.recorded) + 4)
+    .attr("x", xScale(parseFinYear(lastCrime.year)) + 6).attr("y", recY + 4)
     .attr("fill", C.red).text("Recorded " + d3.format(".1f")(lastCrime.recorded) + "m");
 
   // Divergence annotation
@@ -921,7 +961,7 @@ function buildCrimeChart() {
   lineGroup.append("text").attr("class", "chart-annotation")
     .attr("x", xScale(2013)).attr("y", yScale(5.5) + 16)
     .attr("text-anchor", "middle").attr("fill", C.muted)
-    .text("drive divergence \u2192");
+    .text("drive divergence");
 
   // Axes
   lineGroup.append("g").attr("class", "axis x-axis")
@@ -932,9 +972,9 @@ function buildCrimeChart() {
     .call(d3.axisLeft(yScale).ticks(7).tickFormat(function(d) { return d + "m"; }).tickSize(0))
     .call(function(g) { g.select(".domain").remove(); });
 
-  lineGroup.append("text").attr("class", "chart-annotation")
+  lineGroup.append("text").attr("class", "chart-title")
     .attr("x", dim.innerW / 2).attr("y", -10)
-    .attr("text-anchor", "middle").attr("fill", C.muted)
+    .attr("text-anchor", "middle")
     .text("Crime in England & Wales (millions)");
 
   // Hover
@@ -987,7 +1027,8 @@ function buildCrimeChart() {
     .attr("opacity", function(d, i) { return i === 0 ? 1 : 0.4 + (0.5 * (1 - i / sortedBreakdown.length)); })
     .attr("rx", 2)
     .on("mousemove", function(event, d) {
-      showTooltip('<div class="tt-label">' + d.category + '</div><div class="tt-value">' + d3.format(",")(d.value) + 'k offences (' + Math.round(d.value / totalCrime * 100) + '% of total)</div>', event);
+      var valStr = d.value >= 1000 ? d3.format(".1f")(d.value / 1000) + "m" : d3.format(",")(d.value) + "k";
+      showTooltip('<div class="tt-label">' + d.category + '</div><div class="tt-value">' + valStr + ' offences (' + Math.round(d.value / totalCrime * 100) + '% of total)</div>', event);
     })
     .on("mouseleave", hideTooltip);
 
@@ -1008,24 +1049,22 @@ function buildCrimeChart() {
     .attr("fill", function(d, i) { return i === 0 ? C.ink : C.muted; })
     .attr("font-weight", function(d, i) { return i === 0 ? 600 : 400; })
     .text(function(d) {
-      var maxLen = isMobile() ? 14 : 24;
+      var maxLen = isMobile() ? 18 : 28;
       return d.category.length > maxLen ? d.category.slice(0, maxLen - 1) + "\u2026" : d.category;
     });
 
-  barGroup.append("text").attr("class", "chart-annotation")
+  barGroup.append("text").attr("class", "chart-title")
     .attr("x", dim.innerW / 2).attr("y", -10)
-    .attr("text-anchor", "middle").attr("fill", C.muted)
+    .attr("text-anchor", "middle")
     .text("Recorded crime by type, 2023\u201324 (thousands)");
 }
 
 function updateCrimeChart(step) {
   var svg = d3.select("#chart-crime svg");
   if (step === 0) {
-    svg.select(".line-view").transition().duration(DURATION).style("opacity", 1).on("end", function() { d3.select(this).style("pointer-events", "all"); });
-    svg.select(".bar-view").transition().duration(DURATION).style("opacity", 0).on("end", function() { d3.select(this).style("pointer-events", "none"); });
+    sequentialSwap(svg, ".line-view", ".bar-view");
   } else {
-    svg.select(".line-view").transition().duration(DURATION).style("opacity", 0).on("end", function() { d3.select(this).style("pointer-events", "none"); });
-    svg.select(".bar-view").transition().duration(DURATION).style("opacity", 1).on("end", function() { d3.select(this).style("pointer-events", "all"); });
+    sequentialSwap(svg, ".bar-view", ".line-view");
   }
 }
 
@@ -1037,7 +1076,9 @@ function buildCourtsChart() {
   var dim = chartDims(container);
   var svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
-    .attr("viewBox", "0 0 " + dim.width + " " + dim.height);
+    .attr("viewBox", "0 0 " + dim.width + " " + dim.height)
+    .attr("role", "img")
+    .attr("aria-label", "Chart showing the Crown Court case backlog nearly doubling from 2019 to 2024");
   var g = svg.append("g").attr("transform", "translate(" + dim.margin.left + "," + dim.margin.top + ")");
 
   var courtData = DATA.courtBacklog;
@@ -1049,12 +1090,10 @@ function buildCourtsChart() {
     .domain(courtData.map(function(d) { return d.year; }))
     .range([0, dim.innerW])
     .padding(0.3);
-  var yScale = d3.scaleLinear().domain([0, 85]).range([dim.innerH, 0]);
+  var yMax = Math.ceil(d3.max(courtData, function(d) { return d.outstanding; }) * 1.15 / 10) * 10;
+  var yScale = d3.scaleLinear().domain([0, yMax]).range([dim.innerH, 0]);
 
-  // Grid
-  barGroup.append("g").attr("class", "grid")
-    .call(d3.axisLeft(yScale).ticks(6).tickSize(-dim.innerW).tickFormat(""))
-    .call(function(g) { g.select(".domain").remove(); });
+  // No gridlines: every bar has a direct label, so gridlines are chart-junk
 
   // Bars
   barGroup.selectAll(".court-bar").data(courtData).enter()
@@ -1083,7 +1122,7 @@ function buildCourtsChart() {
   barGroup.append("text").attr("class", "chart-annotation")
     .attr("x", xScale(2020) + xScale.bandwidth() / 2).attr("y", yScale(54) - 30)
     .attr("text-anchor", "middle").attr("fill", C.red)
-    .text("COVID");
+    .text("COVID closures");
   barGroup.append("line")
     .attr("x1", xScale(2020) + xScale.bandwidth() / 2)
     .attr("x2", xScale(2020) + xScale.bandwidth() / 2)
@@ -1105,13 +1144,11 @@ function buildCourtsChart() {
     .attr("transform", "translate(0," + dim.innerH + ")")
     .call(d3.axisBottom(xScale).tickSize(0))
     .call(function(g) { g.select(".domain").remove(); });
-  barGroup.append("g").attr("class", "axis y-axis")
-    .call(d3.axisLeft(yScale).ticks(6).tickFormat(function(d) { return d + "k"; }).tickSize(0))
-    .call(function(g) { g.select(".domain").remove(); });
+  // y-axis omitted: every bar carries its own direct label -- no redundant ink
 
-  barGroup.append("text").attr("class", "chart-annotation")
+  barGroup.append("text").attr("class", "chart-title")
     .attr("x", dim.innerW / 2).attr("y", -10)
-    .attr("text-anchor", "middle").attr("fill", C.muted)
+    .attr("text-anchor", "middle")
     .text("Crown Court outstanding cases (thousands)");
 
   // --- GROWTH RATE VIEW (step 1, hidden) ---
@@ -1173,20 +1210,18 @@ function buildCourtsChart() {
     .call(d3.axisLeft(yGrowth).ticks(5).tickFormat(function(d) { return "+" + d + "%"; }).tickSize(0))
     .call(function(g) { g.select(".domain").remove(); });
 
-  growthGroup.append("text").attr("class", "chart-annotation")
+  growthGroup.append("text").attr("class", "chart-title")
     .attr("x", dim.innerW / 2).attr("y", -10)
-    .attr("text-anchor", "middle").attr("fill", C.muted)
+    .attr("text-anchor", "middle")
     .text("Backlog growth since 2019 (%)");
 }
 
 function updateCourtsChart(step) {
   var svg = d3.select("#chart-courts svg");
   if (step === 0) {
-    svg.select(".bar-view").transition().duration(DURATION).style("opacity", 1).on("end", function() { d3.select(this).style("pointer-events", "all"); });
-    svg.select(".growth-view").transition().duration(DURATION).style("opacity", 0).on("end", function() { d3.select(this).style("pointer-events", "none"); });
+    sequentialSwap(svg, ".bar-view", ".growth-view");
   } else {
-    svg.select(".bar-view").transition().duration(DURATION).style("opacity", 0).on("end", function() { d3.select(this).style("pointer-events", "none"); });
-    svg.select(".growth-view").transition().duration(DURATION).style("opacity", 1).on("end", function() { d3.select(this).style("pointer-events", "all"); });
+    sequentialSwap(svg, ".growth-view", ".bar-view");
   }
 }
 
@@ -1198,7 +1233,9 @@ function buildPrisonChart() {
   var dim = chartDims(container);
   var svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
-    .attr("viewBox", "0 0 " + dim.width + " " + dim.height);
+    .attr("viewBox", "0 0 " + dim.width + " " + dim.height)
+    .attr("role", "img")
+    .attr("aria-label", "Chart showing prison population approaching capacity at 98% utilisation");
   var g = svg.append("g").attr("transform", "translate(" + dim.margin.left + "," + dim.margin.top + ")");
 
   var prisonData = DATA.prisonPopulation;
@@ -1232,10 +1269,7 @@ function buildPrisonChart() {
     .y1(function(d) { return yScale(d.population); })
     .curve(d3.curveMonotoneX);
   popGroup.append("path").datum(prisonData)
-    .attr("d", gapArea).attr("fill", function() {
-      // Use a slightly different fill depending on whether overcrowded
-      return C.redLight;
-    });
+    .attr("d", gapArea).attr("fill", C.amberLight);
 
   // Population line
   var popLine = d3.line()
@@ -1272,9 +1306,15 @@ function buildPrisonChart() {
     .call(d3.axisLeft(yScale).ticks(6).tickFormat(function(d) { return d + "k"; }).tickSize(0))
     .call(function(g) { g.select(".domain").remove(); });
 
-  popGroup.append("text").attr("class", "chart-annotation")
+  // Axis-break indicator (y-axis does not start at zero)
+  popGroup.append("text").attr("class", "axis-break")
+    .attr("x", -8).attr("y", dim.innerH + 4)
+    .attr("text-anchor", "middle")
+    .text("\u2E17");
+
+  popGroup.append("text").attr("class", "chart-title")
     .attr("x", dim.innerW / 2).attr("y", -10)
-    .attr("text-anchor", "middle").attr("fill", C.muted)
+    .attr("text-anchor", "middle")
     .text("Prison population vs capacity (thousands)");
 
   // Hover
@@ -1371,20 +1411,24 @@ function buildPrisonChart() {
     .call(d3.axisLeft(yGap).ticks(6).tickFormat(function(d) { return d + "%"; }).tickSize(0))
     .call(function(g) { g.select(".domain").remove(); });
 
-  gapGroup.append("text").attr("class", "chart-annotation")
+  // Axis-break indicator (y-axis starts at 85%)
+  gapGroup.append("text").attr("class", "axis-break")
+    .attr("x", -8).attr("y", dim.innerH + 4)
+    .attr("text-anchor", "middle")
+    .text("\u2E17");
+
+  gapGroup.append("text").attr("class", "chart-title")
     .attr("x", dim.innerW / 2).attr("y", -10)
-    .attr("text-anchor", "middle").attr("fill", C.muted)
+    .attr("text-anchor", "middle")
     .text("Prison utilisation rate (%)");
 }
 
 function updatePrisonChart(step) {
   var svg = d3.select("#chart-prison svg");
   if (step === 0) {
-    svg.select(".pop-view").transition().duration(DURATION).style("opacity", 1).on("end", function() { d3.select(this).style("pointer-events", "all"); });
-    svg.select(".gap-view").transition().duration(DURATION).style("opacity", 0).on("end", function() { d3.select(this).style("pointer-events", "none"); });
+    sequentialSwap(svg, ".pop-view", ".gap-view");
   } else {
-    svg.select(".pop-view").transition().duration(DURATION).style("opacity", 0).on("end", function() { d3.select(this).style("pointer-events", "none"); });
-    svg.select(".gap-view").transition().duration(DURATION).style("opacity", 1).on("end", function() { d3.select(this).style("pointer-events", "all"); });
+    sequentialSwap(svg, ".gap-view", ".pop-view");
   }
 }
 

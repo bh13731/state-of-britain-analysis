@@ -177,7 +177,7 @@ body {
   font-family: 'Inter', sans-serif;
 }
 .chart-annotation-bold {
-  font-size: 13.5px;
+  font-size: 14px;
   font-weight: 600;
   fill: #1A1A1A;
   font-family: 'Inter', sans-serif;
@@ -212,7 +212,7 @@ body {
   fill: #545454;
 }
 .axis path, .axis line { stroke: none; }
-.grid line { stroke: #F0F0EB; stroke-width: 1; }
+.grid line { stroke: #F0F0EB; stroke-width: 0.5; }
 .grid path { stroke: none; }
 
 /* ---------- Responsive ---------- */
@@ -336,7 +336,7 @@ body {
     <div class="step" data-section="qe" data-step="1">
       <div class="step-inner">
         <h2>The programme that was meant to save money</h2>
-        <p>Total APF losses paid by taxpayers since 2022 now exceed <strong style="color:#1E40AF;">&pound;370 billion</strong> flowing through HM Treasury &mdash; more than the annual budgets of multiple government departments.</p>
+        <p>Cumulative APF indemnity payments from the Treasury to the Bank since 2020 now exceed <strong style="color:#1E40AF;">&pound;370 billion</strong> &mdash; more than the entire annual budget of the NHS.</p>
         <p>The programme designed to make borrowing cheaper has become one of the largest single costs in the public finances.</p>
       </div>
     </div>
@@ -352,7 +352,7 @@ body {
     <div class="step" data-section="outlook" data-step="0">
       <div class="step-inner">
         <h2>The forecast: no relief in sight</h2>
-        <p>The OBR forecasts debt interest climbing to <strong style="color:#991B1B;">&pound;140bn by 2030</strong>. Even as the deficit narrows, the interest bill keeps rising &mdash; because the enormous stock of debt issued at low rates is being refinanced at higher ones.</p>
+        <p>The OBR forecasts debt interest continuing to climb toward <strong style="color:#991B1B;">&pound;140bn by 2029&ndash;30</strong>. Even as the deficit narrows, the interest bill keeps rising &mdash; because the enormous stock of gilts issued at low rates is being refinanced at higher yields.</p>
       </div>
     </div>
     <div class="step" data-section="outlook" data-step="1">
@@ -391,7 +391,7 @@ const C = {
   faint: "#8A8A82", ink: "#1A1A1A", secondary: "#3D3D3D", muted: "#545454",
   grid: "#F0F0EB", bg: "#FAFAF7"
 };
-const DURATION = 600;
+const DURATION = 350;
 const MOBILE = 768;
 
 /* =========================================================
@@ -415,7 +415,6 @@ function hideTooltip() { ttEl.classList.remove("visible"); }
    HELPERS
    ========================================================= */
 function fmt(v) {
-  if (Math.abs(v) >= 1000) return (v < 0 ? "-" : "") + "\u00a3" + d3.format(",")(Math.round(Math.abs(v))) + "bn";
   return (v < 0 ? "-" : "") + "\u00a3" + d3.format(",")(Math.round(Math.abs(v))) + "bn";
 }
 function fmtBnShort(v) { return "\u00a3" + d3.format(",")(Math.round(v)) + "bn"; }
@@ -495,7 +494,8 @@ function buildScaleChart() {
   const dim = chartDims(container);
   const svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
-    .attr("viewBox", `0 0 ${dim.width} ${dim.height}`);
+    .attr("viewBox", `0 0 ${dim.width} ${dim.height}`)
+    .attr("role", "img").attr("aria-label", "Chart comparing UK debt interest spending to other government departments, and showing debt interest over time from 1978");
   const g = svg.append("g").attr("transform", `translate(${dim.margin.left},${dim.margin.top})`);
 
   const agg = DATA.aggregates;
@@ -506,10 +506,10 @@ function buildScaleChart() {
 
   const comparisons = [
     { label: "Debt interest", value: latest.debtInterest, color: C.crimson },
-    { label: "Defence", value: 71.5, color: "#94A3B8" },
-    { label: "Transport", value: 30.5, color: "#94A3B8" },
-    { label: "Home Office", value: 22.5, color: "#94A3B8" },
-    { label: "Justice", value: 13.6, color: "#94A3B8" }
+    { label: "Defence", value: 71.5, color: "#B0B0A8" },
+    { label: "Transport", value: 30.5, color: "#B0B0A8" },
+    { label: "Home Office", value: 22.5, color: "#B0B0A8" },
+    { label: "Justice", value: 13.6, color: "#B0B0A8" }
   ];
 
   const yBar = d3.scaleBand().domain(comparisons.map(d => d.label)).range([0, dim.innerH]).padding(0.3);
@@ -525,7 +525,7 @@ function buildScaleChart() {
     .data(comparisons).enter().append("rect")
     .attr("x", 0).attr("y", d => yBar(d.label))
     .attr("width", d => xBar(d.value)).attr("height", yBar.bandwidth())
-    .attr("fill", d => d.color).attr("rx", 3)
+    .attr("fill", d => d.color).attr("rx", 1)
     .on("mousemove", function(event, d) {
       showTooltip(`<div class="tt-label">${d.label}</div><div class="tt-value">${fmtBnShort(d.value)} per year</div>`, event);
     })
@@ -666,9 +666,10 @@ function buildScaleChart() {
     if (!d) return;
     hoverLine.attr("x1", xLine(year)).attr("x2", xLine(year)).style("opacity", 1);
     hoverDot.attr("cx", xLine(year)).attr("cy", yLine(d.debtInterest)).style("opacity", 1);
+    const spendShare = d.tme ? d3.format(".1f")(d.debtInterest / d.tme * 100) + "% of total spending" : "";
     showTooltip(`<div class="tt-label">${d.fy}${d.forecast ? " (forecast)" : ""}</div>
       <div class="tt-value" style="color:${C.crimson}">Debt interest: ${fmtBnShort(d.debtInterest)}</div>
-      <div class="tt-value">Per day: \u00a3${Math.round(d.debtInterest * 1000 / 365)}m</div>`, event);
+      ${spendShare ? '<div class="tt-value">' + spendShare + '</div>' : ""}`, event);
   }).on("mouseleave", function() {
     hoverLine.style("opacity", 0); hoverDot.style("opacity", 0);
     hideTooltip();
@@ -696,7 +697,8 @@ function buildCauseChart() {
   const dim = chartDims(container);
   const svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
-    .attr("viewBox", `0 0 ${dim.width} ${dim.height}`);
+    .attr("viewBox", `0 0 ${dim.width} ${dim.height}`)
+    .attr("role", "img").attr("aria-label", "Chart showing UK debt as percentage of GDP and the decoupling of debt stock from debt interest costs");
   const g = svg.append("g").attr("transform", `translate(${dim.margin.left},${dim.margin.top})`);
 
   const pctGDP = DATA.pctGDP;
@@ -718,8 +720,12 @@ function buildCauseChart() {
     .call(g => g.select(".domain").remove());
 
   debtView.append("g").attr("class", "axis y-axis")
-    .call(d3.axisLeft(yDebt).ticks(6).tickFormat((d, i) => i === 0 ? d + "% of GDP" : d + "%").tickSize(0))
+    .call(d3.axisLeft(yDebt).ticks(6).tickFormat(d => d + "%").tickSize(0))
     .call(g => g.select(".domain").remove());
+  // Horizontal axis label above y-axis (Wilke: never rotate)
+  debtView.append("text").attr("class", "chart-annotation")
+    .attr("x", 0).attr("y", -14).attr("text-anchor", "start").attr("fill", C.muted)
+    .text("Public sector net debt, % of GDP");
 
   debtView.append("g").attr("class", "axis x-axis")
     .attr("transform", `translate(0,${dim.innerH})`)
@@ -746,8 +752,8 @@ function buildCauseChart() {
   // Crisis annotations
   const crises = [
     { year: 1990, label: "ERM crisis", yOff: -30 },
-    { year: 2008, label: "Financial crash", yOff: -30 },
-    { year: 2020, label: "COVID", yOff: -30 }
+    { year: 2008, label: "Bank bailouts", yOff: -50 },
+    { year: 2020, label: "COVID borrowing", yOff: -30 }
   ];
   crises.forEach(c => {
     const d = pctGDP.find(a => a.year === c.year);
@@ -886,12 +892,18 @@ function buildCauseChart() {
   dualView.append("text").attr("class", "chart-annotation")
     .attr("x", xLine(2014)).attr("y", 35)
     .attr("text-anchor", "middle").attr("fill", C.muted)
-    .text("Debt doubles, interest flat");
+    .text("Near-zero rates masked the risk");
 
   // Forecast label
   dualView.append("text").attr("class", "chart-annotation")
     .attr("x", xLine(2027)).attr("y", dim.innerH - 10)
     .attr("text-anchor", "middle").attr("fill", C.muted).text("Forecast \u2192");
+
+  // Dual-axis caveat (Few/Tufte: dual axes can mislead)
+  dualView.append("text").attr("class", "chart-annotation")
+    .attr("x", dim.innerW).attr("y", dim.innerH + 32)
+    .attr("text-anchor", "end").attr("fill", C.muted).attr("font-size", "11px")
+    .text("Caution: two independent scales. Compare trends, not levels.");
 
   // Hover
   const hoverRect1 = dualView.append("rect")
@@ -942,7 +954,8 @@ function buildQEChart() {
   const dim = chartDims(container);
   const svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
-    .attr("viewBox", `0 0 ${dim.width} ${dim.height}`);
+    .attr("viewBox", `0 0 ${dim.width} ${dim.height}`)
+    .attr("role", "img").attr("aria-label", "Chart showing Bank of England Asset Purchase Facility indemnity payments to taxpayers and comparison with department budgets");
   const g = svg.append("g").attr("transform", `translate(${dim.margin.left},${dim.margin.top})`);
 
   // APF indemnity data (from HM Treasury breakdown)
@@ -978,7 +991,7 @@ function buildQEChart() {
     .data(apfData).enter().append("rect")
     .attr("x", d => xAPF(d.fy)).attr("y", d => yAPF(d.value))
     .attr("width", xAPF.bandwidth()).attr("height", d => dim.innerH - yAPF(d.value))
-    .attr("fill", C.blue).attr("rx", 3)
+    .attr("fill", C.blue).attr("rx", 1)
     .on("mousemove", function(event, d) {
       showTooltip(`<div class="tt-label">${d.fy}</div>
         <div class="tt-value" style="color:${C.blue}">APF indemnity: ${fmtBnShort(d.value)}</div>
@@ -1003,7 +1016,7 @@ function buildQEChart() {
     .attr("x", peakBarX)
     .attr("y", peakAnnotY)
     .attr("text-anchor", "middle").attr("fill", C.blue).attr("font-weight", 600)
-    .text("Bank Rate hits 5.25%");
+    .text("Rate rises make every bond a loss");
   // Leader line from annotation to bar top
   apfView.append("line")
     .attr("x1", peakBarX).attr("x2", peakBarX)
@@ -1026,14 +1039,14 @@ function buildQEChart() {
 
   // Department spending data (from API, 2024-25 values in £bn)
   const deptComparisons = [
-    { label: "APF losses (cumulative)", value: totalAPF, color: C.blue, bold: true },
-    { label: "Work & Pensions", value: 297.5, color: "#94A3B8", bold: false },
-    { label: "Health & Social Care", value: 223.2, color: "#94A3B8", bold: false },
-    { label: "Education", value: 132.9, color: "#94A3B8", bold: false },
-    { label: "Defence", value: 71.5, color: "#94A3B8", bold: false },
-    { label: "Transport", value: 30.5, color: "#94A3B8", bold: false },
-    { label: "Home Office", value: 22.5, color: "#94A3B8", bold: false },
-    { label: "Justice", value: 13.6, color: "#94A3B8", bold: false }
+    { label: "APF losses (5 yrs, 2020-25)", value: totalAPF, color: C.blue, bold: true },
+    { label: "Work & Pensions (1 yr)", value: 297.5, color: "#B0B0A8", bold: false },
+    { label: "Health & Social Care (1 yr)", value: 223.2, color: "#B0B0A8", bold: false },
+    { label: "Education (1 yr)", value: 132.9, color: "#B0B0A8", bold: false },
+    { label: "Defence (1 yr)", value: 71.5, color: "#B0B0A8", bold: false },
+    { label: "Transport (1 yr)", value: 30.5, color: "#B0B0A8", bold: false },
+    { label: "Home Office (1 yr)", value: 22.5, color: "#B0B0A8", bold: false },
+    { label: "Justice (1 yr)", value: 13.6, color: "#B0B0A8", bold: false }
   ];
 
   const yComp = d3.scaleBand().domain(deptComparisons.map(d => d.label)).range([0, dim.innerH]).padding(0.25);
@@ -1048,7 +1061,7 @@ function buildQEChart() {
     .data(deptComparisons).enter().append("rect")
     .attr("x", 0).attr("y", d => yComp(d.label))
     .attr("width", d => xComp(d.value)).attr("height", yComp.bandwidth())
-    .attr("fill", d => d.color).attr("rx", 3)
+    .attr("fill", d => d.color).attr("rx", 1)
     .attr("opacity", d => d.bold ? 1 : 0.7)
     .on("mousemove", function(event, d) {
       showTooltip(`<div class="tt-label">${d.label}</div>
@@ -1075,16 +1088,16 @@ function buildQEChart() {
     .attr("font-weight", d => d.bold ? 700 : 400)
     .text(d => fmtBnShort(d.value));
 
-  // Note
-  compView.append("text").attr("class", "chart-annotation")
-    .attr("x", 0).attr("y", dim.innerH + 30)
-    .attr("fill", C.muted).attr("font-size", "13px")
-    .text("APF = cumulative 2020-2025. Departments = 2024-25 annual spend.");
+  // Methodological caveat -- prominent, not buried (Tufte: honest scales)
+  compView.append("text").attr("class", "chart-annotation-bold")
+    .attr("x", 0).attr("y", dim.innerH + 28)
+    .attr("fill", C.crimson).attr("font-size", "13px")
+    .text("Note: APF figure is cumulative (5 yrs). Department figures are single-year.");
 
   // Title
   compView.append("text").attr("class", "chart-annotation-bold")
     .attr("x", 0).attr("y", -10).attr("fill", C.blue)
-    .text("The scale of QE losses");
+    .text("APF indemnity payments vs annual department spending");
 }
 
 function updateQEChart(step) {
@@ -1108,7 +1121,8 @@ function buildOutlookChart() {
   const dim = chartDims(container);
   const svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
-    .attr("viewBox", `0 0 ${dim.width} ${dim.height}`);
+    .attr("viewBox", `0 0 ${dim.width} ${dim.height}`)
+    .attr("role", "img").attr("aria-label", "Chart showing OBR forecast for UK debt interest to 2030 and debt interest as share of tax receipts");
   const g = svg.append("g").attr("transform", `translate(${dim.margin.left},${dim.margin.top})`);
 
   const agg = DATA.aggregates;
@@ -1170,11 +1184,11 @@ function buildOutlookChart() {
   forecastView.append("text").attr("class", "chart-annotation")
     .attr("x", xLine(2027)).attr("y", yInterest(130) - 20)
     .attr("text-anchor", "middle").attr("fill", C.crimsonDark).attr("font-weight", 600)
-    .text("No relief: refinancing");
+    .text("Cheap gilts maturing,");
   forecastView.append("text").attr("class", "chart-annotation")
     .attr("x", xLine(2027)).attr("y", yInterest(130) - 5)
     .attr("text-anchor", "middle").attr("fill", C.crimsonDark)
-    .text("at higher rates");
+    .text("replaced at 4-5% yields");
 
   // Forecast divider
   forecastView.append("line")
@@ -1230,8 +1244,12 @@ function buildOutlookChart() {
     .call(g => g.select(".domain").remove());
 
   pctView.append("g").attr("class", "axis y-axis")
-    .call(d3.axisLeft(yPct).ticks(7).tickFormat((d, i) => i === 0 ? d + "% of receipts" : d + "%").tickSize(0))
+    .call(d3.axisLeft(yPct).ticks(7).tickFormat(d => d + "%").tickSize(0))
     .call(g => g.select(".domain").remove());
+  // Horizontal axis label above y-axis (Wilke)
+  pctView.append("text").attr("class", "chart-annotation")
+    .attr("x", 0).attr("y", -14).attr("text-anchor", "start").attr("fill", C.muted)
+    .text("Debt interest as % of tax receipts");
 
   pctView.append("g").attr("class", "axis x-axis")
     .attr("transform", `translate(0,${dim.innerH})`)
@@ -1256,11 +1274,10 @@ function buildOutlookChart() {
   // % of spending line (secondary)
   const linePctS = d3.line().x(d => xLine(d.year)).y(d => yPct(d.pctSpending)).curve(d3.curveMonotoneX);
   pctView.append("path").datum(historicPct)
-    .attr("d", linePctS).attr("fill", "none").attr("stroke", C.crimsonDark).attr("stroke-width", 1.5)
-    .attr("opacity", 0.5);
+    .attr("d", linePctS).attr("fill", "none").attr("stroke", C.faint).attr("stroke-width", 1.5);
   pctView.append("path").datum(forecastBridgePct)
-    .attr("d", linePctS).attr("fill", "none").attr("stroke", C.crimsonDark).attr("stroke-width", 1.5)
-    .attr("stroke-dasharray", "6,4").attr("opacity", 0.5);
+    .attr("d", linePctS).attr("fill", "none").attr("stroke", C.faint).attr("stroke-width", 1.5)
+    .attr("stroke-dasharray", "6,4");
 
   // End labels
   // End labels — 10px padding from data (Cleveland: 8px+ minimum)
@@ -1274,7 +1291,7 @@ function buildOutlookChart() {
 
   pctView.append("text").attr("class", "chart-annotation")
     .attr("x", xLine(lastPF.year) + 10).attr("y", yPct(lastPF.pctSpending) + 4)
-    .attr("fill", C.crimsonDark).attr("opacity", 0.6)
+    .attr("fill", C.faint)
     .text(d3.format(".1f")(lastPF.pctSpending) + "% of spending");
 
   // "10p in every pound" annotation

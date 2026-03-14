@@ -154,7 +154,7 @@ body {
   z-index: 1000;
   opacity: 0;
   transition: opacity 0.15s;
-  max-width: 280px;
+  max-width: 340px;
 }
 .chart-tooltip.visible { opacity: 1; }
 .chart-tooltip .tt-label { font-weight: 600; margin-bottom: 2px; }
@@ -162,7 +162,7 @@ body {
 
 /* ---------- Chart annotation ---------- */
 .chart-annotation {
-  font-size: 13.5px;
+  font-size: 12.5px;
   fill: #555555;
   font-family: 'Inter', sans-serif;
 }
@@ -198,7 +198,7 @@ body {
 /* ---------- SVG common ---------- */
 .axis text {
   font-family: 'Inter', sans-serif;
-  font-size: 13.5px;
+  font-size: 12.5px;
   fill: #555555;
 }
 .axis path, .axis line { stroke: none; }
@@ -317,7 +317,7 @@ body {
     <div class="step" data-section="renewables" data-step="1">
       <div class="step-inner">
         <h2>Renewables overtake every other source</h2>
-        <p>In 2020, renewables surpassed gas-fired generation for the first time. By 2024, they accounted for 38% of all electricity &mdash; more than gas (29%) and nuclear (14%) combined.</p>
+        <p>In 2020, renewables surpassed gas-fired generation for the first time. By 2024, they accounted for 38% of all electricity &mdash; the single largest source, ahead of gas (29%) and nuclear (14%).</p>
       </div>
     </div>
   </div>
@@ -374,7 +374,7 @@ body {
     <div class="step" data-section="honest" data-step="0">
       <div class="step-inner">
         <h2>Energy bills have surged</h2>
-        <p>Household energy spending more than quadrupled from &pound;12bn in 1990 to &pound;51bn in 2024. The 2022 energy crisis saw bills spike to &pound;55bn as gas prices soared &mdash; a stark reminder of fossil fuel vulnerability.</p>
+        <p>Nominal household energy spending more than quadrupled from &pound;12bn in 1990 to &pound;51bn in 2024 (roughly doubled after adjusting for inflation). The 2022 energy crisis saw bills spike to &pound;55bn as gas prices soared &mdash; a stark reminder of fossil fuel vulnerability.</p>
       </div>
     </div>
     <div class="step" data-section="honest" data-step="1">
@@ -440,6 +440,13 @@ function showTooltip(html, event) {
 }
 function hideTooltip() { ttEl.classList.remove("visible"); }
 
+/* Bind touch events the same as mouse for all hover rects */
+function bindTouchTooltip(sel, moveFn, leaveFn) {
+  sel.on("touchstart", function(event) { event.preventDefault(); moveFn.call(this, event); }, { passive: false })
+     .on("touchmove", function(event) { event.preventDefault(); moveFn.call(this, event); }, { passive: false })
+     .on("touchend", function() { if (leaveFn) leaveFn.call(this); hideTooltip(); });
+}
+
 /* =========================================================
    HELPERS
    ========================================================= */
@@ -453,7 +460,7 @@ function isMobile() { return window.innerWidth < MOBILE; }
 function chartDims(container) {
   const w = container.clientWidth;
   const h = Math.max(500, Math.min(600, window.innerHeight * 0.65));
-  const m = { top: 36, right: 70, bottom: 40, left: 56 };
+  const m = { top: 36, right: 90, bottom: 40, left: 56 };
   return { width: w, height: h, margin: m, innerW: w - m.left - m.right, innerH: h - m.top - m.bottom };
 }
 
@@ -525,7 +532,8 @@ function buildHookChart() {
   const dim = chartDims(container);
   const svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
-    .attr("viewBox", "0 0 " + dim.width + " " + dim.height);
+    .attr("viewBox", "0 0 " + dim.width + " " + dim.height)
+    .attr("role", "img").attr("aria-label", "Stacked bar chart comparing UK electricity generation sources in 1990 versus 2024");
   const g = svg.append("g").attr("transform", "translate(" + dim.margin.left + "," + dim.margin.top + ")");
 
   const elec = DATA.electricity;
@@ -576,7 +584,7 @@ function buildHookChart() {
       .attr("x", xCat("1990")).attr("y", y(seg.y1))
       .attr("width", xCat.bandwidth()).attr("height", y(seg.y0) - y(seg.y1))
       .attr("fill", seg.color).attr("rx", seg.key === "renewables" ? 3 : 0)
-      .attr("opacity", 0.85);
+      .attr("opacity", 0.92);
   });
   // Label the big one
   var coalSeg1990 = stack1990.find(function(s) { return s.key === "convThermal"; });
@@ -593,7 +601,7 @@ function buildHookChart() {
       .attr("x", xCat("2024")).attr("y", y(seg.y1))
       .attr("width", xCat.bandwidth()).attr("height", y(seg.y0) - y(seg.y1))
       .attr("fill", seg.color).attr("rx", seg.key === "renewables" ? 3 : 0)
-      .attr("opacity", 0.85);
+      .attr("opacity", 0.92);
   });
   var renewSeg2024 = stack2024.find(function(s) { return s.key === "renewables"; });
   view1.append("text").attr("class", "chart-annotation-bold")
@@ -602,11 +610,14 @@ function buildHookChart() {
     .attr("text-anchor", "middle").attr("fill", "#fff")
     .text("Renewables: " + Math.round(renewSeg2024.value) + " TWh");
   var coalSeg2024 = stack2024.find(function(s) { return s.key === "convThermal"; });
-  view1.append("text").attr("class", "chart-annotation")
-    .attr("x", xCat("2024") + xCat.bandwidth() / 2)
-    .attr("y", y(coalSeg2024.y1) + (y(coalSeg2024.y0) - y(coalSeg2024.y1)) / 2 + 5)
-    .attr("text-anchor", "middle").attr("fill", "#fff").style("font-size", "12px")
-    .text(Math.round(coalSeg2024.value) + " TWh");
+  var coalBarH2024 = y(coalSeg2024.y0) - y(coalSeg2024.y1);
+  if (coalBarH2024 > 20) {
+    view1.append("text").attr("class", "chart-annotation")
+      .attr("x", xCat("2024") + xCat.bandwidth() / 2)
+      .attr("y", y(coalSeg2024.y1) + coalBarH2024 / 2 + 5)
+      .attr("text-anchor", "middle").attr("fill", "#fff").style("font-size", "12px")
+      .text(Math.round(coalSeg2024.value) + " TWh");
+  }
 
   // Legend
   var legendY = dim.margin.top - 28;
@@ -640,7 +651,8 @@ function buildCoalChart() {
   var dim = chartDims(container);
   var svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
-    .attr("viewBox", "0 0 " + dim.width + " " + dim.height);
+    .attr("viewBox", "0 0 " + dim.width + " " + dim.height)
+    .attr("role", "img").attr("aria-label", "Line chart showing coal share of UK primary energy falling from 31% in 1990 to 1.5% in 2024");
   var g = svg.append("g").attr("transform", "translate(" + dim.margin.left + "," + dim.margin.top + ")");
 
   var mix = DATA.energyMix;
@@ -745,12 +757,12 @@ function buildRenewablesChart() {
   var dim = chartDims(container);
   var svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
-    .attr("viewBox", "0 0 " + dim.width + " " + dim.height);
+    .attr("viewBox", "0 0 " + dim.width + " " + dim.height)
+    .attr("role", "img").attr("aria-label", "Line chart showing UK renewable electricity generation rising from 5 TWh to 103 TWh, overtaking gas generation in 2020");
   var g = svg.append("g").attr("transform", "translate(" + dim.margin.left + "," + dim.margin.top + ")");
 
   var elec = DATA.electricity;
   var x = d3.scaleLinear().domain([1990, 2024]).range([0, dim.innerW]);
-  var maxY = d3.max(elec, function(d) { return Math.max(d.convThermal + d.ccgt, d.renewables, d.nuclear); }) / 1000 * 1.1;
   var y = d3.scaleLinear().domain([0, 300]).range([dim.innerH, 0]);
 
   // Grid
@@ -785,9 +797,10 @@ function buildRenewablesChart() {
     .text(Math.round(last.renewables / 1000) + " TWh");
 
   // Start label
+  view0.append("circle").attr("cx", x(1990)).attr("cy", y(elec[0].renewables / 1000)).attr("r", 3.5).attr("fill", C.green).attr("stroke", "#fff").attr("stroke-width", 1.5);
   view0.append("text").attr("class", "chart-annotation")
-    .attr("x", x(1990) + 8).attr("y", y(elec[0].renewables / 1000) - 10).attr("fill", C.green)
-    .text(Math.round(elec[0].renewables / 1000) + " TWh");
+    .attr("x", x(1990) + 10).attr("y", y(elec[0].renewables / 1000) - 8).attr("fill", C.green)
+    .text(Math.round(elec[0].renewables / 1000) + " TWh (1990)");
 
   // Step 1: All sources comparison (layered on top)
   var view1 = g.append("g").attr("class", "renew-view-1").style("opacity", 0);
@@ -803,10 +816,10 @@ function buildRenewablesChart() {
   // Direct labels at end
   view1.append("text").attr("class", "chart-annotation-bold")
     .attr("x", x(2024) + 8).attr("y", y((last.convThermal + last.ccgt) / 1000) + 4).attr("fill", C.grey)
-    .text("Fossil " + Math.round((last.convThermal + last.ccgt) / 1000));
+    .text("Fossil " + Math.round((last.convThermal + last.ccgt) / 1000) + " TWh");
   view1.append("text").attr("class", "chart-annotation-bold")
     .attr("x", x(2024) + 8).attr("y", y(last.nuclear / 1000) + 4).attr("fill", C.nuclear)
-    .text("Nuclear " + Math.round(last.nuclear / 1000));
+    .text("Nuclear " + Math.round(last.nuclear / 1000) + " TWh");
 
   // Crossover annotation
   var crossYear = 2020;
@@ -817,7 +830,7 @@ function buildRenewablesChart() {
     .text("Renewables overtake");
   view1.append("text").attr("class", "chart-annotation")
     .attr("x", x(crossYear)).attr("y", crossY - 14).attr("text-anchor", "middle").attr("fill", C.green)
-    .text("fossil fuels (2020)");
+    .text("gas generation (2020)");
   view1.append("line")
     .attr("x1", x(crossYear)).attr("x2", x(crossYear))
     .attr("y1", crossY - 8).attr("y2", crossY + 4)
@@ -867,7 +880,8 @@ function buildMixChart() {
   var dim = chartDims(container);
   var svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
-    .attr("viewBox", "0 0 " + dim.width + " " + dim.height);
+    .attr("viewBox", "0 0 " + dim.width + " " + dim.height)
+    .attr("role", "img").attr("aria-label", "Stacked area chart showing UK primary energy mix from 1990 to 2024, fossil fuels still dominating at 74%");
   var g = svg.append("g").attr("transform", "translate(" + dim.margin.left + "," + dim.margin.top + ")");
 
   var mix = DATA.energyMix;
@@ -876,7 +890,7 @@ function buildMixChart() {
 
   var keys = ["coal", "petroleum", "gas", "nuclear", "bioenergy", "renewables"];
   var labels = { coal: "Coal", petroleum: "Petroleum", gas: "Gas", nuclear: "Nuclear", bioenergy: "Bioenergy", renewables: "Renewables" };
-  var colors = { coal: "#475569", petroleum: "#64748B", gas: "#94A3B8", nuclear: "#7C3AED", bioenergy: "#34D399", renewables: "#059669" };
+  var colors = { coal: "#475569", petroleum: "#64748B", gas: "#94A3B8", nuclear: "#7C3AED", bioenergy: "#2DD4BF", renewables: "#059669" };
 
   var stack = d3.stack().keys(keys).order(d3.stackOrderNone).offset(d3.stackOffsetNone);
   var series = stack(mix);
@@ -912,7 +926,7 @@ function buildMixChart() {
     if (val > 3) {
       view0.append("text").attr("class", "chart-annotation-bold")
         .attr("x", x(2024) + 8).attr("y", y(mid) + 4)
-        .attr("fill", key === "renewables" || key === "bioenergy" ? colors[key] : "#fff")
+        .attr("fill", colors[key])
         .style("font-size", val > 8 ? "13px" : "11px")
         .text(labels[key] + " " + fmtPct(val));
     }
@@ -962,7 +976,7 @@ function buildMixChart() {
     showTooltip('<div class="tt-label">' + d.year + '</div>' +
       '<div class="tt-value" style="color:' + colors.petroleum + '">Petroleum: ' + fmtPct(d.petroleum) + '</div>' +
       '<div class="tt-value" style="color:' + colors.gas + '">Gas: ' + fmtPct(d.gas) + '</div>' +
-      '<div class="tt-value" style="color:' + colors.coal + '">Coal: ' + fmtPct(d.coal) + '</div>' +
+      '<div class="tt-value" style="color:#334155">Coal: ' + fmtPct(d.coal) + '</div>' +
       '<div class="tt-value" style="color:' + colors.nuclear + '">Nuclear: ' + fmtPct(d.nuclear) + '</div>' +
       '<div class="tt-value" style="color:' + colors.bioenergy + '">Bioenergy: ' + fmtPct(d.bioenergy) + '</div>' +
       '<div class="tt-value" style="color:' + colors.renewables + '">Renewables: ' + fmtPct(d.renewables) + '</div>', event);
@@ -988,7 +1002,8 @@ function buildImportsChart() {
   var dim = chartDims(container);
   var svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
-    .attr("viewBox", "0 0 " + dim.width + " " + dim.height);
+    .attr("viewBox", "0 0 " + dim.width + " " + dim.height)
+    .attr("role", "img").attr("aria-label", "Line chart showing UK net energy import dependency rising from negative (net exporter) in the late 1990s to 42% by 2024");
   var g = svg.append("g").attr("transform", "translate(" + dim.margin.left + "," + dim.margin.top + ")");
 
   var impDep = DATA.importDependency;
@@ -1043,7 +1058,7 @@ function buildImportsChart() {
   var peakD = impDep.find(function(d) { return d.year === 1999; });
   g.append("circle").attr("cx", x(1999)).attr("cy", y(peakD.importDependency)).attr("r", 4).attr("fill", C.green).attr("stroke", "#fff").attr("stroke-width", 2);
   g.append("text").attr("class", "chart-annotation")
-    .attr("x", x(1999)).attr("y", y(peakD.importDependency) + 20).attr("text-anchor", "middle").attr("fill", C.green)
+    .attr("x", x(1999)).attr("y", y(peakD.importDependency) - 14).attr("text-anchor", "middle").attr("fill", C.green)
     .text("Peak North Sea");
 
   // 2024 level
@@ -1114,7 +1129,7 @@ function buildImportsChart() {
     var status = d.importDependency < 0 ? "Net exporter" : "Net importer";
     showTooltip('<div class="tt-label">' + d.year + '</div>' +
       '<div class="tt-value">' + status + ': ' + fmtPct(Math.abs(d.importDependency)) + '</div>' +
-      '<div class="tt-value" style="color:' + C.muted + '">Production: ' + d3.format(",")(d.production) + ' ktoe</div>' +
+      '<div class="tt-value" style="color:' + C.muted + '">Production: ' + d3.format(",")(d.production) + ' ktoe (thousand tonnes of oil equivalent)</div>' +
       '<div class="tt-value" style="color:' + C.muted + '">Consumption: ' + d3.format(",")(d.consumption) + ' ktoe</div>', event);
   }).on("mouseleave", function() {
     hoverLineEl.style("opacity", 0); hoverDot.style("opacity", 0); hideTooltip();
@@ -1138,7 +1153,8 @@ function buildHonestChart() {
   var dim = chartDims(container);
   var svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
-    .attr("viewBox", "0 0 " + dim.width + " " + dim.height);
+    .attr("viewBox", "0 0 " + dim.width + " " + dim.height)
+    .attr("role", "img").attr("aria-label", "Line chart showing UK household energy expenditure rising from 12 billion pounds in 1990 to 51 billion in 2024, with a spike during the 2022 energy crisis");
   var g = svg.append("g").attr("transform", "translate(" + dim.margin.left + "," + dim.margin.top + ")");
 
   var exp = DATA.expenditure;
@@ -1156,7 +1172,7 @@ function buildHonestChart() {
     .call(d3.axisBottom(x).ticks(isMobile() ? 5 : 8).tickFormat(d3.format("d")).tickSize(0))
     .call(function(s) { s.select(".domain").remove(); });
   g.append("g").attr("class", "axis y-axis")
-    .call(d3.axisLeft(y).ticks(6).tickFormat(function(d, i) { return i === 0 ? "\u00a3" + d + "bn" : "\u00a3" + d; }).tickSize(0))
+    .call(d3.axisLeft(y).ticks(6).tickFormat(function(d, i) { return i === 0 ? "\u00a3" + d + "bn (nominal)" : "\u00a3" + d; }).tickSize(0))
     .call(function(s) { s.select(".domain").remove(); });
 
   // Step 0: Household bills
@@ -1197,10 +1213,10 @@ function buildHonestChart() {
     .text("Total \u00a3" + Math.round(last.domesticTotal / 1000) + "bn");
   view0.append("text").attr("class", "chart-annotation-bold")
     .attr("x", x(2024) + 8).attr("y", y(last.domesticElectricity / 1000) + 4).attr("fill", C.amber)
-    .text("Electricity");
+    .text("Electricity \u00a3" + Math.round(last.domesticElectricity / 1000) + "bn");
   view0.append("text").attr("class", "chart-annotation-bold")
     .attr("x", x(2024) + 8).attr("y", y(last.domesticGas / 1000) + 4).attr("fill", C.gas)
-    .text("Gas");
+    .text("Gas \u00a3" + Math.round(last.domesticGas / 1000) + "bn");
 
   // 2022 crisis annotation
   var d2022 = exp.find(function(d) { return d.year === 2022; });

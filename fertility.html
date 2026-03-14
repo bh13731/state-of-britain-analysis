@@ -109,7 +109,7 @@ body {
 }
 .step-inner {
   max-width: 420px;
-  opacity: 0.15;
+  opacity: 0.05;
   transition: opacity 0.5s;
 }
 .step-inner.active {
@@ -431,7 +431,7 @@ function isMobile() { return window.innerWidth < MOBILE; }
 function chartDims(container) {
   const w = container.clientWidth;
   const h = Math.max(500, Math.min(600, window.innerHeight * 0.65));
-  const m = { top: 30, right: 60, bottom: 40, left: 62 };
+  const m = { top: 30, right: 100, bottom: 48, left: 62 };
   return { width: w, height: h, margin: m, innerW: w - m.left - m.right, innerH: h - m.top - m.bottom };
 }
 
@@ -503,7 +503,9 @@ function buildHookChart() {
   const dim = chartDims(container);
   const svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
-    .attr("viewBox", "0 0 " + dim.width + " " + dim.height);
+    .attr("viewBox", "0 0 " + dim.width + " " + dim.height)
+    .attr("role", "img")
+    .attr("aria-label", "Total fertility rate in England and Wales, 1960 to 2024, compared to the replacement rate of 2.1");
   const g = svg.append("g").attr("transform", "translate(" + dim.margin.left + "," + dim.margin.top + ")");
 
   const tfrData = DATA.tfrByOrder;
@@ -641,14 +643,17 @@ function buildHookChart() {
     .attr("x", xLine(latest.year) - 4).attr("y", yLine(latest.tfrTotal) - 14)
     .attr("text-anchor", "end").attr("fill", C.rose).text(latest.year + ": " + latest.tfrTotal.toFixed(2));
 
-  // Mini recovery annotation
-  lineGroup.append("text").attr("class", "chart-annotation")
-    .attr("x", xLine(2010)).attr("y", yLine(2.0) - 28)
-    .attr("text-anchor", "middle").attr("fill", C.muted).text("Brief recovery");
-  lineGroup.append("line")
-    .attr("x1", xLine(2010)).attr("x2", xLine(2010))
-    .attr("y1", yLine(2.0) - 22).attr("y2", yLine(2.0) - 4)
-    .attr("stroke", C.muted).attr("stroke-width", 1).attr("stroke-dasharray", "3,2");
+  // Mini recovery annotation — anchored to actual 2010 data point
+  var recoveryPt = tfrData.find(function(d) { return d.year === 2010; });
+  if (recoveryPt) {
+    lineGroup.append("text").attr("class", "chart-annotation")
+      .attr("x", xLine(2010)).attr("y", yLine(recoveryPt.tfrTotal) - 28)
+      .attr("text-anchor", "middle").attr("fill", C.muted).text("Brief recovery");
+    lineGroup.append("line")
+      .attr("x1", xLine(2010)).attr("x2", xLine(2010))
+      .attr("y1", yLine(recoveryPt.tfrTotal) - 22).attr("y2", yLine(recoveryPt.tfrTotal) - 4)
+      .attr("stroke", C.muted).attr("stroke-width", 1).attr("stroke-dasharray", "3,2");
+  }
 
   // Axes
   lineGroup.append("g").attr("class", "axis x-axis")
@@ -702,7 +707,9 @@ function buildOrderChart() {
   var dim = chartDims(container);
   var svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
-    .attr("viewBox", "0 0 " + dim.width + " " + dim.height);
+    .attr("viewBox", "0 0 " + dim.width + " " + dim.height)
+    .attr("role", "img")
+    .attr("aria-label", "Fertility rate by birth order and mean age of mother at childbirth, 1960 to 2022");
   var g = svg.append("g").attr("transform", "translate(" + dim.margin.left + "," + dim.margin.top + ")");
 
   var orderData = DATA.tfrByOrder.filter(function(d) { return d.tfr1 !== undefined; });
@@ -738,15 +745,25 @@ function buildOrderChart() {
       .attr("stroke", colors[i]).attr("stroke-width", 0.5);
   });
 
-  // Direct labels at the right edge
+  // Direct labels at the right edge — with collision avoidance
   var lastD = orderData[orderData.length - 1];
   var cumul = 0;
+  var labelPositions = [];
+  var minLabelGap = 16;
   ["tfr4", "tfr3", "tfr2", "tfr1"].forEach(function(key, i) {
     var val = lastD[key];
-    var midY = yA(cumul + val / 2);
+    var idealY = yA(cumul + val / 2) + 4;
     cumul += val;
+    // Push labels apart if they overlap
+    if (labelPositions.length > 0) {
+      var prev = labelPositions[labelPositions.length - 1];
+      if (prev - idealY < minLabelGap) {
+        idealY = prev - minLabelGap;
+      }
+    }
+    labelPositions.push(idealY);
     areaGroup.append("text").attr("class", "chart-annotation-bold")
-      .attr("x", dim.innerW + 4).attr("y", midY + 4)
+      .attr("x", dim.innerW + 4).attr("y", idealY)
       .attr("fill", colors[i]).attr("font-size", "13px")
       .text(labels[i]);
   });
@@ -866,9 +883,9 @@ function buildOrderChart() {
     hLine2.attr("x1", xAge(d.year)).attr("x2", xAge(d.year)).style("opacity", 1);
     showTooltip('<div class="tt-label">' + d.year + '</div>' +
       '<div class="tt-value">All births: ' + d.ageAll.toFixed(1) + ' years</div>' +
-      '<div class="tt-value" style="color:' + C.order1 + '">1st child: ' + d.age1.toFixed(1) + '</div>' +
-      '<div class="tt-value" style="color:' + C.order2 + '">2nd child: ' + d.age2.toFixed(1) + '</div>' +
-      '<div class="tt-value" style="color:' + C.order3 + '">3rd child: ' + d.age3.toFixed(1) + '</div>', event);
+      '<div class="tt-value" style="color:' + C.order1 + '">1st child: ' + d.age1.toFixed(1) + ' years</div>' +
+      '<div class="tt-value" style="color:' + C.order2 + '">2nd child: ' + d.age2.toFixed(1) + ' years</div>' +
+      '<div class="tt-value" style="color:' + C.order3 + '">3rd child: ' + d.age3.toFixed(1) + ' years</div>', event);
   }).on("mouseleave", function() { hLine2.style("opacity", 0); hideTooltip(); });
 }
 
@@ -891,7 +908,9 @@ function buildBirthsChart() {
   var dim = chartDims(container);
   var svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
-    .attr("viewBox", "0 0 " + dim.width + " " + dim.height);
+    .attr("viewBox", "0 0 " + dim.width + " " + dim.height)
+    .attr("role", "img")
+    .attr("aria-label", "Live births in England and Wales, 1960 to 2024");
   var g = svg.append("g").attr("transform", "translate(" + dim.margin.left + "," + dim.margin.top + ")");
 
   var birthsData = DATA.birthsSeries;
@@ -983,7 +1002,7 @@ function buildBirthsChart() {
     hDot.attr("cx", xB(d.year)).attr("cy", yB(d.births)).style("opacity", 1);
     showTooltip('<div class="tt-label">' + d.year + '</div>' +
       '<div class="tt-value">' + d3.format(",")(d.births) + ',000 live births</div>' +
-      '<div class="tt-value" style="color:' + C.rose + '">' + (d.births < peak.births ? (Math.round((1 - d.births / peak.births) * 100) + '% below 1964 peak') : 'Peak year') + '</div>', event);
+      '<div class="tt-value" style="color:' + C.rose + '">' + (d.births < peak.births ? (Math.round((1 - d.births / peak.births) * 100) + '% below ' + peak.year + ' peak') : 'Peak year') + '</div>', event);
   }).on("mouseleave", function() { hLine.style("opacity", 0); hDot.style("opacity", 0); hideTooltip(); });
 
   // --- FEEDBACK LOOP VIEW (step 1): same chart with annotation overlay ---
@@ -1062,7 +1081,9 @@ function buildFamiliesChart() {
   var dim = chartDims(container);
   var svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
-    .attr("viewBox", "0 0 " + dim.width + " " + dim.height);
+    .attr("viewBox", "0 0 " + dim.width + " " + dim.height)
+    .attr("role", "img")
+    .attr("aria-label", "Family types and average household size in the UK, 2004 to 2024");
   var g = svg.append("g").attr("transform", "translate(" + dim.margin.left + "," + dim.margin.top + ")");
 
   var famData = DATA.familyTypeSeries;
@@ -1098,15 +1119,24 @@ function buildFamiliesChart() {
       .attr("stroke", famColors[i]).attr("stroke-width", 0.5);
   });
 
-  // Direct labels
+  // Direct labels — with collision avoidance
   var lastFam = stackedData[stackedData.length - 1];
   var famCumul = 0;
+  var famLabelPositions = [];
+  var minLabelGap = 16;
   ["loneParent", "cohabiting", "married"].forEach(function(key, i) {
     var val = lastFam[key];
-    var midY = yF(famCumul + val / 2);
+    var idealY = yF(famCumul + val / 2) + 4;
     famCumul += val;
+    if (famLabelPositions.length > 0) {
+      var prev = famLabelPositions[famLabelPositions.length - 1];
+      if (prev - idealY < minLabelGap) {
+        idealY = prev - minLabelGap;
+      }
+    }
+    famLabelPositions.push(idealY);
     famGroup.append("text").attr("class", "chart-annotation-bold")
-      .attr("x", dim.innerW + 4).attr("y", midY + 4)
+      .attr("x", dim.innerW + 4).attr("y", idealY)
       .attr("fill", famColors[i]).attr("font-size", "13px")
       .text(famLabels[i]);
   });
@@ -1123,7 +1153,7 @@ function buildFamiliesChart() {
     .attr("transform", "rotate(-90)")
     .attr("x", -dim.innerH / 2).attr("y", -42)
     .attr("text-anchor", "middle").attr("fill", C.muted)
-    .text("Families (thousands)");
+    .text("Families (millions)");
 
   // Hover
   var hoverRect = famGroup.append("rect")
@@ -1155,16 +1185,7 @@ function buildFamiliesChart() {
     .call(d3.axisLeft(yH).ticks(7).tickSize(-dim.innerW).tickFormat(""))
     .call(function(g) { g.select(".domain").remove(); });
 
-  // Area under curve
-  var hhArea = d3.area()
-    .x(function(d) { return xH(d.year); })
-    .y0(dim.innerH)
-    .y1(function(d) { return yH(d.size); })
-    .curve(d3.curveMonotoneX);
-  hhGroup.append("path").datum(hhData)
-    .attr("d", hhArea).attr("fill", C.mauveLight).attr("stroke", "none");
-
-  // Line
+  // Line (no area fill — baseline is truncated at 2.0, area would exaggerate decline)
   var hhLine = d3.line()
     .x(function(d) { return xH(d.year); })
     .y(function(d) { return yH(d.size); })
@@ -1249,7 +1270,9 @@ function buildWhyChart() {
   var dim = chartDims(container);
   var svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
-    .attr("viewBox", "0 0 " + dim.width + " " + dim.height);
+    .attr("viewBox", "0 0 " + dim.width + " " + dim.height)
+    .attr("role", "img")
+    .attr("aria-label", "Fertility rate and live births on dual axes, plus summary dashboard of key demographic metrics");
   var g = svg.append("g").attr("transform", "translate(" + dim.margin.left + "," + dim.margin.top + ")");
 
   // --- DEPENDENCY VIEW (step 0): TFR + births dual axis to show compounding ---
@@ -1309,7 +1332,8 @@ function buildWhyChart() {
     .call(function(g) { g.select(".domain").remove(); });
   depGroup.append("g").attr("class", "axis y-axis")
     .call(d3.axisLeft(yLeft).ticks(7).tickFormat(function(d) { return d.toFixed(1); }).tickSize(0))
-    .call(function(g) { g.select(".domain").remove(); });
+    .call(function(g) { g.select(".domain").remove(); })
+    .selectAll("text").attr("fill", C.rose);
   depGroup.append("g").attr("class", "axis y-axis-right")
     .attr("transform", "translate(" + dim.innerW + ",0)")
     .call(d3.axisRight(yRight).ticks(6).tickFormat(function(d) { return d + "k"; }).tickSize(0))
@@ -1326,6 +1350,13 @@ function buildWhyChart() {
     .attr("x", dim.innerH / 2).attr("y", -(dim.innerW + 48))
     .attr("text-anchor", "middle").attr("fill", C.warm)
     .text("Births (thousands)");
+
+  // Dual-axis caveat
+  depGroup.append("text").attr("class", "chart-annotation")
+    .attr("x", dim.innerW / 2).attr("y", dim.innerH + 34)
+    .attr("text-anchor", "middle").attr("fill", C.faint)
+    .attr("font-size", "11px")
+    .text("Note: two independent scales — compare trends, not magnitudes");
 
   // --- SUMMARY VIEW (step 1): key metrics dashboard ---
   var sumGroup = g.append("g").attr("class", "sum-view").style("opacity", 0).style("pointer-events", "none");
@@ -1355,7 +1386,7 @@ function buildWhyChart() {
       .attr("x", cx).attr("y", cy - 18)
       .attr("text-anchor", "middle")
       .attr("font-family", "'Source Serif 4', serif")
-      .attr("font-size", "clamp(1.8rem, 3vw, 2.6rem)")
+      .attr("font-size", isMobile() ? "24px" : "32px")
       .attr("font-weight", 700)
       .attr("fill", m.color)
       .text(m.value);

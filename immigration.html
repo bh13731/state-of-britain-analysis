@@ -421,7 +421,11 @@ function addTouchSupport(selection) {
 /* =========================================================
    HELPERS
    ========================================================= */
-function fmtK(v) { return d3.format(",")(Math.round(v)) + "k"; }
+function fmtK(v) {
+  const abs = Math.abs(Math.round(v));
+  const s = d3.format(",")(abs);
+  return (v < 0 ? "\u2212" : "") + s + "k";
+}
 function fmtPct(v) { return d3.format(".1f")(v) + "%"; }
 function fmtNum(v) { return d3.format(",")(Math.round(v)); }
 function isMobile() { return window.innerWidth < MOBILE; }
@@ -537,7 +541,7 @@ function buildHookChart() {
   bigGroup.append("rect")
     .attr("x", xBar("Net")).attr("y", yBar(peak.net))
     .attr("width", xBar.bandwidth()).attr("height", dim.innerH - yBar(peak.net))
-    .attr("fill", C.orange).attr("rx", 3).attr("opacity", 0.6);
+    .attr("fill", "none").attr("stroke", C.orange).attr("stroke-width", 2).attr("rx", 3);
 
   // Bar labels
   bigGroup.append("text").attr("class", "chart-annotation-bold")
@@ -567,7 +571,7 @@ function buildHookChart() {
     .text("Year ending June 2022");
 
   // --- LINE VIEW (step 1, hidden) ---
-  const lineGroup = g.append("g").attr("class", "line-view").style("opacity", 0);
+  const lineGroup = g.append("g").attr("class", "line-view").style("opacity", 0).style("pointer-events", "none");
 
   const xLine = d3.scaleLinear().domain([1991, 2024]).range([0, dim.innerW]);
   const yLine = d3.scaleLinear().domain([0, d3.max(netMig, d => d.immigration) * 1.08]).range([dim.innerH, 0]);
@@ -605,8 +609,8 @@ function buildHookChart() {
     .attr("d", lineGen("emigration")).attr("fill", "none").attr("stroke", C.blue).attr("stroke-width", 2.5);
 
   lineGroup.append("path").datum(netMig)
-    .attr("d", lineGen("net")).attr("fill", "none").attr("stroke", C.orange).attr("stroke-width", 2)
-    .attr("stroke-dasharray", "6,4").attr("opacity", 0.7);
+    .attr("d", lineGen("net")).attr("fill", "none").attr("stroke", C.ink).attr("stroke-width", 2)
+    .attr("stroke-dasharray", "6,4").attr("opacity", 0.8);
 
   // Axes
   lineGroup.append("g").attr("class", "axis x-axis")
@@ -621,19 +625,26 @@ function buildHookChart() {
   // Y-axis title (horizontal, above axis)
   lineGroup.append("text").attr("class", "chart-annotation")
     .attr("x", 0).attr("y", -14)
-    .attr("text-anchor", "start").attr("fill", C.muted).text("Thousands");
+    .attr("text-anchor", "start").attr("fill", C.muted).text("Migration flows (thousands)");
 
-  // End labels
+  // End labels -- enforce minimum 18px vertical spacing to prevent overlap
   const last = netMig[netMig.length - 1];
-  lineGroup.append("text").attr("class", "chart-annotation-bold")
-    .attr("x", xLine(last.year) + 10).attr("y", yLine(last.immigration) + 4)
-    .attr("fill", C.orange).text("Immigration");
-  lineGroup.append("text").attr("class", "chart-annotation-bold")
-    .attr("x", xLine(last.year) + 10).attr("y", yLine(last.emigration) + 4)
-    .attr("fill", C.blue).text("Emigration");
-  lineGroup.append("text").attr("class", "chart-annotation-bold")
-    .attr("x", xLine(last.year) + 10).attr("y", yLine(last.net) - 10)
-    .attr("fill", C.muted).text("Net");
+  const minGap = 18;
+  const endLabels = [
+    { y: yLine(last.immigration) + 4, text: "Immigration", fill: C.orange },
+    { y: yLine(last.net) - 2, text: "Net", fill: C.ink },
+    { y: yLine(last.emigration) + 4, text: "Emigration", fill: C.blue }
+  ].sort((a, b) => a.y - b.y);
+  for (let i = 1; i < endLabels.length; i++) {
+    if (endLabels[i].y - endLabels[i - 1].y < minGap) {
+      endLabels[i].y = endLabels[i - 1].y + minGap;
+    }
+  }
+  endLabels.forEach(l => {
+    lineGroup.append("text").attr("class", "chart-annotation-bold")
+      .attr("x", xLine(last.year) + 10).attr("y", l.y)
+      .attr("fill", l.fill).text(l.text);
+  });
 
   // COVID annotation
   lineGroup.append("text").attr("class", "chart-annotation")
@@ -662,7 +673,7 @@ function buildHookChart() {
     .style("opacity", 0);
   const hoverDotI = lineGroup.append("circle").attr("r", 4).attr("fill", C.orange).style("opacity", 0);
   const hoverDotE = lineGroup.append("circle").attr("r", 4).attr("fill", C.blue).style("opacity", 0);
-  const hoverDotN = lineGroup.append("circle").attr("r", 4).attr("fill", C.muted).style("opacity", 0);
+  const hoverDotN = lineGroup.append("circle").attr("r", 4).attr("fill", C.ink).style("opacity", 0);
 
   hoverRect.on("mousemove", function(event) {
     const [mx] = d3.pointer(event, this);
@@ -688,11 +699,11 @@ function buildHookChart() {
 function updateHookChart(step) {
   const svg = d3.select("#chart-hook svg");
   if (step === 0) {
-    svg.select(".big-view").transition().duration(DURATION).style("opacity", 1);
-    svg.select(".line-view").transition().duration(DURATION).style("opacity", 0);
+    svg.select(".big-view").style("pointer-events", "all").transition().duration(DURATION).style("opacity", 1);
+    svg.select(".line-view").transition().duration(DURATION).style("opacity", 0).on("end", function() { d3.select(this).style("pointer-events", "none"); });
   } else {
-    svg.select(".big-view").transition().duration(DURATION).style("opacity", 0);
-    svg.select(".line-view").transition().duration(DURATION).style("opacity", 1);
+    svg.select(".big-view").transition().duration(DURATION).style("opacity", 0).on("end", function() { d3.select(this).style("pointer-events", "none"); });
+    svg.select(".line-view").style("pointer-events", "all").transition().duration(DURATION).style("opacity", 1);
   }
 }
 
@@ -815,13 +826,13 @@ function buildBrexitChart() {
   addTouchSupport(hoverRect);
 
   // --- VISA BREAKDOWN VIEW (step 1, hidden) ---
-  const visaGroup = g.append("g").attr("class", "visa-view").style("opacity", 0);
+  const visaGroup = g.append("g").attr("class", "visa-view").style("opacity", 0).style("pointer-events", "none");
   const visas = DATA.visaBreakdown;
   const totalVisas = d3.sum(visas, d => d.value);
 
   const visaColors = {
     "Study": C.orange,
-    "Work": "#D97706",
+    "Work": "#0E7490",
     "Family": C.blue,
     "Humanitarian": "#7C3AED",
     "Other": C.faint
@@ -830,10 +841,16 @@ function buildBrexitChart() {
   const yVisa = d3.scaleBand().domain(visas.map(d => d.type)).range([dim.innerH * 0.1, dim.innerH * 0.85]).padding(0.3);
   const xVisa = d3.scaleLinear().domain([0, d3.max(visas, d => d.value) * 1.25]).range([0, dim.innerW]);
 
-  // Grid
+  // Vertical grid lines for horizontal bar chart
   visaGroup.append("g").attr("class", "grid")
-    .attr("transform", `translate(0,${dim.innerH * 0.1})`)
-    .call(d3.axisLeft(d3.scaleLinear().domain([0, 1]).range([0, dim.innerH * 0.75])).ticks(0).tickSize(-dim.innerW).tickFormat(""))
+    .attr("transform", `translate(0,${dim.innerH * 0.85})`)
+    .call(d3.axisBottom(xVisa).ticks(5).tickSize(-(dim.innerH * 0.75)).tickFormat(""))
+    .call(g => g.select(".domain").remove());
+
+  // Value axis labels along bottom
+  visaGroup.append("g").attr("class", "axis x-axis")
+    .attr("transform", `translate(0,${dim.innerH * 0.87})`)
+    .call(d3.axisBottom(xVisa).ticks(5).tickFormat(d => fmtK(d)).tickSize(0))
     .call(g => g.select(".domain").remove());
 
   // Bars
@@ -848,25 +865,22 @@ function buildBrexitChart() {
     })
     .on("mouseleave", hideTooltip);
 
-  // Labels — type name on left inside bar (or outside if bar too short)
+  // Labels — type name inside bar (white on colour) or suppressed if bar too short (value label handles it)
   visaGroup.selectAll(".visa-name").data(visas).enter()
     .append("text").attr("class", "chart-annotation-bold")
-    .attr("x", d => xVisa(d.value) > 80 ? 10 : xVisa(d.value) + 8)
+    .attr("x", 10)
     .attr("y", d => yVisa(d.type) + yVisa.bandwidth() / 2 + 5)
-    .attr("fill", d => xVisa(d.value) > 80 ? "#fff" : (visaColors[d.type] || C.muted))
+    .attr("fill", "#fff")
+    .style("display", d => xVisa(d.value) > 80 ? null : "none")
     .text(d => d.type);
 
-  // Value labels at end of bar (shift further right if name is also outside)
+  // Value labels at end of bar
   visaGroup.selectAll(".visa-val").data(visas).enter()
     .append("text").attr("class", "chart-annotation-bold")
-    .attr("x", d => {
-      if (xVisa(d.value) > 80) return xVisa(d.value) + 8;
-      // Name is outside bar, so place value after name text (~70px)
-      return xVisa(d.value) + 80;
-    })
+    .attr("x", d => xVisa(d.value) + 8)
     .attr("y", d => yVisa(d.type) + yVisa.bandwidth() / 2 + 5)
     .attr("fill", d => visaColors[d.type] || C.muted)
-    .text(d => fmtK(d.value) + " (" + Math.round(d.value / totalVisas * 100) + "%)");
+    .text(d => (xVisa(d.value) <= 80 ? d.type + ": " : "") + fmtK(d.value) + " (" + Math.round(d.value / totalVisas * 100) + "%)");
 
   // Title
   visaGroup.append("text").attr("class", "chart-annotation")
@@ -877,11 +891,11 @@ function buildBrexitChart() {
 function updateBrexitChart(step) {
   const svg = d3.select("#chart-brexit svg");
   if (step === 0) {
-    svg.select(".net-view").transition().duration(DURATION).style("opacity", 1);
-    svg.select(".visa-view").transition().duration(DURATION).style("opacity", 0);
+    svg.select(".net-view").style("pointer-events", "all").transition().duration(DURATION).style("opacity", 1);
+    svg.select(".visa-view").transition().duration(DURATION).style("opacity", 0).on("end", function() { d3.select(this).style("pointer-events", "none"); });
   } else {
-    svg.select(".net-view").transition().duration(DURATION).style("opacity", 0);
-    svg.select(".visa-view").transition().duration(DURATION).style("opacity", 1);
+    svg.select(".net-view").transition().duration(DURATION).style("opacity", 0).on("end", function() { d3.select(this).style("pointer-events", "none"); });
+    svg.select(".visa-view").style("pointer-events", "all").transition().duration(DURATION).style("opacity", 1);
   }
 }
 
@@ -933,7 +947,7 @@ function buildAsylumChart() {
   // Y-axis title (horizontal, above axis)
   appGroup.append("text").attr("class", "chart-annotation")
     .attr("x", 0).attr("y", -14)
-    .attr("text-anchor", "start").attr("fill", C.muted).text("Asylum applications");
+    .attr("text-anchor", "start").attr("fill", C.muted).text("Asylum applications (thousands)");
 
   // 2001 peak annotation
   appGroup.append("circle")
@@ -986,7 +1000,7 @@ function buildAsylumChart() {
   addTouchSupport(hoverRect);
 
   // --- APPLICATIONS vs GRANTS VIEW (step 1, hidden) ---
-  const grantGroup = g.append("g").attr("class", "grant-view").style("opacity", 0);
+  const grantGroup = g.append("g").attr("class", "grant-view").style("opacity", 0).style("pointer-events", "none");
   const yGrant = d3.scaleLinear().domain([0, 85]).range([dim.innerH, 0]);
 
   // Grid
@@ -1032,7 +1046,7 @@ function buildAsylumChart() {
   // Y-axis title (horizontal, above axis)
   grantGroup.append("text").attr("class", "chart-annotation")
     .attr("x", 0).attr("y", -14)
-    .attr("text-anchor", "start").attr("fill", C.muted).text("Thousands");
+    .attr("text-anchor", "start").attr("fill", C.muted).text("Asylum applications and grants (thousands)");
 
   // End labels
   const lastAs = asylum[asylum.length - 1];
@@ -1093,11 +1107,11 @@ function buildAsylumChart() {
 function updateAsylumChart(step) {
   const svg = d3.select("#chart-asylum svg");
   if (step === 0) {
-    svg.select(".app-view").transition().duration(DURATION).style("opacity", 1);
-    svg.select(".grant-view").transition().duration(DURATION).style("opacity", 0);
+    svg.select(".app-view").style("pointer-events", "all").transition().duration(DURATION).style("opacity", 1);
+    svg.select(".grant-view").transition().duration(DURATION).style("opacity", 0).on("end", function() { d3.select(this).style("pointer-events", "none"); });
   } else {
-    svg.select(".app-view").transition().duration(DURATION).style("opacity", 0);
-    svg.select(".grant-view").transition().duration(DURATION).style("opacity", 1);
+    svg.select(".app-view").transition().duration(DURATION).style("opacity", 0).on("end", function() { d3.select(this).style("pointer-events", "none"); });
+    svg.select(".grant-view").style("pointer-events", "all").transition().duration(DURATION).style("opacity", 1);
   }
 }
 
@@ -1194,11 +1208,11 @@ function buildDemographicsChart() {
     popGroup.append("text").attr("class", "chart-annotation")
       .attr("x", x(negYear.year)).attr("y", yPop(negYear.naturalChange) + 42)
       .attr("text-anchor", "middle").attr("fill", C.red).attr("font-size", "13px")
-      .text("Deaths > births");
+      .text("Deaths > births (" + negYear.year + ")");
   }
 
   // --- FOREIGN BORN + DEPENDENCY VIEW (step 1, hidden) ---
-  const fbGroup = g.append("g").attr("class", "fb-view").style("opacity", 0);
+  const fbGroup = g.append("g").attr("class", "fb-view").style("opacity", 0).style("pointer-events", "none");
   const foreignBorn = DATA.foreignBorn;
   const depRatio = DATA.dependencyRatio;
 
@@ -1245,12 +1259,24 @@ function buildDemographicsChart() {
     .call(g => g.select(".domain").remove())
     .selectAll("text").attr("fill", C.orange);
 
-  // Right axis — dependency ratio
+  // Right axis — dependency ratio (truncated baseline, clearly labelled)
   fbGroup.append("g").attr("class", "axis y-axis-right")
     .attr("transform", `translate(${dim.innerW},0)`)
     .call(d3.axisRight(yDep).ticks(6).tickFormat(d => d).tickSize(0))
     .call(g => g.select(".domain").remove())
     .selectAll("text").attr("fill", C.blue).attr("font-size", "13px").attr("font-family", "'Inter', sans-serif");
+
+  // Right axis label with truncation warning
+  fbGroup.append("text").attr("class", "chart-annotation")
+    .attr("x", dim.innerW).attr("y", -14)
+    .attr("text-anchor", "end").attr("fill", C.blue)
+    .text("Dependency ratio (axis starts at 48)");
+
+  // Left axis label
+  fbGroup.append("text").attr("class", "chart-annotation")
+    .attr("x", 0).attr("y", -14)
+    .attr("text-anchor", "start").attr("fill", C.orange)
+    .text("Foreign-born share (%)");
 
   // End labels
   const lastFB = foreignBorn[foreignBorn.length - 1];
@@ -1310,11 +1336,11 @@ function buildDemographicsChart() {
 function updateDemographicsChart(step) {
   const svg = d3.select("#chart-demographics svg");
   if (step === 0) {
-    svg.select(".pop-view").transition().duration(DURATION).style("opacity", 1);
-    svg.select(".fb-view").transition().duration(DURATION).style("opacity", 0);
+    svg.select(".pop-view").style("pointer-events", "all").transition().duration(DURATION).style("opacity", 1);
+    svg.select(".fb-view").transition().duration(DURATION).style("opacity", 0).on("end", function() { d3.select(this).style("pointer-events", "none"); });
   } else {
-    svg.select(".pop-view").transition().duration(DURATION).style("opacity", 0);
-    svg.select(".fb-view").transition().duration(DURATION).style("opacity", 1);
+    svg.select(".pop-view").transition().duration(DURATION).style("opacity", 0).on("end", function() { d3.select(this).style("pointer-events", "none"); });
+    svg.select(".fb-view").style("pointer-events", "all").transition().duration(DURATION).style("opacity", 1);
   }
 }
 

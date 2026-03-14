@@ -155,7 +155,7 @@ body {
   z-index: 1000;
   opacity: 0;
   transition: opacity 0.15s;
-  max-width: 300px;
+  max-width: 220px;
 }
 .chart-tooltip.visible { opacity: 1; }
 .chart-tooltip .tt-label { font-weight: 600; margin-bottom: 2px; }
@@ -203,7 +203,7 @@ body {
   fill: #555555;
 }
 .axis path, .axis line { stroke: none; }
-.grid line { stroke: #F0F0EB; stroke-width: 1; }
+.grid line { stroke: #E4E4DE; stroke-width: 1; }
 .grid path { stroke: none; }
 
 /* ---------- Responsive ---------- */
@@ -413,11 +413,11 @@ const C = {
   amber: "#D97706", amberDark: "#B45309", amberLight: "rgba(217,119,6,0.12)",
   red: "#C53030",
   faint: "#B0B0A8", ink: "#1A1A1A", secondary: "#3D3D3D", muted: "#555555",
-  grid: "#F0F0EB", bg: "#FAFAF7",
+  grid: "#E4E4DE", bg: "#FAFAF7",
   electricity: "#0891B2",
-  industry: "#0E7490",
+  industry: "#5B21B6",
   transport: "#D97706",
-  buildings: "#B45309",
+  buildings: "#C53030",
   agriculture: "#92400E",
   waste: "#6B7280",
   fuel: "#64748B",
@@ -430,8 +430,8 @@ const MOBILE = 768;
 const SECTORS = [
   { key: "electricity", label: "Electricity", color: C.electricity },
   { key: "transport", label: "Transport", color: C.transport },
-  { key: "industry", label: "Industry", color: C.industry },
-  { key: "buildings", label: "Buildings", color: C.buildings },
+  { key: "industry", label: "Industry", color: "#5B21B6" },
+  { key: "buildings", label: "Buildings", color: "#C53030" },
   { key: "fuel", label: "Fuel supply", color: C.fuel },
   { key: "agriculture", label: "Agriculture", color: C.agriculture },
   { key: "waste", label: "Waste", color: C.waste },
@@ -540,7 +540,8 @@ function buildHookChart() {
   const dim = chartDims(container);
   const svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
-    .attr("viewBox", `0 0 ${dim.width} ${dim.height}`);
+    .attr("viewBox", `0 0 ${dim.width} ${dim.height}`)
+    .attr("role", "img").attr("aria-label", "UK greenhouse gas emissions from 1990 to 2024, showing a 54% decline from 811 to 371 megatonnes");
   const g = svg.append("g").attr("transform", `translate(${dim.margin.left},${dim.margin.top})`);
 
   const emissions = DATA.ghgEmissions;
@@ -682,12 +683,13 @@ function buildHookChart() {
 function updateHookChart(step) {
   const container = document.getElementById("chart-hook");
   const svg = d3.select(container).select("svg");
+  const FADE_OUT = Math.round(DURATION * 0.5);
   if (step === 0) {
-    svg.select(".bar-view").transition().duration(DURATION).style("opacity", 1).on("end", function() { d3.select(this).style("pointer-events", "all"); });
-    svg.select(".line-view").transition().duration(DURATION).style("opacity", 0).on("end", function() { d3.select(this).style("pointer-events", "none"); });
+    svg.select(".line-view").transition().duration(FADE_OUT).style("opacity", 0).on("end", function() { d3.select(this).style("pointer-events", "none"); });
+    svg.select(".bar-view").transition().delay(FADE_OUT).duration(DURATION).style("opacity", 1).on("end", function() { d3.select(this).style("pointer-events", "all"); });
   } else {
-    svg.select(".bar-view").transition().duration(DURATION).style("opacity", 0).on("end", function() { d3.select(this).style("pointer-events", "none"); });
-    svg.select(".line-view").transition().duration(DURATION).style("opacity", 1).on("end", function() { d3.select(this).style("pointer-events", "all"); });
+    svg.select(".bar-view").transition().duration(FADE_OUT).style("opacity", 0).on("end", function() { d3.select(this).style("pointer-events", "none"); });
+    svg.select(".line-view").transition().delay(FADE_OUT).duration(DURATION).style("opacity", 1).on("end", function() { d3.select(this).style("pointer-events", "all"); });
   }
 }
 
@@ -699,7 +701,8 @@ function buildSectorsChart() {
   const dim = chartDims(container);
   const svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
-    .attr("viewBox", `0 0 ${dim.width} ${dim.height}`);
+    .attr("viewBox", `0 0 ${dim.width} ${dim.height}`)
+    .attr("role", "img").attr("aria-label", "Stacked area chart of UK emissions by sector from 1990 to 2024, showing electricity and industry as the largest sources of reductions");
   const g = svg.append("g").attr("transform", `translate(${dim.margin.left},${dim.margin.top})`);
 
   const emissions = DATA.ghgEmissions;
@@ -741,7 +744,7 @@ function buildSectorsChart() {
     .attr("class", "layer")
     .attr("d", area)
     .attr("fill", d => stackColors[d.key])
-    .attr("opacity", 0.85)
+    .attr("opacity", 1)
     .attr("data-key", d => d.key);
 
   /* Direct labels at the right edge */
@@ -788,7 +791,7 @@ function buildSectorsChart() {
       .attr("opacity", d => d.key === key ? 1 : 0.15);
   };
   container._reset = function() {
-    layers.transition().duration(DURATION).attr("opacity", 0.85);
+    layers.transition().duration(DURATION).attr("opacity", 1);
   };
 }
 
@@ -809,7 +812,8 @@ function buildAirChart() {
   const dim = chartDims(container);
   const svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
-    .attr("viewBox", `0 0 ${dim.width} ${dim.height}`);
+    .attr("viewBox", `0 0 ${dim.width} ${dim.height}`)
+    .attr("role", "img").attr("aria-label", "Air quality charts showing nitrogen dioxide levels falling 76% since 1990 and PM2.5 falling 42% since 2009");
   const g = svg.append("g").attr("transform", `translate(${dim.margin.left},${dim.margin.top})`);
 
   const no2 = DATA.no2;
@@ -939,7 +943,7 @@ function buildAirChart() {
     .attr("fill", C.teal).attr("stroke", "#fff").attr("stroke-width", 2);
   pmGroup.append("text").attr("class", "chart-annotation-bold")
     .attr("x", xPm(pmLast.year) + 8).attr("y", yPm(pmLast.mean) + 5)
-    .attr("fill", C.tealDark).text(d3.format(".1f")(pmLast.mean));
+    .attr("fill", C.tealDark).text(d3.format(".1f")(pmLast.mean) + " \u00b5g/m\u00b3");
 
   /* WHO guideline for PM2.5 = 5 */
   pmGroup.append("line")
@@ -968,7 +972,7 @@ function buildAirChart() {
     pmHLine.attr("x1", xPm(year)).attr("x2", xPm(year)).style("opacity", 1);
     pmHDot.attr("cx", xPm(year)).attr("cy", yPm(d.mean)).style("opacity", 1);
     showTooltip(`<div class="tt-label">${year}</div>
-      <div class="tt-value" style="color:${C.teal}">PM2.5: ${d3.format(".2f")(d.mean)} \u00b5g/m\u00b3</div>`, event);
+      <div class="tt-value" style="color:${C.teal}">PM2.5: ${d3.format(".1f")(d.mean)} \u00b5g/m\u00b3</div>`, event);
   }).on("mouseleave", function() {
     pmHLine.style("opacity", 0); pmHDot.style("opacity", 0); hideTooltip();
   });
@@ -976,12 +980,13 @@ function buildAirChart() {
 
 function updateAirChart(step) {
   const svg = d3.select("#chart-air svg");
+  const FADE_OUT = Math.round(DURATION * 0.5);
   if (step === 0) {
-    svg.select(".no2-view").transition().duration(DURATION).style("opacity", 1).on("end", function() { d3.select(this).style("pointer-events", "all"); });
-    svg.select(".pm25-view").transition().duration(DURATION).style("opacity", 0).on("end", function() { d3.select(this).style("pointer-events", "none"); });
+    svg.select(".pm25-view").transition().duration(FADE_OUT).style("opacity", 0).on("end", function() { d3.select(this).style("pointer-events", "none"); });
+    svg.select(".no2-view").transition().delay(FADE_OUT).duration(DURATION).style("opacity", 1).on("end", function() { d3.select(this).style("pointer-events", "all"); });
   } else {
-    svg.select(".no2-view").transition().duration(DURATION).style("opacity", 0).on("end", function() { d3.select(this).style("pointer-events", "none"); });
-    svg.select(".pm25-view").transition().duration(DURATION).style("opacity", 1).on("end", function() { d3.select(this).style("pointer-events", "all"); });
+    svg.select(".no2-view").transition().duration(FADE_OUT).style("opacity", 0).on("end", function() { d3.select(this).style("pointer-events", "none"); });
+    svg.select(".pm25-view").transition().delay(FADE_OUT).duration(DURATION).style("opacity", 1).on("end", function() { d3.select(this).style("pointer-events", "all"); });
   }
 }
 
@@ -993,7 +998,8 @@ function buildEvChart() {
   const dim = chartDims(container);
   const svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
-    .attr("viewBox", `0 0 ${dim.width} ${dim.height}`);
+    .attr("viewBox", `0 0 ${dim.width} ${dim.height}`)
+    .attr("role", "img").attr("aria-label", "Bar chart of ultra-low emission vehicle registrations in the UK from 2015 to 2024, showing rapid growth to 579,000");
   const g = svg.append("g").attr("transform", `translate(${dim.margin.left},${dim.margin.top})`);
 
   const ulev = DATA.ulevRegistrations;
@@ -1008,7 +1014,7 @@ function buildEvChart() {
     .call(gg => gg.select(".domain").remove());
   totalGroup.append("g").attr("class", "axis y-axis")
     .call(d3.axisLeft(yTotal).ticks(6).tickFormat((d, i) => {
-      if (d === 0) return "0 registrations";
+      if (d === 0) return "0";
       if (d >= 1000) return d3.format(",.0f")(d / 1000) + "k";
       return d;
     }).tickSize(0))
@@ -1062,7 +1068,7 @@ function buildEvChart() {
     .call(gg => gg.select(".domain").remove());
   stackGroup.append("g").attr("class", "axis y-axis")
     .call(d3.axisLeft(yTotal).ticks(6).tickFormat((d, i) => {
-      if (d === 0) return "0 registrations";
+      if (d === 0) return "0";
       if (d >= 1000) return d3.format(",.0f")(d / 1000) + "k";
       return d;
     }).tickSize(0))
@@ -1130,12 +1136,13 @@ function buildEvChart() {
 
 function updateEvChart(step) {
   const svg = d3.select("#chart-ev svg");
+  const FADE_OUT = Math.round(DURATION * 0.5);
   if (step === 0) {
-    svg.select(".total-view").transition().duration(DURATION).style("opacity", 1).on("end", function() { d3.select(this).style("pointer-events", "all"); });
-    svg.select(".stack-view").transition().duration(DURATION).style("opacity", 0).on("end", function() { d3.select(this).style("pointer-events", "none"); });
+    svg.select(".stack-view").transition().duration(FADE_OUT).style("opacity", 0).on("end", function() { d3.select(this).style("pointer-events", "none"); });
+    svg.select(".total-view").transition().delay(FADE_OUT).duration(DURATION).style("opacity", 1).on("end", function() { d3.select(this).style("pointer-events", "all"); });
   } else {
-    svg.select(".total-view").transition().duration(DURATION).style("opacity", 0).on("end", function() { d3.select(this).style("pointer-events", "none"); });
-    svg.select(".stack-view").transition().duration(DURATION).style("opacity", 1).on("end", function() { d3.select(this).style("pointer-events", "all"); });
+    svg.select(".total-view").transition().duration(FADE_OUT).style("opacity", 0).on("end", function() { d3.select(this).style("pointer-events", "none"); });
+    svg.select(".stack-view").transition().delay(FADE_OUT).duration(DURATION).style("opacity", 1).on("end", function() { d3.select(this).style("pointer-events", "all"); });
   }
 }
 
@@ -1147,7 +1154,8 @@ function buildHonestChart() {
   const dim = chartDims(container);
   const svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
-    .attr("viewBox", `0 0 ${dim.width} ${dim.height}`);
+    .attr("viewBox", `0 0 ${dim.width} ${dim.height}`)
+    .attr("role", "img").attr("aria-label", "Horizontal bar chart showing percentage change in emissions by sector since 1990, with transport, agriculture and buildings as laggards");
   const g = svg.append("g").attr("transform", `translate(${dim.margin.left},${dim.margin.top})`);
 
   const emissions = DATA.ghgEmissions;
@@ -1251,7 +1259,8 @@ function buildGapChart() {
   const dim = chartDims(container);
   const svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
-    .attr("viewBox", `0 0 ${dim.width} ${dim.height}`);
+    .attr("viewBox", `0 0 ${dim.width} ${dim.height}`)
+    .attr("role", "img").attr("aria-label", "Waterfall and projection chart showing the gap between current emissions trajectory and the net zero 2050 target");
   const g = svg.append("g").attr("transform", `translate(${dim.margin.left},${dim.margin.top})`);
 
   const emissions = DATA.ghgEmissions;
@@ -1304,8 +1313,8 @@ function buildGapChart() {
     .text("What was cut and what remains");
 
   segments.forEach((s, i) => {
-    const color = s.type === "start" ? "#94A3B8" : s.type === "end" ? C.amber : s.type === "small" ? C.amberLight : C.tealLight;
-    const barColor = s.type === "start" ? "#94A3B8" : s.type === "end" ? C.amber : s.type === "small" ? C.amber : C.teal;
+    const color = s.type === "start" ? "#94A3B8" : s.type === "end" ? "#64748B" : s.type === "small" ? C.amberLight : C.tealLight;
+    const barColor = s.type === "start" ? "#94A3B8" : s.type === "end" ? "#64748B" : s.type === "small" ? C.amber : C.teal;
     const top = Math.min(yWat(s.y0), yWat(s.y1));
     const height = Math.abs(yWat(s.y0) - yWat(s.y1));
 
@@ -1349,7 +1358,7 @@ function buildGapChart() {
     .call(gg => {
       gg.select(".domain").remove();
       gg.selectAll("text").attr("font-size", "11px")
-        .attr("transform", "rotate(-25)").attr("text-anchor", "end").attr("dx", "-4px").attr("dy", "4px");
+        .attr("transform", "rotate(-40)").attr("text-anchor", "end").attr("dx", "-4px").attr("dy", "4px");
     });
 
   /* --- STEP 1: Projection line to 2050 --- */
@@ -1397,7 +1406,7 @@ function buildGapChart() {
 
   const projLine = d3.line().x(d => xProj(d.year)).y(d => yProj(d.total)).curve(d3.curveMonotoneX);
   projGroup.append("path").datum(projData).attr("d", projLine)
-    .attr("fill", "none").attr("stroke", C.teal).attr("stroke-width", 2)
+    .attr("fill", "none").attr("stroke", C.amber).attr("stroke-width", 2)
     .attr("stroke-dasharray", "6,4");
 
   /* Target line to zero */
@@ -1486,12 +1495,13 @@ function buildGapChart() {
 
 function updateGapChart(step) {
   const svg = d3.select("#chart-gap svg");
+  const FADE_OUT = Math.round(DURATION * 0.5);
   if (step === 0) {
-    svg.select(".waterfall-view").transition().duration(DURATION).style("opacity", 1).on("end", function() { d3.select(this).style("pointer-events", "all"); });
-    svg.select(".proj-view").transition().duration(DURATION).style("opacity", 0).on("end", function() { d3.select(this).style("pointer-events", "none"); });
+    svg.select(".proj-view").transition().duration(FADE_OUT).style("opacity", 0).on("end", function() { d3.select(this).style("pointer-events", "none"); });
+    svg.select(".waterfall-view").transition().delay(FADE_OUT).duration(DURATION).style("opacity", 1).on("end", function() { d3.select(this).style("pointer-events", "all"); });
   } else {
-    svg.select(".waterfall-view").transition().duration(DURATION).style("opacity", 0).on("end", function() { d3.select(this).style("pointer-events", "none"); });
-    svg.select(".proj-view").transition().duration(DURATION).style("opacity", 1).on("end", function() { d3.select(this).style("pointer-events", "all"); });
+    svg.select(".waterfall-view").transition().duration(FADE_OUT).style("opacity", 0).on("end", function() { d3.select(this).style("pointer-events", "none"); });
+    svg.select(".proj-view").transition().delay(FADE_OUT).duration(DURATION).style("opacity", 1).on("end", function() { d3.select(this).style("pointer-events", "all"); });
   }
 }
 

@@ -175,6 +175,18 @@ body {
   fill: #1A1A1A;
   font-family: 'Inter', sans-serif;
 }
+.chart-title {
+  font-size: 15px;
+  font-weight: 600;
+  fill: #1A1A1A;
+  font-family: 'Inter', sans-serif;
+}
+.baseline-flag {
+  font-size: 11px;
+  fill: #8A8A82;
+  font-family: 'Inter', sans-serif;
+  font-style: italic;
+}
 
 /* ---------- Section divider ---------- */
 .section-divider {
@@ -257,7 +269,7 @@ body {
   <p id="error-msg">Could not load infrastructure data. Please refresh or try again later.</p>
 </div>
 
-<div class="chart-tooltip" id="tooltip"></div>
+<div class="chart-tooltip" id="tooltip" role="status" aria-live="polite"></div>
 
 <header class="site-header" id="site-header" style="display:none;padding-top:72px;">
   <div class="kicker">State of Britain</div>
@@ -559,7 +571,7 @@ function buildHookChart() {
     .call(d3.axisBottom(xP).ticks(8).tickFormat(d3.format("d")).tickSize(0))
     .call(g => g.select(".domain").remove());
   potholeGroup.append("g").attr("class", "axis y-axis")
-    .call(d3.axisLeft(yP).ticks(6).tickFormat(d => "\u00a3" + d).tickSize(0))
+    .call(d3.axisLeft(yP).ticks(6).tickFormat(d => "\u00a3" + d + "bn").tickSize(0))
     .call(g => g.select(".domain").remove());
 
   // Start annotation
@@ -587,8 +599,8 @@ function buildHookChart() {
     .attr("stroke", C.amber).attr("stroke-width", 1).attr("stroke-dasharray", "3,2");
 
   // Title
-  potholeGroup.append("text").attr("class", "chart-annotation")
-    .attr("x", 0).attr("y", -10).attr("fill", C.muted)
+  potholeGroup.append("text").attr("class", "chart-title")
+    .attr("x", 0).attr("y", -14).attr("fill", C.ink)
     .text("Road repair backlog (\u00a3 billions)");
 
   // Hover
@@ -683,9 +695,13 @@ function buildHookChart() {
     .attr("stroke", C.amber).attr("stroke-width", 1).attr("stroke-dasharray", "3,2");
 
   // Title
-  railGroup.append("text").attr("class", "chart-annotation")
-    .attr("x", 0).attr("y", -10).attr("fill", C.muted)
+  railGroup.append("text").attr("class", "chart-title")
+    .attr("x", 0).attr("y", -14).attr("fill", C.ink)
     .text("Rail punctuality (% trains on time, PPM)");
+  // Baseline flag for truncated y-axis
+  railGroup.append("text").attr("class", "baseline-flag")
+    .attr("x", 0).attr("y", dim.innerH + 40)
+    .text("Y-axis starts at 75%, not zero");
 
   // Hover
   const hoverRect2 = railGroup.append("rect")
@@ -811,8 +827,8 @@ function buildRoadsChart() {
     .call(g => g.select(".domain").remove());
 
   // Title
-  condGroup.append("text").attr("class", "chart-annotation")
-    .attr("x", 0).attr("y", -10).attr("fill", C.muted)
+  condGroup.append("text").attr("class", "chart-title")
+    .attr("x", 0).attr("y", -14).attr("fill", C.ink)
     .text("Roads in poor condition (% requiring maintenance)");
 
   // Hover
@@ -856,7 +872,7 @@ function buildRoadsChart() {
     .append("rect").attr("class", "pot-bar")
     .attr("x", d => xPot(d.year)).attr("y", d => yPotR(d.filled))
     .attr("width", xPot.bandwidth()).attr("height", d => dim.innerH - yPotR(d.filled))
-    .attr("fill", C.primary).attr("rx", 2).attr("opacity", 0.7);
+    .attr("fill", C.primary).attr("rx", 2).attr("opacity", 0.85);
 
   // Line for backlog
   const backlogLine = d3.line()
@@ -879,7 +895,7 @@ function buildRoadsChart() {
     .call(d3.axisBottom(xPot).tickFormat(d => "'" + String(d).slice(2)).tickSize(0))
     .call(g => g.select(".domain").remove());
   potGroup.append("g").attr("class", "axis y-axis")
-    .call(d3.axisLeft(yPotL).ticks(6).tickFormat(d => "\u00a3" + d).tickSize(0))
+    .call(d3.axisLeft(yPotL).ticks(6).tickFormat(d => "\u00a3" + d + "bn").tickSize(0))
     .call(g => g.select(".domain").remove());
 
   // Right axis for filled
@@ -896,9 +912,14 @@ function buildRoadsChart() {
     .attr("x", dim.innerW - 126).attr("y", -6).attr("fill", C.amber).text("Backlog (\u00a3bn)");
 
   potGroup.append("rect").attr("x", dim.innerW - 310).attr("y", -16).attr("width", 12).attr("height", 12)
-    .attr("fill", C.primary).attr("rx", 2).attr("opacity", 0.7);
+    .attr("fill", C.primary).attr("rx", 2).attr("opacity", 0.85);
   potGroup.append("text").attr("class", "chart-annotation")
     .attr("x", dim.innerW - 294).attr("y", -6).attr("fill", C.primary).text("Potholes filled (millions)");
+
+  // Dual-axis warning
+  potGroup.append("text").attr("class", "baseline-flag")
+    .attr("x", 0).attr("y", dim.innerH + 40)
+    .text("Caution: left and right axes use independent scales");
 
   // Hover
   potGroup.selectAll(".pot-bar")
@@ -985,17 +1006,17 @@ function buildRailChart() {
       .attr("stroke", C.muted).attr("stroke-width", 1).attr("stroke-dasharray", "3,2");
   }
 
-  // Hatton low
-  const hatton = punct.find(d => d.year === 2001);
-  if (hatton) {
-    punctGroup.append("circle").attr("cx", xP(hatton.year)).attr("cy", yP(hatton.ppm)).attr("r", 3)
+  // Hatfield rail crash low
+  const hatfield = punct.find(d => d.year === 2001);
+  if (hatfield) {
+    punctGroup.append("circle").attr("cx", xP(hatfield.year)).attr("cy", yP(hatfield.ppm)).attr("r", 3)
       .attr("fill", C.amber).attr("stroke", "#fff").attr("stroke-width", 2);
     punctGroup.append("text").attr("class", "chart-annotation")
-      .attr("x", xP(hatton.year)).attr("y", yP(hatton.ppm) + 28).attr("text-anchor", "middle").attr("fill", C.amber)
+      .attr("x", xP(hatfield.year)).attr("y", yP(hatfield.ppm) + 28).attr("text-anchor", "middle").attr("fill", C.amber)
       .text("Post-Hatfield");
     punctGroup.append("line")
-      .attr("x1", xP(hatton.year)).attr("x2", xP(hatton.year))
-      .attr("y1", yP(hatton.ppm) + 6).attr("y2", yP(hatton.ppm) + 20)
+      .attr("x1", xP(hatfield.year)).attr("x2", xP(hatfield.year))
+      .attr("y1", yP(hatfield.ppm) + 6).attr("y2", yP(hatfield.ppm) + 20)
       .attr("stroke", C.amber).attr("stroke-width", 1).attr("stroke-dasharray", "3,2");
   }
 
@@ -1021,9 +1042,13 @@ function buildRailChart() {
     .call(g => g.select(".domain").remove());
 
   // Title
-  punctGroup.append("text").attr("class", "chart-annotation")
-    .attr("x", 0).attr("y", -10).attr("fill", C.muted)
+  punctGroup.append("text").attr("class", "chart-title")
+    .attr("x", 0).attr("y", -14).attr("fill", C.ink)
     .text("Public Performance Measure (% on time)");
+  // Baseline flag for truncated y-axis
+  punctGroup.append("text").attr("class", "baseline-flag")
+    .attr("x", 0).attr("y", dim.innerH + 40)
+    .text("Y-axis starts at 75%, not zero");
 
   // Hover
   const hoverRect = punctGroup.append("rect")
@@ -1117,8 +1142,8 @@ function buildRailChart() {
     .call(g => g.select(".domain").remove());
 
   // Title
-  journeyGroup.append("text").attr("class", "chart-annotation")
-    .attr("x", 0).attr("y", -10).attr("fill", C.muted)
+  journeyGroup.append("text").attr("class", "chart-title")
+    .attr("x", 0).attr("y", -14).attr("fill", C.ink)
     .text("Rail journeys per year (millions)");
 
   // Hover
@@ -1243,8 +1268,8 @@ function buildBroadbandChart() {
     .call(g => g.select(".domain").remove());
 
   // Title
-  fibreGroup.append("text").attr("class", "chart-annotation")
-    .attr("x", 0).attr("y", -10).attr("fill", C.muted)
+  fibreGroup.append("text").attr("class", "chart-title")
+    .attr("x", 0).attr("y", -14).attr("fill", C.ink)
     .text("UK premises coverage (%)");
 
   // Hover
@@ -1309,7 +1334,7 @@ function buildBroadbandChart() {
     .attr("fill", C.primary).attr("stroke", "#fff").attr("stroke-width", 2);
   speedGroup.append("text").attr("class", "chart-annotation-bold")
     .attr("x", xS(lastSpeed.year) + 10).attr("y", yS(lastSpeed.medianDown) - 10).attr("fill", C.primary)
-    .text("Download: " + lastSpeed.medianDown);
+    .text("Download: " + lastSpeed.medianDown + " Mbps");
   speedGroup.append("line")
     .attr("x1", xS(lastSpeed.year) + 6).attr("x2", xS(lastSpeed.year) + 10)
     .attr("y1", yS(lastSpeed.medianDown) - 4).attr("y2", yS(lastSpeed.medianDown) - 6)
@@ -1319,7 +1344,7 @@ function buildBroadbandChart() {
     .attr("fill", C.secondary).attr("stroke", "#fff").attr("stroke-width", 2);
   speedGroup.append("text").attr("class", "chart-annotation-bold")
     .attr("x", xS(lastSpeed.year) + 10).attr("y", yS(lastSpeed.medianUp) + 18).attr("fill", C.secondary)
-    .text("Upload: " + lastSpeed.medianUp);
+    .text("Upload: " + lastSpeed.medianUp + " Mbps");
   speedGroup.append("line")
     .attr("x1", xS(lastSpeed.year) + 6).attr("x2", xS(lastSpeed.year) + 10)
     .attr("y1", yS(lastSpeed.medianUp) + 4).attr("y2", yS(lastSpeed.medianUp) + 10)
@@ -1348,12 +1373,12 @@ function buildBroadbandChart() {
     .call(d3.axisBottom(xS).ticks(6).tickFormat(d3.format("d")).tickSize(0))
     .call(g => g.select(".domain").remove());
   speedGroup.append("g").attr("class", "axis y-axis")
-    .call(d3.axisLeft(yS).ticks(6).tickFormat(d3.format(",")).tickSize(0))
+    .call(d3.axisLeft(yS).ticks(6).tickFormat(d => d3.format(",")(d) + " Mbps").tickSize(0))
     .call(g => g.select(".domain").remove());
 
   // Title
-  speedGroup.append("text").attr("class", "chart-annotation")
-    .attr("x", 0).attr("y", -10).attr("fill", C.muted)
+  speedGroup.append("text").attr("class", "chart-title")
+    .attr("x", 0).attr("y", -14).attr("fill", C.ink)
     .text("Median broadband speeds (Mbps)");
 
   // Hover
@@ -1432,7 +1457,7 @@ function buildTrafficChart() {
 
   stackedData.forEach((layer, i) => {
     trafficGroup.append("path").datum(layer)
-      .attr("d", areaGen).attr("fill", stackColors[i]).attr("opacity", 0.65);
+      .attr("d", areaGen).attr("fill", stackColors[i]).attr("opacity", 0.82);
   });
 
   // Total line on top
@@ -1465,7 +1490,7 @@ function buildTrafficChart() {
     const lx = isMobile() ? (i % 2) * 140 : i * 110;
     const ly = isMobile() ? Math.floor(i / 2) * 18 : 0;
     trafficGroup.append("rect").attr("x", lx).attr("y", dim.innerH + 22 + ly).attr("width", 12).attr("height", 12)
-      .attr("fill", stackColors[i]).attr("opacity", 0.65).attr("rx", 2);
+      .attr("fill", stackColors[i]).attr("opacity", 0.82).attr("rx", 2);
     trafficGroup.append("text").attr("class", "chart-annotation")
       .attr("x", lx + 16).attr("y", dim.innerH + 32 + ly).attr("fill", C.muted).text(label);
   });
@@ -1480,8 +1505,8 @@ function buildTrafficChart() {
     .call(g => g.select(".domain").remove());
 
   // Title
-  trafficGroup.append("text").attr("class", "chart-annotation")
-    .attr("x", 0).attr("y", -10).attr("fill", C.muted)
+  trafficGroup.append("text").attr("class", "chart-title")
+    .attr("x", 0).attr("y", -14).attr("fill", C.ink)
     .text("Road traffic (billion vehicle miles)");
 
   // Hover
@@ -1503,7 +1528,8 @@ function buildTrafficChart() {
       <div class="tt-value"><strong>Total: ${d3.format(".1f")(d.totalBnMiles)}bn miles</strong></div>
       <div class="tt-value" style="color:${C.primary}">Cars: ${d3.format(".1f")(d.cars)}bn</div>
       <div class="tt-value" style="color:${C.secondary}">Vans: ${d3.format(".1f")(d.lcvs)}bn</div>
-      <div class="tt-value" style="color:${C.amber}">HGVs: ${d3.format(".1f")(d.hgvs)}bn</div>`, event);
+      <div class="tt-value" style="color:${C.amber}">HGVs: ${d3.format(".1f")(d.hgvs)}bn</div>
+      <div class="tt-value" style="color:${C.faint}">Buses: ${d3.format(".1f")(d.buses)}bn</div>`, event);
   }).on("mouseleave", function() {
     hoverLine.style("opacity", 0); hideTooltip();
   });
@@ -1572,9 +1598,13 @@ function buildTrafficChart() {
     .attr("stroke", C.primary).attr("stroke-width", 1).attr("stroke-dasharray", "3,2");
 
   // Title
-  lengthGroup.append("text").attr("class", "chart-annotation")
-    .attr("x", 0).attr("y", -26).attr("fill", C.muted)
+  lengthGroup.append("text").attr("class", "chart-title")
+    .attr("x", 0).attr("y", -26).attr("fill", C.ink)
     .text("Major road network (km) vs traffic index");
+  // Baseline flag for truncated y-axis
+  lengthGroup.append("text").attr("class", "baseline-flag")
+    .attr("x", 0).attr("y", dim.innerH + 40)
+    .text("Y-axis starts at 49,000 km, not zero");
 
   // Legend
   lengthGroup.append("line").attr("x1", 0).attr("x2", 30).attr("y1", -10).attr("y2", -10)
@@ -1654,7 +1684,7 @@ function buildInvestmentChart() {
 
   // Electrified % of total
   const electPct = infra.map(d => ({ year: d.year, pct: d.electRouteKm / d.routeKm * 100, electKm: d.electRouteKm, routeKm: d.routeKm }));
-  const yE = d3.scaleLinear().domain([0, 50]).range([dim.innerH, 0]);
+  const yE = d3.scaleLinear().domain([0, 58]).range([dim.innerH, 0]);
 
   // Grid
   electGroup.append("g").attr("class", "grid")
@@ -1701,8 +1731,8 @@ function buildInvestmentChart() {
     .attr("y1", yE(50)).attr("y2", yE(50))
     .attr("stroke", C.faint).attr("stroke-width", 1.5).attr("stroke-dasharray", "6,4");
   electGroup.append("text").attr("class", "chart-annotation")
-    .attr("x", dim.innerW - 4).attr("y", yE(50) - 10).attr("text-anchor", "end").attr("fill", C.faint)
-    .text("EU average ~50%");
+    .attr("x", dim.innerW - 4).attr("y", yE(50) - 6).attr("text-anchor", "end").attr("fill", C.faint)
+    .text("EU average \u2248 50%");
 
   // Axes
   electGroup.append("g").attr("class", "axis x-axis")
@@ -1714,8 +1744,8 @@ function buildInvestmentChart() {
     .call(g => g.select(".domain").remove());
 
   // Title
-  electGroup.append("text").attr("class", "chart-annotation")
-    .attr("x", 0).attr("y", -10).attr("fill", C.muted)
+  electGroup.append("text").attr("class", "chart-title")
+    .attr("x", 0).attr("y", -14).attr("fill", C.ink)
     .text("Rail electrification (% of route-km)");
 
   // Hover
@@ -1828,9 +1858,13 @@ function buildInvestmentChart() {
     .call(g => g.select(".domain").remove());
 
   // Title
-  routeGroup.append("text").attr("class", "chart-annotation")
-    .attr("x", 0).attr("y", -10).attr("fill", C.muted)
+  routeGroup.append("text").attr("class", "chart-title")
+    .attr("x", 0).attr("y", -14).attr("fill", C.ink)
     .text("Rail network (total route-km)");
+  // Baseline flag for truncated y-axis
+  routeGroup.append("text").attr("class", "baseline-flag")
+    .attr("x", 0).attr("y", dim.innerH + 40)
+    .text("Y-axis starts at 15,000 km, not zero");
 
   // Hover
   const hoverRect2 = routeGroup.append("rect")

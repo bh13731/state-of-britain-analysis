@@ -164,12 +164,12 @@ body {
 
 /* ---------- Chart annotation ---------- */
 .chart-annotation {
-  font-size: 13.5px;
+  font-size: 12px;
   fill: #555555;
   font-family: 'Inter', sans-serif;
 }
 .chart-annotation-bold {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   fill: #1A1A1A;
   font-family: 'Inter', sans-serif;
@@ -200,7 +200,7 @@ body {
 /* ---------- SVG common ---------- */
 .axis text {
   font-family: 'Inter', sans-serif;
-  font-size: 13.5px;
+  font-size: 12px;
   fill: #555555;
 }
 .axis path, .axis line { stroke: none; }
@@ -396,6 +396,7 @@ const C = {
   orange: "#D97706", orangeLight: "rgba(217,119,6,0.12)"
 };
 const DURATION = 600;
+const CROSSFADE = 900; // Longer duration for view-swapping transitions
 const MOBILE = 768;
 
 /* =========================================================
@@ -422,13 +423,12 @@ function hideTooltip() { ttEl.classList.remove("visible"); }
    HELPERS
    ========================================================= */
 function fmtGBP(v) { return "\u00a3" + d3.format(",")(Math.round(v)); }
-function fmtPct(v) { return d3.format(".1f")(v) + "%"; }
 function isMobile() { return window.innerWidth < MOBILE; }
 
 function chartDims(container) {
   const w = container.clientWidth;
   const h = Math.max(500, Math.min(600, window.innerHeight * 0.65));
-  const m = { top: 30, right: 60, bottom: 40, left: 62 };
+  const m = { top: 30, right: 90, bottom: 40, left: 62 };
   return { width: w, height: h, margin: m, innerW: w - m.left - m.right, innerH: h - m.top - m.bottom };
 }
 
@@ -499,7 +499,9 @@ function buildSpendingChart() {
   const dim = chartDims(container);
   const svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
-    .attr("viewBox", `0 0 ${dim.width} ${dim.height}`);
+    .attr("viewBox", `0 0 ${dim.width} ${dim.height}`)
+    .attr("role", "img")
+    .attr("aria-label", "Line chart showing per-pupil spending in England from 2003 to 2024 in real terms, peaking at \u00a36,720 in 2009-10 and not yet fully recovered.");
   const g = svg.append("g").attr("transform", `translate(${dim.margin.left},${dim.margin.top})`);
 
   const raw = DATA.perPupilSpending;
@@ -518,13 +520,6 @@ function buildSpendingChart() {
   mainGroup.append("g").attr("class", "grid")
     .call(d3.axisLeft(y).ticks(6).tickSize(-dim.innerW).tickFormat(""))
     .call(g => g.select(".domain").remove());
-
-  // Area under line
-  const area = d3.area()
-    .x(d => x(d.year)).y0(dim.innerH).y1(d => y(d.value))
-    .curve(d3.curveMonotoneX);
-  mainGroup.append("path").datum(data)
-    .attr("d", area).attr("fill", C.tealLight);
 
   // Line
   const line = d3.line().x(d => x(d.year)).y(d => y(d.value)).curve(d3.curveMonotoneX);
@@ -620,6 +615,16 @@ function buildSpendingChart() {
     .attr("text-anchor", "middle").attr("fill", C.muted)
     .text("Per-pupil spending (real terms)");
 
+  // Axis break indicator (y-axis does not start at zero)
+  const breakY = dim.innerH;
+  mainGroup.append("path")
+    .attr("d", `M${-8},${breakY - 6} L${-4},${breakY - 2} L${-8},${breakY + 2} L${-4},${breakY + 6}`)
+    .attr("fill", "none").attr("stroke", C.muted).attr("stroke-width", 1.2);
+  mainGroup.append("text").attr("class", "chart-annotation")
+    .attr("x", -16).attr("y", breakY + 5)
+    .attr("text-anchor", "end").attr("fill", C.muted)
+    .attr("font-size", "10px").text("0 \u2260");
+
   // Hover
   const hoverRect = mainGroup.append("rect")
     .attr("width", dim.innerW).attr("height", dim.innerH)
@@ -639,7 +644,7 @@ function buildSpendingChart() {
     hoverDot.attr("cx", x(yr)).attr("cy", y(d.value)).style("opacity", 1);
     showTooltip(`<div class="tt-label">${d.label}</div>
       <div class="tt-value">${fmtGBP(d.value)} per pupil</div>
-      <div class="tt-value" style="color:${C.muted}">${d.value > 6720 ? "Above" : (((6720 - d.value) / 6720 * 100).toFixed(1) + "% below")} 2010 peak</div>`, event);
+      <div class="tt-value" style="color:${C.muted}">${d.value >= 6720 ? ("+" + ((d.value - 6720) / 6720 * 100).toFixed(1) + "% above") : (((6720 - d.value) / 6720 * 100).toFixed(1) + "% below")} 2010 peak</div>`, event);
   }).on("mouseleave", function() {
     hoverLine.style("opacity", 0); hoverDot.style("opacity", 0); hideTooltip();
   });
@@ -673,7 +678,9 @@ function buildIntlChart() {
 
   const svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", h)
-    .attr("viewBox", `0 0 ${dim.width} ${h}`);
+    .attr("viewBox", `0 0 ${dim.width} ${h}`)
+    .attr("role", "img")
+    .attr("aria-label", "Horizontal bar chart comparing education spending as percentage of GDP across countries, and line chart of PISA scores over time.");
   const g = svg.append("g").attr("transform", `translate(${m.left},${m.top})`);
 
   // --- BAR VIEW: spending % GDP (step 0) ---
@@ -760,16 +767,13 @@ function buildIntlChart() {
       .attr("d", oecdLine).attr("fill", "none").attr("stroke", sub.color).attr("stroke-width", 1.5)
       .attr("stroke-dasharray", "5,4").attr("opacity", 0.5);
 
-    // End labels - UK
+    // End labels - UK only (OECD labels removed to prevent overlap; dashed-line legend suffices)
     const lastP = pisaData[pisaData.length - 1];
+    // Manually separate labels: Science top, Reading middle, Maths bottom
+    const ukLabelOffsets = { "ukScience": -8, "ukReading": 4, "ukMaths": 16 };
     pisaGroup.append("text").attr("class", "chart-annotation-bold")
-      .attr("x", xPisa(lastP.year) + 8).attr("y", yPisa(lastP[sub.ukKey]) + 4)
-      .attr("fill", sub.color).text("UK " + sub.label + " " + lastP[sub.ukKey]);
-
-    // End labels - OECD
-    pisaGroup.append("text").attr("class", "chart-annotation")
-      .attr("x", xPisa(lastP.year) + 8).attr("y", yPisa(lastP[sub.oecdKey]) + 4)
-      .attr("fill", sub.color).style("opacity", 0.6).text("OECD " + lastP[sub.oecdKey]);
+      .attr("x", xPisa(lastP.year) + 8).attr("y", yPisa(lastP[sub.ukKey]) + (ukLabelOffsets[sub.ukKey] || 4))
+      .attr("fill", sub.color).text(sub.label + " " + lastP[sub.ukKey]);
 
     // Dots
     pisaGroup.selectAll(".pisa-dot-" + sub.ukKey).data(pisaData).enter()
@@ -803,11 +807,11 @@ function buildIntlChart() {
 function updateIntlChart(step) {
   const svg = d3.select("#chart-intl svg");
   if (step === 0) {
-    svg.select(".intl-bar-view").transition().duration(DURATION).style("opacity", 1).on("end", function() { d3.select(this).style("pointer-events", "all"); });
-    svg.select(".pisa-view").transition().duration(DURATION).style("opacity", 0).on("end", function() { d3.select(this).style("pointer-events", "none"); });
+    svg.select(".intl-bar-view").transition().duration(CROSSFADE).style("opacity", 1).on("end", function() { d3.select(this).style("pointer-events", "all"); });
+    svg.select(".pisa-view").transition().duration(CROSSFADE).style("opacity", 0).on("end", function() { d3.select(this).style("pointer-events", "none"); });
   } else {
-    svg.select(".intl-bar-view").transition().duration(DURATION).style("opacity", 0).on("end", function() { d3.select(this).style("pointer-events", "none"); });
-    svg.select(".pisa-view").transition().duration(DURATION).style("opacity", 1).on("end", function() { d3.select(this).style("pointer-events", "all"); });
+    svg.select(".intl-bar-view").transition().duration(CROSSFADE).style("opacity", 0).on("end", function() { d3.select(this).style("pointer-events", "none"); });
+    svg.select(".pisa-view").transition().duration(CROSSFADE).style("opacity", 1).on("end", function() { d3.select(this).style("pointer-events", "all"); });
   }
 }
 
@@ -819,7 +823,9 @@ function buildGcseChart() {
   const dim = chartDims(container);
   const svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
-    .attr("viewBox", `0 0 ${dim.width} ${dim.height}`);
+    .attr("viewBox", `0 0 ${dim.width} ${dim.height}`)
+    .attr("role", "img")
+    .attr("aria-label", "Line chart showing GCSE attainment rates under old and new grading systems from 2005 to 2024, with COVID-era grade inflation highlighted.");
   const g = svg.append("g").attr("transform", `translate(${dim.margin.left},${dim.margin.top})`);
 
   const raw = DATA.gcseResults;
@@ -914,15 +920,17 @@ function buildGcseChart() {
     .attr("text-anchor", "middle").attr("fill", C.teal)
     .text("59.4% peak");
 
-  // Legend
-  mainGroup.append("line").attr("x1", 10).attr("x2", 34).attr("y1", -10).attr("y2", -10)
+  // Legend -- positioned relative to first item width
+  const legendX1 = 10;
+  mainGroup.append("line").attr("x1", legendX1).attr("x2", legendX1 + 24).attr("y1", -10).attr("y2", -10)
     .attr("stroke", C.teal).attr("stroke-width", 2.5);
-  mainGroup.append("text").attr("class", "chart-annotation")
-    .attr("x", 38).attr("y", -6).attr("fill", C.teal).text("5+ A*\u2013C (old)");
-  mainGroup.append("line").attr("x1", isMobile() ? 140 : 170).attr("x2", isMobile() ? 164 : 194).attr("y1", -10).attr("y2", -10)
+  const oldLabel = mainGroup.append("text").attr("class", "chart-annotation")
+    .attr("x", legendX1 + 28).attr("y", -6).attr("fill", C.teal).text("5+ A*\u2013C (old)");
+  const legendX2 = legendX1 + 28 + (oldLabel.node().getComputedTextLength ? oldLabel.node().getComputedTextLength() + 20 : 120);
+  mainGroup.append("line").attr("x1", legendX2).attr("x2", legendX2 + 24).attr("y1", -10).attr("y2", -10)
     .attr("stroke", C.blue).attr("stroke-width", 2.5);
   mainGroup.append("text").attr("class", "chart-annotation")
-    .attr("x", isMobile() ? 168 : 198).attr("y", -6).attr("fill", C.blue).text("Grade 5+ (new)");
+    .attr("x", legendX2 + 28).attr("y", -6).attr("fill", C.blue).text("Grade 5+ (new)");
 
   // Axes
   mainGroup.append("g").attr("class", "axis x-axis")
@@ -960,7 +968,9 @@ function buildTeachersChart() {
   const dim = chartDims(container);
   const svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
-    .attr("viewBox", `0 0 ${dim.width} ${dim.height}`);
+    .attr("viewBox", `0 0 ${dim.width} ${dim.height}`)
+    .attr("role", "img")
+    .attr("aria-label", "Charts showing teacher vacancy rates rising from 0.2% to 0.6% since 2012, and pupil-teacher ratios hovering around 17.5 to 18.1.");
   const g = svg.append("g").attr("transform", `translate(${dim.margin.left},${dim.margin.top})`);
 
   const data = DATA.teacherWorkforce;
@@ -975,13 +985,6 @@ function buildTeachersChart() {
   vacGroup.append("g").attr("class", "grid")
     .call(d3.axisLeft(yVac).ticks(6).tickSize(-dim.innerW).tickFormat(""))
     .call(g => g.select(".domain").remove());
-
-  // Area
-  const vacArea = d3.area()
-    .x(d => xVac(d.year)).y0(dim.innerH).y1(d => yVac(d.vacancyRate))
-    .curve(d3.curveMonotoneX);
-  vacGroup.append("path").datum(data)
-    .attr("d", vacArea).attr("fill", C.redLight);
 
   // Line
   const vacLine = d3.line().x(d => xVac(d.year)).y(d => yVac(d.vacancyRate)).curve(d3.curveMonotoneX);
@@ -1039,13 +1042,6 @@ function buildTeachersChart() {
     .call(d3.axisLeft(yRatio).ticks(6).tickSize(-dim.innerW).tickFormat(""))
     .call(g => g.select(".domain").remove());
 
-  // Area
-  const ratioArea = d3.area()
-    .x(d => xRatio(d.year)).y0(dim.innerH).y1(d => yRatio(d.ratio))
-    .curve(d3.curveMonotoneX);
-  ratioGroup.append("path").datum(data)
-    .attr("d", ratioArea).attr("fill", C.tealLight);
-
   // Line
   const ratioLine = d3.line().x(d => xRatio(d.year)).y(d => yRatio(d.ratio)).curve(d3.curveMonotoneX);
   ratioGroup.append("path").datum(data)
@@ -1090,16 +1086,26 @@ function buildTeachersChart() {
     .attr("x", -dim.innerH / 2).attr("y", -42)
     .attr("text-anchor", "middle").attr("fill", C.muted)
     .text("Pupil-teacher ratio");
+
+  // Axis break indicator (y-axis does not start at zero)
+  const ratioBreakY = dim.innerH;
+  ratioGroup.append("path")
+    .attr("d", `M${-8},${ratioBreakY - 6} L${-4},${ratioBreakY - 2} L${-8},${ratioBreakY + 2} L${-4},${ratioBreakY + 6}`)
+    .attr("fill", "none").attr("stroke", C.muted).attr("stroke-width", 1.2);
+  ratioGroup.append("text").attr("class", "chart-annotation")
+    .attr("x", -16).attr("y", ratioBreakY + 5)
+    .attr("text-anchor", "end").attr("fill", C.muted)
+    .attr("font-size", "10px").text("0 \u2260");
 }
 
 function updateTeachersChart(step) {
   const svg = d3.select("#chart-teachers svg");
   if (step === 0) {
-    svg.select(".vacancy-view").transition().duration(DURATION).style("opacity", 1).on("end", function() { d3.select(this).style("pointer-events", "all"); });
-    svg.select(".ratio-view").transition().duration(DURATION).style("opacity", 0).on("end", function() { d3.select(this).style("pointer-events", "none"); });
+    svg.select(".vacancy-view").transition().duration(CROSSFADE).style("opacity", 1).on("end", function() { d3.select(this).style("pointer-events", "all"); });
+    svg.select(".ratio-view").transition().duration(CROSSFADE).style("opacity", 0).on("end", function() { d3.select(this).style("pointer-events", "none"); });
   } else {
-    svg.select(".vacancy-view").transition().duration(DURATION).style("opacity", 0).on("end", function() { d3.select(this).style("pointer-events", "none"); });
-    svg.select(".ratio-view").transition().duration(DURATION).style("opacity", 1).on("end", function() { d3.select(this).style("pointer-events", "all"); });
+    svg.select(".vacancy-view").transition().duration(CROSSFADE).style("opacity", 0).on("end", function() { d3.select(this).style("pointer-events", "none"); });
+    svg.select(".ratio-view").transition().duration(CROSSFADE).style("opacity", 1).on("end", function() { d3.select(this).style("pointer-events", "all"); });
   }
 }
 
@@ -1111,7 +1117,9 @@ function buildHeChart() {
   const dim = chartDims(container);
   const svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
-    .attr("viewBox", `0 0 ${dim.width} ${dim.height}`);
+    .attr("viewBox", `0 0 ${dim.width} ${dim.height}`)
+    .attr("role", "img")
+    .attr("aria-label", "Charts showing higher education participation rising from 38% to 55% then edging back, and degree classification inflation with Firsts doubling from 15% to 36%.");
   const g = svg.append("g").attr("transform", `translate(${dim.margin.left},${dim.margin.top})`);
 
   // --- HE PARTICIPATION (step 0) ---
@@ -1125,13 +1133,6 @@ function buildHeChart() {
   partGroup.append("g").attr("class", "grid")
     .call(d3.axisLeft(yPart).ticks(6).tickSize(-dim.innerW).tickFormat(""))
     .call(g => g.select(".domain").remove());
-
-  // Area
-  const partArea = d3.area()
-    .x(d => xPart(d.year)).y0(dim.innerH).y1(d => yPart(d.rate))
-    .curve(d3.curveMonotoneX);
-  partGroup.append("path").datum(heData)
-    .attr("d", partArea).attr("fill", C.tealLight);
 
   // Line
   const partLine = d3.line().x(d => xPart(d.year)).y(d => yPart(d.rate)).curve(d3.curveMonotoneX);
@@ -1190,6 +1191,16 @@ function buildHeChart() {
     .attr("text-anchor", "middle").attr("fill", C.muted)
     .text("HE participation rate");
 
+  // Axis break indicator (y-axis does not start at zero)
+  const partBreakY = dim.innerH;
+  partGroup.append("path")
+    .attr("d", `M${-8},${partBreakY - 6} L${-4},${partBreakY - 2} L${-8},${partBreakY + 2} L${-4},${partBreakY + 6}`)
+    .attr("fill", "none").attr("stroke", C.muted).attr("stroke-width", 1.2);
+  partGroup.append("text").attr("class", "chart-annotation")
+    .attr("x", -16).attr("y", partBreakY + 5)
+    .attr("text-anchor", "end").attr("fill", C.muted)
+    .attr("font-size", "10px").text("0 \u2260");
+
   // --- DEGREE CLASSIFICATION (step 1, hidden) ---
   const degGroup = g.append("g").attr("class", "degree-view").style("opacity", 0).style("pointer-events", "none");
   const degData = DATA.degreeClassification.map(d => ({
@@ -1236,7 +1247,7 @@ function buildHeChart() {
       .datum(layer)
       .attr("d", areaGen)
       .attr("fill", stackColors[layer.key])
-      .attr("opacity", 0.7)
+      .attr("opacity", 1)
       .on("mousemove", function(event) {
         const [mx] = d3.pointer(event, this);
         const yr = Math.round(xDeg.invert(mx));
@@ -1287,11 +1298,11 @@ function buildHeChart() {
 function updateHeChart(step) {
   const svg = d3.select("#chart-he svg");
   if (step === 0) {
-    svg.select(".he-part-view").transition().duration(DURATION).style("opacity", 1).on("end", function() { d3.select(this).style("pointer-events", "all"); });
-    svg.select(".degree-view").transition().duration(DURATION).style("opacity", 0).on("end", function() { d3.select(this).style("pointer-events", "none"); });
+    svg.select(".he-part-view").transition().duration(CROSSFADE).style("opacity", 1).on("end", function() { d3.select(this).style("pointer-events", "all"); });
+    svg.select(".degree-view").transition().duration(CROSSFADE).style("opacity", 0).on("end", function() { d3.select(this).style("pointer-events", "none"); });
   } else {
-    svg.select(".he-part-view").transition().duration(DURATION).style("opacity", 0).on("end", function() { d3.select(this).style("pointer-events", "none"); });
-    svg.select(".degree-view").transition().duration(DURATION).style("opacity", 1).on("end", function() { d3.select(this).style("pointer-events", "all"); });
+    svg.select(".he-part-view").transition().duration(CROSSFADE).style("opacity", 0).on("end", function() { d3.select(this).style("pointer-events", "none"); });
+    svg.select(".degree-view").transition().duration(CROSSFADE).style("opacity", 1).on("end", function() { d3.select(this).style("pointer-events", "all"); });
   }
 }
 

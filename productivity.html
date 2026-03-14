@@ -163,12 +163,12 @@ body {
 
 /* ---------- Chart annotation ---------- */
 .chart-annotation {
-  font-size: 13.5px;
+  font-size: 13px;
   fill: #555555;
   font-family: 'Inter', sans-serif;
 }
 .chart-annotation-bold {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   fill: #1A1A1A;
   font-family: 'Inter', sans-serif;
@@ -199,7 +199,7 @@ body {
 /* ---------- SVG common ---------- */
 .axis text {
   font-family: 'Inter', sans-serif;
-  font-size: 13.5px;
+  font-size: 13px;
   fill: #555555;
 }
 .axis path, .axis line { stroke: none; }
@@ -267,7 +267,7 @@ body {
   <div class="scroll-steps">
     <div class="step" data-section="hook" data-step="0">
       <div class="step-inner">
-        <div class="big-number indigo" id="bn-growth">7%</div>
+        <div class="big-number indigo" id="bn-growth">&nbsp;</div>
         <h2>Sixteen years. Seven percent.</h2>
         <p>Between 2008 and 2024, UK output per hour grew by just 7%. In the sixteen years <em>before</em> that, it grew by 45%. Something broke.</p>
       </div>
@@ -280,7 +280,7 @@ body {
     </div>
   </div>
   <div class="scroll-graphic">
-    <div class="chart-container" id="chart-hook"></div>
+    <div class="chart-container" id="chart-hook" role="img" aria-label="Line chart showing UK output per hour index from 1971 to 2024, with a counterfactual trend line"></div>
   </div>
 </section>
 
@@ -296,12 +296,13 @@ body {
     <div class="step" data-section="international" data-step="1">
       <div class="step-inner">
         <h2>The league table</h2>
+        <!-- NB: These figures must be updated if the API data changes. Cross-check against DATA.international -->
         <p>Among major advanced economies, Britain produces $79.49 of output per hour worked. The US produces $97.05. France $87.30. Germany $93.72. Only Italy and Canada rank lower among the G7.</p>
       </div>
     </div>
   </div>
   <div class="scroll-graphic">
-    <div class="chart-container" id="chart-international"></div>
+    <div class="chart-container" id="chart-international" role="img" aria-label="International comparison of GDP per hour worked across G7 nations"></div>
   </div>
 </section>
 
@@ -322,7 +323,7 @@ body {
     </div>
   </div>
   <div class="scroll-graphic">
-    <div class="chart-container" id="chart-sectors"></div>
+    <div class="chart-container" id="chart-sectors" role="img" aria-label="Horizontal bar chart of UK output per hour by sector"></div>
   </div>
 </section>
 
@@ -344,7 +345,7 @@ body {
     </div>
   </div>
   <div class="scroll-graphic">
-    <div class="chart-container" id="chart-matters"></div>
+    <div class="chart-container" id="chart-matters" role="img" aria-label="Line chart of UK output per hour in pounds, showing post-2008 stagnation"></div>
   </div>
 </section>
 
@@ -488,10 +489,8 @@ function buildHookChart() {
 
   const series = DATA.indexSeries;
   const x = d3.scaleLinear().domain([1971, 2024]).range([0, dim.innerW]);
-  const yMax = 160;
-  const y = d3.scaleLinear().domain([0, yMax]).range([dim.innerH, 0]);
 
-  // Compute counterfactual trend from 1992-2008 growth rate
+  // Compute counterfactual first so yMax encompasses it
   const idx1992 = series.find(d => d.year === 1992).index;
   const idx2008 = series.find(d => d.year === 2008).index;
   const annualGrowth = Math.pow(idx2008 / idx1992, 1 / 16) - 1;
@@ -499,6 +498,13 @@ function buildHookChart() {
   for (let yr = 2008; yr <= 2024; yr++) {
     counterfactual.push({ year: yr, index: idx2008 * Math.pow(1 + annualGrowth, yr - 2008) });
   }
+
+  const dataMin = d3.min(series, d => d.index);
+  const cfMax = counterfactual[counterfactual.length - 1].index;
+  const dataMax = Math.max(d3.max(series, d => d.index), cfMax);
+  const yFloor = Math.max(0, Math.floor(dataMin / 10) * 10 - 10);
+  const yMax = Math.ceil(dataMax / 10) * 10 + 10;
+  const y = d3.scaleLinear().domain([yFloor, yMax]).range([dim.innerH, 0]).nice();
 
   // ---- Step 0 view: basic index line ----
   const basicGroup = g.append("g").attr("class", "basic-view");
@@ -539,16 +545,6 @@ function buildHookChart() {
     .attr("x", x(2008)).attr("y", y(d2008.index) - 14)
     .attr("text-anchor", "middle").attr("fill", C.indigo)
     .text("2008 crisis");
-
-  // Shaded flatline region
-  var flatData = series.filter(function(d) { return d.year >= 2008; });
-  var flatArea = d3.area()
-    .x(function(d) { return x(d.year); })
-    .y0(dim.innerH)
-    .y1(function(d) { return y(d.index); })
-    .curve(d3.curveMonotoneX);
-  basicGroup.append("path").datum(flatData)
-    .attr("d", flatArea).attr("fill", C.indigoLight);
 
   // End label
   var last = series[series.length - 1];
@@ -672,6 +668,7 @@ function updateHookChart(step) {
 function buildInternationalChart() {
   var container = document.getElementById("chart-international");
   var dim = chartDims(container);
+  var dimBar = chartDimsBar(container);
   var svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
     .attr("viewBox", "0 0 " + dim.width + " " + dim.height);
@@ -767,7 +764,7 @@ function buildInternationalChart() {
     countries.forEach(function(c) {
       if (d[c.key] != null) {
         hoverDots[c.key].attr("cx", x(year)).attr("cy", y(d[c.key])).style("opacity", 1);
-        ttHtml += '<div class="tt-value" style="color:' + c.color + '">' + (c.label === "United Kingdom" ? "UK" : c.label === "United States" ? "US" : c.key) + ': $' + d[c.key].toFixed(1) + '</div>';
+        ttHtml += '<div class="tt-value" style="color:' + c.color + '">' + (c.label === "United Kingdom" ? "UK" : c.label === "United States" ? "US" : c.key) + ': $' + d[c.key].toFixed(2) + '</div>';
       }
     });
     showTooltip(ttHtml, event);
@@ -778,14 +775,18 @@ function buildInternationalChart() {
   });
 
   // ---- Step 1: Bar chart of 2023 levels (hidden) ----
-  var barGroup = g.append("g").attr("class", "intl-bar-view").style("opacity", 0).style("pointer-events", "none");
+  // Use a separate transform to accommodate wider left margin for country labels
+  var barGroup = g.append("g").attr("class", "intl-bar-view")
+    .attr("transform", "translate(" + (dimBar.margin.left - dim.margin.left) + ",0)")
+    .style("opacity", 0).style("pointer-events", "none");
 
   // Filter to key countries for the bar
   var barCountries = DATA.international.filter(function(d) {
     return ["USA", "DEU", "FRA", "GBR", "ITA", "CAN", "JPN", "OECD"].indexOf(d.countryCode) >= 0;
   }).sort(function(a, b) { return b.usdPPP - a.usdPPP; });
 
-  var xBar = d3.scaleLinear().domain([0, d3.max(barCountries, function(d) { return d.usdPPP; }) * 1.12]).range([0, dim.innerW]);
+  var barInnerW = dim.width - dimBar.margin.left - dimBar.margin.right;
+  var xBar = d3.scaleLinear().domain([0, d3.max(barCountries, function(d) { return d.usdPPP; }) * 1.12]).range([0, barInnerW]);
   var yBar = d3.scaleBand().domain(barCountries.map(function(d) { return d.country; })).range([0, dim.innerH]).padding(0.25);
 
   // Grid
@@ -809,7 +810,7 @@ function buildInternationalChart() {
     .attr("y", function(d) { return yBar(d.country); })
     .attr("width", function(d) { return xBar(d.usdPPP); })
     .attr("height", yBar.bandwidth())
-    .attr("fill", function(d) { return d.countryCode === "GBR" ? C.indigo : d.countryCode === "OECD" ? C.oecd : "#C7D2FE"; })
+    .attr("fill", function(d) { return d.countryCode === "GBR" ? C.indigo : d.countryCode === "OECD" ? C.oecd : "#A8B5CF"; })
     .attr("rx", 3)
     .on("mousemove", function(event, d) {
       showTooltip('<div class="tt-label">' + d.country + '</div><div class="tt-value">$' + d.usdPPP.toFixed(1) + ' per hour (PPP)</div>', event);
@@ -837,7 +838,7 @@ function buildInternationalChart() {
     .attr("y", function(d) { return yBar(d.country) + yBar.bandwidth() / 2 + 5; })
     .attr("fill", function(d) { return d.countryCode === "GBR" ? C.indigo : C.muted; })
     .attr("font-size", "13px")
-    .text(function(d) { return "$" + d.usdPPP.toFixed(0); });
+    .text(function(d) { return "$" + d.usdPPP.toFixed(1); });
 }
 
 function updateInternationalChart(step) {
@@ -908,7 +909,7 @@ function buildSectorsChart() {
     .attr("stroke", C.indigo).attr("stroke-width", 1.5).attr("stroke-dasharray", "6,4");
   allGroup.append("text").attr("class", "chart-annotation")
     .attr("x", x(avgVal) + 4).attr("y", -6)
-    .attr("fill", C.indigo).attr("font-size", "12px")
+    .attr("fill", C.indigo).attr("font-size", "13px")
     .text("UK avg \u00a3" + avgVal.toFixed(0) + "/hr");
 
   // Bars
@@ -920,7 +921,7 @@ function buildSectorsChart() {
     .attr("y", function(d) { return yBand(shortName(d.sector)); })
     .attr("width", function(d) { return x(d.gbpPerHour); })
     .attr("height", yBand.bandwidth())
-    .attr("fill", function(d) { return d.gbpPerHour >= avgVal ? C.indigo : "#C7D2FE"; })
+    .attr("fill", function(d) { return d.gbpPerHour >= avgVal ? C.indigo : "#A8B5CF"; })
     .attr("rx", 2)
     .on("mousemove", function(event, d) {
       showTooltip('<div class="tt-label">' + d.sector + '</div><div class="tt-value">\u00a3' + d.gbpPerHour.toFixed(2) + ' per hour</div>', event);
@@ -936,7 +937,7 @@ function buildSectorsChart() {
     .attr("y", function(d) { return yBand(shortName(d.sector)) + yBand.bandwidth() / 2 + 4; })
     .attr("text-anchor", "end")
     .attr("fill", C.ink)
-    .attr("font-size", "12.5px")
+    .attr("font-size", "13px")
     .text(function(d) { return shortName(d.sector); });
 
   // Value labels
@@ -947,7 +948,7 @@ function buildSectorsChart() {
     .attr("x", function(d) { return x(d.gbpPerHour) + 4; })
     .attr("y", function(d) { return yBand(shortName(d.sector)) + yBand.bandwidth() / 2 + 4; })
     .attr("fill", function(d) { return d.gbpPerHour >= avgVal ? C.indigo : C.muted; })
-    .attr("font-size", "12px")
+    .attr("font-size", "13px")
     .text(function(d) { return "\u00a3" + d.gbpPerHour.toFixed(0); });
 
   // ---- Step 1: highlight bottom half ----
@@ -965,7 +966,7 @@ function buildSectorsChart() {
     .attr("stroke", C.indigo).attr("stroke-width", 1.5).attr("stroke-dasharray", "6,4");
   highlightGroup.append("text").attr("class", "chart-annotation")
     .attr("x", x(avgVal) + 4).attr("y", -6)
-    .attr("fill", C.indigo).attr("font-size", "12px")
+    .attr("fill", C.indigo).attr("font-size", "13px")
     .text("UK avg \u00a3" + avgVal.toFixed(0) + "/hr");
 
   var median = sectors[Math.floor(sectors.length / 2)].gbpPerHour;
@@ -996,7 +997,7 @@ function buildSectorsChart() {
     .attr("y", function(d) { return yBand(shortName(d.sector)) + yBand.bandwidth() / 2 + 4; })
     .attr("text-anchor", "end")
     .attr("fill", function(d) { return d.gbpPerHour < median ? C.ink : C.faint; })
-    .attr("font-size", "12.5px")
+    .attr("font-size", "13px")
     .text(function(d) { return shortName(d.sector); });
 
   // Value labels
@@ -1007,7 +1008,7 @@ function buildSectorsChart() {
     .attr("x", function(d) { return x(d.gbpPerHour) + 4; })
     .attr("y", function(d) { return yBand(shortName(d.sector)) + yBand.bandwidth() / 2 + 4; })
     .attr("fill", function(d) { return d.gbpPerHour < median ? C.red : C.faint; })
-    .attr("font-size", "12px")
+    .attr("font-size", "13px")
     .text(function(d) { return "\u00a3" + d.gbpPerHour.toFixed(0); });
 }
 
@@ -1070,15 +1071,6 @@ function buildMattersChart() {
   nomGroup.append("path").datum(series)
     .attr("d", lineGen).attr("fill", "none").attr("stroke", C.indigo).attr("stroke-width", 2.5);
 
-  // Area under line
-  var areaGen = d3.area()
-    .x(function(d) { return x(d.year); })
-    .y0(dim.innerH)
-    .y1(function(d) { return y(d.gbpPerHour); })
-    .curve(d3.curveMonotoneX);
-  nomGroup.append("path").datum(series)
-    .attr("d", areaGen).attr("fill", C.indigoLight);
-
   // Annotations: pre-2008 steep growth, post-2008 slow
   var d2008 = series.find(function(d) { return d.year === 2008; });
   nomGroup.append("circle").attr("cx", x(2008)).attr("cy", y(d2008.gbpPerHour)).attr("r", 4)
@@ -1086,26 +1078,28 @@ function buildMattersChart() {
 
   // Growth rates as annotations
   var d1990 = series.find(function(d) { return d.year === 1990; });
-  var annPre = ((d2008.gbpPerHour / d1990.gbpPerHour) - 1) / 18 * 100;
+  var annPre = (Math.pow(d2008.gbpPerHour / d1990.gbpPerHour, 1 / 18) - 1) * 100;
+  var midPreVal = (d1990.gbpPerHour + d2008.gbpPerHour) / 2;
   nomGroup.append("text").attr("class", "chart-annotation-bold")
-    .attr("x", x(1999)).attr("y", y(20))
+    .attr("x", x(1999)).attr("y", y(midPreVal) - 8)
     .attr("text-anchor", "middle").attr("fill", C.indigo)
     .text("Rapid growth");
   nomGroup.append("text").attr("class", "chart-annotation")
-    .attr("x", x(1999)).attr("y", y(20) + 16)
+    .attr("x", x(1999)).attr("y", y(midPreVal) + 8)
     .attr("text-anchor", "middle").attr("fill", C.indigo)
     .text("+" + annPre.toFixed(1) + "% per year");
 
   var d2024 = series.find(function(d) { return d.year === 2024; });
-  var annPost = ((d2024.gbpPerHour / d2008.gbpPerHour) - 1) / 16 * 100;
+  var annPost = (Math.pow(d2024.gbpPerHour / d2008.gbpPerHour, 1 / 16) - 1) * 100;
+  var midPostVal = (d2008.gbpPerHour + d2024.gbpPerHour) / 2;
   nomGroup.append("text").attr("class", "chart-annotation-bold")
-    .attr("x", x(2016)).attr("y", y(42))
+    .attr("x", x(2016)).attr("y", y(midPostVal) - 24)
     .attr("text-anchor", "middle").attr("fill", C.red)
     .text("Stagnation");
   nomGroup.append("text").attr("class", "chart-annotation")
-    .attr("x", x(2016)).attr("y", y(42) + 16)
+    .attr("x", x(2016)).attr("y", y(midPostVal) - 8)
     .attr("text-anchor", "middle").attr("fill", C.red)
-    .text("+" + annPost.toFixed(1) + "% per year (nominal)");
+    .text("+" + annPost.toFixed(1) + "% per year");
 
   // End label
   var last = series[series.length - 1];
@@ -1152,11 +1146,9 @@ function buildMattersChart() {
     .call(d3.axisLeft(y).ticks(6).tickSize(0).tickFormat(function(d) { return "\u00a3" + d; }))
     .call(function(g) { g.select(".domain").remove(); });
 
-  // Dimmed line
+  // Dimmed line (no area fill -- let the data speak)
   fiscalGroup.append("path").datum(series)
     .attr("d", lineGen).attr("fill", "none").attr("stroke", C.indigo).attr("stroke-width", 2.5).attr("opacity", 0.3);
-  fiscalGroup.append("path").datum(series)
-    .attr("d", areaGen).attr("fill", C.indigoPale);
 
   // Highlight the post-2008 flatline
   var postSeries = series.filter(function(d) { return d.year >= 2008; });
@@ -1181,7 +1173,7 @@ function buildMattersChart() {
     .attr("opacity", 0.95);
   fiscalGroup.append("text").attr("class", "chart-annotation-bold")
     .attr("x", boxX + 14).attr("y", boxY + 24)
-    .attr("fill", C.red).attr("font-size", "14px")
+    .attr("fill", C.red).attr("font-size", "13px")
     .text("Low productivity = low growth");
   fiscalGroup.append("text").attr("class", "chart-annotation")
     .attr("x", boxX + 14).attr("y", boxY + 44)

@@ -46,7 +46,6 @@ body {
 /* ---------- Header ---------- */
 .site-header {
   padding: 48px 32px 24px;
-  padding-top: 64px;
   max-width: 1200px;
   margin: 0 auto;
 }
@@ -167,7 +166,7 @@ body {
 /* ---------- Chart annotation ---------- */
 .chart-annotation {
   font-size: 13px;
-  fill: #595959;
+  fill: #555555;
   font-family: 'Inter', sans-serif;
 }
 .chart-annotation-bold {
@@ -193,7 +192,7 @@ body {
   padding: 32px 32px 48px;
   border-top: 1px solid #E0E0DB;
   font-size: 0.9rem;
-  color: #595959;
+  color: #555555;
   line-height: 1.7;
 }
 .site-footer a { color: #0E7490; text-decoration: none; }
@@ -203,7 +202,7 @@ body {
 .axis text {
   font-family: 'Inter', sans-serif;
   font-size: 13px;
-  fill: #595959;
+  fill: #555555;
 }
 .axis path, .axis line { stroke: none; }
 .grid line { stroke: #F0F0EB; stroke-width: 1; }
@@ -234,7 +233,7 @@ body {
     max-width: 100%;
   }
   .site-header {
-    padding: 56px 16px 20px;
+    padding: 32px 16px 20px;
   }
   .site-header h1 { font-size: 2rem; }
   .site-footer { padding: 24px 16px 32px; }
@@ -243,7 +242,7 @@ body {
 </head>
 <body>
 
-<nav style="position:fixed;top:0;left:0;right:0;z-index:999;background:rgba(250,250,247,0.95);backdrop-filter:blur(8px);border-bottom:1px solid #E0E0DB;padding:10px 24px;font-size:14px;font-family:Inter,sans-serif;"><a href="hub.html" style="color:#2563A0;text-decoration:none;font-weight:500;">&larr; All stories</a><span style="margin:0 12px;color:#8A8A82;">|</span><span style="color:#595959;font-weight:600;">NHS</span></nav>
+<nav style="position:fixed;top:0;left:0;right:0;z-index:999;background:rgba(250,250,247,0.95);backdrop-filter:blur(8px);border-bottom:1px solid #E0E0DB;padding:10px 24px;font-size:14px;font-family:Inter,sans-serif;"><a href="hub.html" style="color:#2563A0;text-decoration:none;font-weight:500;">&larr; All stories</a><span style="margin:0 12px;color:#8A8A82;">|</span><span style="color:#555555;font-weight:600;">NHS</span></nav>
 
 <div id="loading-screen">
   <div class="spinner"></div>
@@ -257,7 +256,7 @@ body {
 
 <div class="chart-tooltip" id="tooltip"></div>
 
-<header class="site-header" id="site-header" style="display:none;padding-top:64px;">
+<header class="site-header" id="site-header" style="display:none;padding-top:72px;">
   <div class="kicker">State of Britain</div>
   <h1>The Waiting Game</h1>
   <p class="deck">How the NHS stopped meeting its own targets &mdash; and what the numbers reveal about a health service under structural strain.</p>
@@ -416,7 +415,7 @@ const C = {
   teal: "#0E7490", tealDark: "#065666", tealLight: "rgba(14,116,144,0.12)",
   red: "#C53030", redLight: "rgba(197,48,48,0.12)",
   green: "#2E7D32", amber: "#A16B00", blue: "#2563A0",
-  faint: "#8A8A82", ink: "#1A1A1A", secondary: "#3D3D3D", muted: "#595959",
+  faint: "#8A8A82", ink: "#1A1A1A", secondary: "#3D3D3D", muted: "#555555",
   grid: "#F0F0EB", bg: "#FAFAF7"
 };
 const DURATION = 600;

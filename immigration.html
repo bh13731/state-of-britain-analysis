@@ -34,19 +34,18 @@ body {
   animation: spin 0.8s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
-#loading-screen p { margin-top: 16px; color: #545454; font-size: 1rem; }
+#loading-screen p { margin-top: 16px; color: #555555; font-size: 0.95rem; }
 #error-screen {
   display: none; position: fixed; inset: 0; z-index: 9998;
   background: #FAFAF7;
   flex-direction: column; align-items: center; justify-content: center;
 }
 #error-screen h2 { font-family: 'Source Serif 4', serif; font-size: 1.8rem; margin-bottom: 8px; }
-#error-screen p { color: #545454; max-width: 400px; text-align: center; }
+#error-screen p { color: #555555; max-width: 400px; text-align: center; }
 
 /* ---------- Header ---------- */
 .site-header {
   padding: 48px 32px 24px;
-  padding-top: 48px;
   max-width: 1200px;
   margin: 0 auto;
 }
@@ -55,7 +54,7 @@ body {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: #9A4408;
+  color: #B45309;
   margin-bottom: 8px;
 }
 .site-header h1 {
@@ -167,7 +166,7 @@ body {
 /* ---------- Chart annotation ---------- */
 .chart-annotation {
   font-size: 13px;
-  fill: #545454;
+  fill: #555555;
   font-family: 'Inter', sans-serif;
 }
 .chart-annotation-bold {
@@ -193,7 +192,7 @@ body {
   padding: 32px 32px 48px;
   border-top: 1px solid #E0E0DB;
   font-size: 0.9rem;
-  color: #545454;
+  color: #555555;
   line-height: 1.7;
 }
 .site-footer a { color: #2563A0; text-decoration: none; }
@@ -203,7 +202,7 @@ body {
 .axis text {
   font-family: 'Inter', sans-serif;
   font-size: 13px;
-  fill: #545454;
+  fill: #555555;
 }
 .axis path, .axis line { stroke: none; }
 .grid line { stroke: #F0F0EB; stroke-width: 1; }
@@ -247,7 +246,7 @@ body {
 </head>
 <body>
 
-<nav style="position:fixed;top:0;left:0;right:0;z-index:999;background:rgba(250,250,247,0.95);backdrop-filter:blur(8px);border-bottom:1px solid #E0E0DB;padding:8px 24px;font-size:13px;font-family:Inter,sans-serif;"><a href="hub.html" style="color:#2563A0;text-decoration:none;font-weight:500;">&larr; All stories</a><span style="margin:0 12px;color:#B0B0A8;">|</span><span style="color:#545454;font-weight:600;">Immigration</span></nav>
+<nav style="position:fixed;top:0;left:0;right:0;z-index:999;background:rgba(250,250,247,0.95);backdrop-filter:blur(8px);border-bottom:1px solid #E0E0DB;padding:10px 24px;font-size:14px;font-family:Inter,sans-serif;"><a href="hub.html" style="color:#2563A0;text-decoration:none;font-weight:500;">&larr; All stories</a><span style="margin:0 12px;color:#8A8A82;">|</span><span style="color:#555555;font-weight:600;">Immigration</span></nav>
 
 <div id="loading-screen">
   <div class="spinner"></div>
@@ -261,7 +260,7 @@ body {
 
 <div class="chart-tooltip" id="tooltip"></div>
 
-<header class="site-header" id="site-header" style="display:none;padding-top:60px;">
+<header class="site-header" id="site-header" style="display:none;padding-top:72px;">
   <div class="kicker">State of Britain</div>
   <h1>The Migration Surge</h1>
   <p class="deck">How net migration tripled in three years &mdash; a visual guide to the numbers, the origins, and the demographic consequences.</p>
@@ -375,7 +374,7 @@ const C = {
   orange: "#B45309", orangeLight: "rgba(180,83,9,0.12)", orangeFill: "rgba(180,83,9,0.25)",
   blue: "#2563A0", blueLight: "rgba(37,99,160,0.12)", blueFill: "rgba(37,99,160,0.25)",
   red: "#C53030", green: "#2E7D32", amber: "#A16B00",
-  faint: "#B0B0A8", ink: "#1A1A1A", secondary: "#3D3D3D", muted: "#545454",
+  faint: "#B0B0A8", ink: "#1A1A1A", secondary: "#3D3D3D", muted: "#555555",
   grid: "#F0F0EB", bg: "#FAFAF7",
   redLight: "rgba(197,48,48,0.12)", greenLight: "rgba(46,125,50,0.08)",
   amberLight: "rgba(161,107,0,0.12)"

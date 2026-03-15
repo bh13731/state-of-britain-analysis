@@ -449,122 +449,6 @@ function computeRates(series) {
 }
 
 
-/* =========================================================
-   ANNOTATION COLLISION DETECTION & RESOLUTION
-   ========================================================= */
-function resolveOverlaps(g, bounds) {
-  var annotations = g.selectAll('.chart-annotation, .chart-annotation-bold, [class*="label"], [class*="annot"]');
-  if (annotations.empty()) return;
-
-  // Collect all data element bounding boxes (paths, rects, circles)
-  var dataBoxes = [];
-  g.selectAll('path:not([class*="leader"]), rect:not([fill="transparent"]):not([fill="none"]), circle').each(function() {
-    try { dataBoxes.push(this.getBBox()); } catch(e) {}
-  });
-
-  // Collect all text bounding boxes
-  var textNodes = [];
-  annotations.each(function() {
-    try {
-      var bbox = this.getBBox();
-      textNodes.push({ el: this, bbox: bbox, origX: +this.getAttribute('x'), origY: +this.getAttribute('y') });
-    } catch(e) {}
-  });
-
-  // Check each text against all others and against data elements
-  for (var i = 0; i < textNodes.length; i++) {
-    var a = textNodes[i];
-    var hasOverlap = false;
-
-    // Check against other text
-    for (var j = 0; j < textNodes.length; j++) {
-      if (i === j) continue;
-      if (boxesOverlap(a.bbox, textNodes[j].bbox)) { hasOverlap = true; break; }
-    }
-
-    // Check against data elements
-    if (!hasOverlap) {
-      for (var k = 0; k < dataBoxes.length; k++) {
-        if (boxesOverlap(a.bbox, dataBoxes[k])) { hasOverlap = true; break; }
-      }
-    }
-
-    // Check if clipped at right edge
-    if (a.bbox.x + a.bbox.width > bounds.width) hasOverlap = true;
-
-    if (hasOverlap) {
-      // Try positions: above, below, left, further above, further left
-      var offsets = [
-        { dx: 0, dy: -40 },
-        { dx: 0, dy: 40 },
-        { dx: -60, dy: -20 },
-        { dx: 0, dy: -70 },
-        { dx: -80, dy: 0 }
-      ];
-
-      var bestOffset = null;
-      var bestScore = Infinity;
-
-      for (var oi = 0; oi < offsets.length; oi++) {
-        var off = offsets[oi];
-        var testX = a.origX + off.dx;
-        var testY = a.origY + off.dy;
-        var testBox = { x: testX, y: testY - a.bbox.height, width: a.bbox.width, height: a.bbox.height };
-
-        // Check bounds
-        if (testBox.x < -10 || testBox.x + testBox.width > bounds.width + 20) continue;
-        if (testBox.y < -10 || testBox.y + testBox.height > bounds.height + 10) continue;
-
-        // Score = total overlap area with everything
-        var score = 0;
-        for (var sj = 0; sj < textNodes.length; sj++) {
-          if (i === sj) continue;
-          score += overlapArea(testBox, textNodes[sj].bbox);
-        }
-        for (var sk = 0; sk < dataBoxes.length; sk++) {
-          score += overlapArea(testBox, dataBoxes[sk]) * 0.5;
-        }
-
-        if (score < bestScore) {
-          bestScore = score;
-          bestOffset = off;
-        }
-      }
-
-      if (bestOffset && (bestOffset.dx !== 0 || bestOffset.dy !== 0)) {
-        var newX = a.origX + bestOffset.dx;
-        var newY = a.origY + bestOffset.dy;
-        d3.select(a.el).attr('x', newX).attr('y', newY);
-
-        // Update bbox for subsequent checks
-        try { a.bbox = a.el.getBBox(); } catch(e) {}
-
-        // Add leader line if moved significantly
-        if (Math.abs(bestOffset.dx) > 15 || Math.abs(bestOffset.dy) > 15) {
-          var existingLeader = g.select('[data-leader-for="' + i + '"]');
-          if (!existingLeader.empty()) existingLeader.remove();
-
-          g.append('line')
-            .attr('data-leader-for', i)
-            .attr('x1', a.origX).attr('y1', a.origY)
-            .attr('x2', newX).attr('y2', newY)
-            .attr('stroke', '#999').attr('stroke-width', 0.75)
-            .attr('stroke-dasharray', '3,2');
-        }
-      }
-    }
-  }
-}
-
-function boxesOverlap(a, b) {
-  return a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y;
-}
-
-function overlapArea(a, b) {
-  var dx = Math.min(a.x + a.width, b.x + b.width) - Math.max(a.x, b.x);
-  var dy = Math.min(a.y + a.height, b.y + b.height) - Math.max(a.y, b.y);
-  return (dx > 0 && dy > 0) ? dx * dy : 0;
-}
 
 /* =========================================================
    DATA LOAD & INIT
@@ -827,7 +711,6 @@ function buildHookChart() {
   }).on("mouseleave", function() {
     hoverLine2.style("opacity", 0); hoverDot2.style("opacity", 0); hideTooltip();
   });
-  resolveOverlaps(g, {width: dim.innerW, height: dim.innerH});
 }
 
 function updateHookChart(step) {
@@ -1111,7 +994,6 @@ function buildSectorsChart() {
   }).on("mouseleave", function() {
     hoverLine2.style("opacity", 0); hideTooltip();
   });
-  resolveOverlaps(g, {width: dim.innerW, height: dim.innerH});
 }
 
 function updateSectorsChart(step) {
@@ -1343,7 +1225,6 @@ function buildCumulativeChart() {
   }).on("mouseleave", function() {
     hoverLine2.style("opacity", 0); hideTooltip();
   });
-  resolveOverlaps(g, {width: dim.innerW, height: dim.innerH});
 }
 
 function updateCumulativeChart(step) {
@@ -1521,7 +1402,6 @@ function buildNowChart() {
         '<div class="tt-value">\u00a3100 then = \u00a3' + d3.format(".0f")(equiv) + ' now</div>', event);
     })
     .on("mouseleave", hideTooltip);
-  resolveOverlaps(g, {width: dim.innerW, height: dim.innerH});
 }
 
 function updateNowChart(step) {

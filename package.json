@@ -1,0 +1,23 @@
+{
+  "name": "state-of-britain-analysis",
+  "version": "1.0.0",
+  "description": "Analysis of UK government statistics using the [State of Britain](https://stateofbritain.uk/) open data API.",
+  "main": "index.js",
+  "scripts": {
+    "test": "node tests/mobile-responsiveness.test.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bh13731/state-of-britain-analysis.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/bh13731/state-of-britain-analysis/issues"
+  },
+  "homepage": "https://github.com/bh13731/state-of-britain-analysis#readme",
+  "devDependencies": {
+    "puppeteer": "^24.39.1"
+  }
+}

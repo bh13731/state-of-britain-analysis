@@ -99,7 +99,7 @@ body {
 
 .stories {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr));
   gap: 20px;
 }
 
@@ -228,10 +228,24 @@ body {
 .hub-footer a { color: #2563A0; text-decoration: none; }
 .hub-footer a:hover { text-decoration: underline; }
 
+/* ── Mobile ─────────────────────────────────────── */
 @media (max-width: 600px) {
-  .hub { padding: 48px 16px 80px; }
-  .stories { grid-template-columns: 1fr; }
-  .act-header h2 { font-size: 1.4rem; }
+  body { overflow-x: hidden; }
+  .hub { padding: 40px 16px 64px; }
+  .hub-header { margin-bottom: 36px; padding-bottom: 28px; }
+  .hub-header h1 { font-size: 1.85rem; }
+  .hub-header .deck { font-size: 1.05rem; }
+  .hub-header .read-guide { font-size: 0.85rem; }
+  .stories { grid-template-columns: 1fr; gap: 14px; }
+  .story-card { padding: 22px 18px; min-height: 44px; }
+  .story-card h3 { font-size: 1.25rem; }
+  .story-card .card-desc { font-size: 0.88rem; }
+  .story-card .card-cta { font-size: 0.85rem; min-height: 44px; display: inline-flex; align-items: center; }
+  .act { margin-bottom: 40px; }
+  .act-header h2 { font-size: 1.35rem; }
+  .act-header p { font-size: 0.92rem; }
+  .act-connector { margin: 28px 0; font-size: 0.8rem; }
+  .hub-footer { margin-top: 48px; font-size: 0.85rem; }
 }
 </style>
 </head>

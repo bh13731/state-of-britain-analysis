@@ -1094,34 +1094,36 @@ function buildMattersChart() {
   var d1990 = series.find(function(d) { return d.year === 1990; });
   var annPre = (Math.pow(d2008.gbpPerHour / d1990.gbpPerHour, 1 / 18) - 1) * 100;
   var midPreVal = (d1990.gbpPerHour + d2008.gbpPerHour) / 2;
-  // "Rapid growth" below the line in the pre-2008 section
+  // "Rapid growth" in clear white space BELOW the pre-2008 line
+  // Line is at ~£8-30 in this region; place annotations near bottom of chart
   nomGroup.append("text").attr("class", "chart-annotation-bold")
-    .attr("x", x(1995)).attr("y", y(midPreVal) + 40)
-    .attr("text-anchor", "middle").attr("fill", C.indigo)
+    .attr("x", x(1982)).attr("y", dim.innerH - 30)
+    .attr("text-anchor", "start").attr("fill", C.indigo)
     .text("Rapid growth");
   nomGroup.append("text").attr("class", "chart-annotation")
-    .attr("x", x(1995)).attr("y", y(midPreVal) + 56)
-    .attr("text-anchor", "middle").attr("fill", C.indigo)
+    .attr("x", x(1982)).attr("y", dim.innerH - 14)
+    .attr("text-anchor", "start").attr("fill", C.indigo)
     .text("+" + annPre.toFixed(1) + "% per year");
 
   var d2024 = series.find(function(d) { return d.year === 2024; });
   var annPost = (Math.pow(d2024.gbpPerHour / d2008.gbpPerHour, 1 / 16) - 1) * 100;
   var midPostVal = (d2008.gbpPerHour + d2024.gbpPerHour) / 2;
-  // "Stagnation" above the line in the post-2008 section
+  // "Stagnation" in clear white space ABOVE the post-2008 line
+  // Line is at ~£30-47; place annotations near top of chart
   nomGroup.append("text").attr("class", "chart-annotation-bold")
-    .attr("x", x(2016)).attr("y", y(midPostVal) - 40)
-    .attr("text-anchor", "middle").attr("fill", C.red)
+    .attr("x", x(2012)).attr("y", 20)
+    .attr("text-anchor", "start").attr("fill", C.red)
     .text("Stagnation");
   nomGroup.append("text").attr("class", "chart-annotation")
-    .attr("x", x(2016)).attr("y", y(midPostVal) - 24)
-    .attr("text-anchor", "middle").attr("fill", C.red)
+    .attr("x", x(2012)).attr("y", 36)
+    .attr("text-anchor", "start").attr("fill", C.red)
     .text("+" + annPost.toFixed(1) + "% per year");
 
   // End label
   var last = series[series.length - 1];
   nomGroup.append("text").attr("class", "chart-annotation-bold")
-    .attr("x", x(last.year) + 6).attr("y", y(last.gbpPerHour) + 4)
-    .attr("fill", C.indigo).text("\u00a3" + last.gbpPerHour.toFixed(0));
+    .attr("x", x(last.year)).attr("y", y(last.gbpPerHour) - 14)
+    .attr("text-anchor", "middle").attr("fill", C.indigo).text("\u00a3" + last.gbpPerHour.toFixed(0));
 
   // Hover
   var hoverRect = nomGroup.append("rect")

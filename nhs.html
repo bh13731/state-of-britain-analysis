@@ -207,6 +207,7 @@ body {
 .axis path, .axis line { stroke: none; }
 .grid line { stroke: #F0F0EB; stroke-width: 1; }
 .grid path { stroke: none; }
+.chart-container svg { overflow: visible; max-width: 100%; height: auto; }
 
 /* ---------- Responsive ---------- */
 @media (max-width: 768px) {
@@ -466,7 +467,7 @@ function chartDims(container) {
   const w = container.clientWidth;
   const mob = window.innerWidth < 768;
   const h = mob ? Math.max(320, Math.min(440, window.innerHeight * 0.52)) : Math.max(500, Math.min(600, window.innerHeight * 0.65));
-  const m = { top: 36, right: 76, bottom: 44, left: 60 };
+  const m = { top: 36, right: 100, bottom: 44, left: 60 };
   return { width: w, height: h, margin: m, innerW: w - m.left - m.right, innerH: h - m.top - m.bottom };
 }
 

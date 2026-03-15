@@ -217,6 +217,7 @@ body {
 .axis path, .axis line { stroke: none; }
 .grid line { stroke: #F0F0EB; stroke-width: 1; }
 .grid path { stroke: none; }
+.chart-container svg { overflow: visible; max-width: 100%; height: auto; }
 
 /* ---------- Responsive ---------- */
 @media (max-width: 768px) {
@@ -440,7 +441,7 @@ function isMobile() { return window.innerWidth < MOBILE; }
 function chartDims(container) {
   const w = container.clientWidth;
   const h = Math.max(500, Math.min(600, window.innerHeight * 0.65));
-  const m = { top: 30, right: 60, bottom: 40, left: 62 };
+  const m = { top: 30, right: 100, bottom: 40, left: 62 };
   return { width: w, height: h, margin: m, innerW: w - m.left - m.right, innerH: h - m.top - m.bottom };
 }
 
@@ -1279,14 +1280,23 @@ function buildPrisonChart() {
   popGroup.append("path").datum(prisonData)
     .attr("d", popLine).attr("fill", "none").attr("stroke", C.red).attr("stroke-width", 2.5);
 
-  // Direct labels at end
+  // Direct labels at end with collision avoidance
   var lastP = prisonData[prisonData.length - 1];
-  popGroup.append("text").attr("class", "chart-annotation-bold")
-    .attr("x", xScale(lastP.year) + 6).attr("y", yScale(lastP.population) + 4)
-    .attr("fill", C.red).text("Population " + d3.format(".1f")(lastP.population) + "k");
-  popGroup.append("text").attr("class", "chart-annotation-bold")
-    .attr("x", xScale(lastP.year) + 6).attr("y", yScale(lastP.capacity) + 4)
-    .attr("fill", C.muted).text("Capacity " + d3.format(".1f")(lastP.capacity) + "k");
+  var prisonLabels = [
+    { rawY: yScale(lastP.population) + 4, color: C.red, text: "Population " + d3.format(".1f")(lastP.population) + "k" },
+    { rawY: yScale(lastP.capacity) + 4, color: C.muted, text: "Capacity " + d3.format(".1f")(lastP.capacity) + "k" }
+  ];
+  prisonLabels.sort(function(a, b) { return a.rawY - b.rawY; });
+  for (var pi = 1; pi < prisonLabels.length; pi++) {
+    if (prisonLabels[pi].rawY - prisonLabels[pi - 1].rawY < 18) {
+      prisonLabels[pi].rawY = prisonLabels[pi - 1].rawY + 18;
+    }
+  }
+  prisonLabels.forEach(function(l) {
+    popGroup.append("text").attr("class", "chart-annotation-bold")
+      .attr("x", xScale(lastP.year) + 6).attr("y", l.rawY)
+      .attr("fill", l.color).text(l.text);
+  });
 
   // COVID dip annotation
   var covidD = prisonData.find(function(d) { return d.year === 2021; });

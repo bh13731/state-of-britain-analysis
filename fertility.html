@@ -204,6 +204,7 @@ body {
 .axis path, .axis line { stroke: none; }
 .grid line { stroke: #F0F0EB; stroke-width: 1; }
 .grid path { stroke: none; }
+.chart-container svg { overflow: visible; max-width: 100%; height: auto; }
 
 /* ---------- Responsive ---------- */
 @media (max-width: 768px) {
@@ -824,6 +825,7 @@ function buildOrderChart() {
     { key: "age3", label: "3rd child", color: C.order3 }
   ];
 
+  var lastA = ageData[ageData.length - 1];
   ageKeys.forEach(function(ak) {
     var lineGen = d3.line()
       .x(function(d) { return xAge(d.year); })
@@ -833,13 +835,23 @@ function buildOrderChart() {
       .attr("d", lineGen).attr("fill", "none")
       .attr("stroke", ak.color).attr("stroke-width", ak.key === "ageAll" ? 3 : 2)
       .attr("stroke-dasharray", ak.key === "ageAll" ? null : "6,3");
+  });
 
-    // Direct label at end
-    var lastA = ageData[ageData.length - 1];
+  // Direct labels at end with collision avoidance
+  var ageEndLabels = ageKeys.map(function(ak) {
+    return { rawY: yAge(lastA[ak.key]) + 4, color: ak.color, text: ak.label + ": " + lastA[ak.key].toFixed(1) };
+  });
+  ageEndLabels.sort(function(a, b) { return a.rawY - b.rawY; });
+  for (var ai = 1; ai < ageEndLabels.length; ai++) {
+    if (ageEndLabels[ai].rawY - ageEndLabels[ai - 1].rawY < 18) {
+      ageEndLabels[ai].rawY = ageEndLabels[ai - 1].rawY + 18;
+    }
+  }
+  ageEndLabels.forEach(function(l) {
     ageGroup.append("text").attr("class", "chart-annotation-bold")
-      .attr("x", dim.innerW + 4).attr("y", yAge(lastA[ak.key]) + 4)
-      .attr("fill", ak.color).attr("font-size", "13px")
-      .text(ak.label + ": " + lastA[ak.key].toFixed(1));
+      .attr("x", dim.innerW + 4).attr("y", l.rawY)
+      .attr("fill", l.color).attr("font-size", "13px")
+      .text(l.text);
   });
 
   // Highlight first-birth age shift
@@ -863,9 +875,8 @@ function buildOrderChart() {
     .call(d3.axisLeft(yAge).ticks(7).tickFormat(function(d) { return d; }).tickSize(0))
     .call(function(g) { g.select(".domain").remove(); });
   ageGroup.append("text").attr("class", "chart-annotation")
-    .attr("transform", "rotate(-90)")
-    .attr("x", -dim.innerH / 2).attr("y", -42)
-    .attr("text-anchor", "middle").attr("fill", C.muted)
+    .attr("x", 0).attr("y", -10)
+    .attr("text-anchor", "start").attr("fill", C.muted)
     .text("Mean age of mother");
 
   // Hover
@@ -980,9 +991,8 @@ function buildBirthsChart() {
     .call(d3.axisLeft(yB).ticks(6).tickFormat(function(d) { return d + "k"; }).tickSize(0))
     .call(function(g) { g.select(".domain").remove(); });
   barGroup.append("text").attr("class", "chart-annotation")
-    .attr("transform", "rotate(-90)")
-    .attr("x", -dim.innerH / 2).attr("y", -42)
-    .attr("text-anchor", "middle").attr("fill", C.muted)
+    .attr("x", 0).attr("y", -10)
+    .attr("text-anchor", "start").attr("fill", C.muted)
     .text("Live births (thousands)");
 
   // Hover
@@ -1150,9 +1160,8 @@ function buildFamiliesChart() {
     .call(d3.axisLeft(yF).ticks(6).tickFormat(function(d) { return d3.format(",")(d / 1000) + "m"; }).tickSize(0))
     .call(function(g) { g.select(".domain").remove(); });
   famGroup.append("text").attr("class", "chart-annotation")
-    .attr("transform", "rotate(-90)")
-    .attr("x", -dim.innerH / 2).attr("y", -42)
-    .attr("text-anchor", "middle").attr("fill", C.muted)
+    .attr("x", 0).attr("y", -10)
+    .attr("text-anchor", "start").attr("fill", C.muted)
     .text("Families (millions)");
 
   // Hover
@@ -1226,9 +1235,8 @@ function buildFamiliesChart() {
     .call(d3.axisLeft(yH).ticks(7).tickFormat(function(d) { return d.toFixed(1); }).tickSize(0))
     .call(function(g) { g.select(".domain").remove(); });
   hhGroup.append("text").attr("class", "chart-annotation")
-    .attr("transform", "rotate(-90)")
-    .attr("x", -dim.innerH / 2).attr("y", -42)
-    .attr("text-anchor", "middle").attr("fill", C.muted)
+    .attr("x", 0).attr("y", -10)
+    .attr("text-anchor", "start").attr("fill", C.muted)
     .text("Average persons per household");
 
   // Hover
@@ -1341,14 +1349,12 @@ function buildWhyChart() {
     .selectAll("text").attr("fill", C.warm);
 
   depGroup.append("text").attr("class", "chart-annotation")
-    .attr("transform", "rotate(-90)")
-    .attr("x", -dim.innerH / 2).attr("y", -42)
-    .attr("text-anchor", "middle").attr("fill", C.rose)
+    .attr("x", 0).attr("y", -10)
+    .attr("text-anchor", "start").attr("fill", C.rose)
     .text("Total fertility rate");
   depGroup.append("text").attr("class", "chart-annotation")
-    .attr("transform", "rotate(90)")
-    .attr("x", dim.innerH / 2).attr("y", -(dim.innerW + 48))
-    .attr("text-anchor", "middle").attr("fill", C.warm)
+    .attr("x", dim.innerW).attr("y", -10)
+    .attr("text-anchor", "end").attr("fill", C.warm)
     .text("Births (thousands)");
 
   // Dual-axis caveat

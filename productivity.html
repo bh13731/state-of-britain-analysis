@@ -205,6 +205,7 @@ body {
 .axis path, .axis line { stroke: none; }
 .grid line { stroke: #F0F0EB; stroke-width: 1; }
 .grid path { stroke: none; }
+.chart-container svg { overflow: visible; max-width: 100%; height: auto; }
 
 /* ---------- Responsive ---------- */
 @media (max-width: 768px) {
@@ -525,11 +526,10 @@ function buildHookChart() {
     .call(d3.axisLeft(y).ticks(6).tickSize(0).tickFormat(function(d) { return d; }))
     .call(function(g) { g.select(".domain").remove(); });
 
-  // Y-axis label
+  // Y-axis label (horizontal, above axis)
   basicGroup.append("text").attr("class", "chart-annotation")
-    .attr("transform", "rotate(-90)")
-    .attr("x", -dim.innerH / 2).attr("y", -44)
-    .attr("text-anchor", "middle").attr("fill", C.muted)
+    .attr("x", 0).attr("y", -10)
+    .attr("text-anchor", "start").attr("fill", C.muted)
     .text("Output per hour (index, 2023=100)");
 
   // Main line
@@ -706,14 +706,14 @@ function buildInternationalChart() {
     .call(d3.axisLeft(y).ticks(6).tickSize(0).tickFormat(function(d) { return "$" + d; }))
     .call(function(g) { g.select(".domain").remove(); });
 
-  // Y label
+  // Y label (horizontal, above axis)
   lineGroup.append("text").attr("class", "chart-annotation")
-    .attr("transform", "rotate(-90)")
-    .attr("x", -dim.innerH / 2).attr("y", -44)
-    .attr("text-anchor", "middle").attr("fill", C.muted)
+    .attr("x", 0).attr("y", -10)
+    .attr("text-anchor", "start").attr("fill", C.muted)
     .text("GDP per hour (USD, PPP)");
 
   // Lines
+  var intlEndLabels = [];
   countries.forEach(function(c) {
     var lineData = ts.filter(function(d) { return d[c.key] != null; });
     var lineGen = d3.line()
@@ -728,16 +728,31 @@ function buildInternationalChart() {
       .attr("stroke-dasharray", c.key === "OECD" ? "6,4" : "none")
       .attr("opacity", c.key === "OECD" ? 0.7 : 1);
 
-    // End label
+    // Collect end label
     var lastVal = lineData[lineData.length - 1];
     if (lastVal) {
-      var labelY = y(lastVal[c.key]);
-      lineGroup.append("text").attr("class", "chart-annotation-bold")
-        .attr("x", x(lastVal.year) + 6).attr("y", labelY + 4)
-        .attr("fill", c.color)
-        .attr("font-size", "13px")
-        .text(c.label === "United States" ? "US" : c.label === "United Kingdom" ? "UK" : c.label === "OECD Average" ? "OECD" : c.key);
+      intlEndLabels.push({
+        rawY: y(lastVal[c.key]) + 4,
+        xPos: x(lastVal.year) + 6,
+        color: c.color,
+        text: c.label === "United States" ? "US" : c.label === "United Kingdom" ? "UK" : c.label === "OECD Average" ? "OECD" : c.key
+      });
     }
+  });
+
+  // Collision avoidance for end labels
+  intlEndLabels.sort(function(a, b) { return a.rawY - b.rawY; });
+  for (var ili = 1; ili < intlEndLabels.length; ili++) {
+    if (intlEndLabels[ili].rawY - intlEndLabels[ili - 1].rawY < 18) {
+      intlEndLabels[ili].rawY = intlEndLabels[ili - 1].rawY + 18;
+    }
+  }
+  intlEndLabels.forEach(function(l) {
+    lineGroup.append("text").attr("class", "chart-annotation-bold")
+      .attr("x", l.xPos).attr("y", l.rawY)
+      .attr("fill", l.color)
+      .attr("font-size", "13px")
+      .text(l.text);
   });
 
   // Hover
@@ -1059,11 +1074,10 @@ function buildMattersChart() {
     .call(d3.axisLeft(y).ticks(6).tickSize(0).tickFormat(function(d) { return "\u00a3" + d; }))
     .call(function(g) { g.select(".domain").remove(); });
 
-  // Y label
+  // Y label (horizontal, above axis)
   nomGroup.append("text").attr("class", "chart-annotation")
-    .attr("transform", "rotate(-90)")
-    .attr("x", -dim.innerH / 2).attr("y", -44)
-    .attr("text-anchor", "middle").attr("fill", C.muted)
+    .attr("x", 0).attr("y", -10)
+    .attr("text-anchor", "start").attr("fill", C.muted)
     .text("Output per hour (\u00a3)");
 
   // Line

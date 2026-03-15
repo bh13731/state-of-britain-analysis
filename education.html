@@ -206,6 +206,7 @@ body {
 .axis path, .axis line { stroke: none; }
 .grid line { stroke: #F0F0EB; stroke-width: 1; }
 .grid path { stroke: none; }
+.chart-container svg { overflow: visible; max-width: 100%; height: auto; }
 
 /* ---------- Responsive ---------- */
 @media (max-width: 768px) {
@@ -608,11 +609,10 @@ function buildSpendingChart() {
     .call(d3.axisLeft(y).ticks(6).tickFormat(d => "\u00a3" + d3.format(",")(d)).tickSize(0))
     .call(g => g.select(".domain").remove());
 
-  // Y-axis title
+  // Y-axis title (horizontal, above axis)
   mainGroup.append("text").attr("class", "chart-annotation")
-    .attr("transform", "rotate(-90)")
-    .attr("x", -dim.innerH / 2).attr("y", -46)
-    .attr("text-anchor", "middle").attr("fill", C.muted)
+    .attr("x", 0).attr("y", -10)
+    .attr("text-anchor", "start").attr("fill", C.muted)
     .text("Per-pupil spending (real terms)");
 
   // Axis break indicator (y-axis does not start at zero)
@@ -672,7 +672,7 @@ function buildIntlChart() {
   const container = document.getElementById("chart-intl");
   const dim = chartDims(container);
   const h = Math.max(540, dim.height);
-  const m = { top: 30, right: 60, bottom: 40, left: isMobile() ? 90 : 120 };
+  const m = { top: 30, right: 100, bottom: 40, left: isMobile() ? 90 : 120 };
   const innerW = dim.width - m.left - m.right;
   const innerH = h - m.top - m.bottom;
 
@@ -941,11 +941,10 @@ function buildGcseChart() {
     .call(d3.axisLeft(y).ticks(6).tickFormat(d => d + "%").tickSize(0))
     .call(g => g.select(".domain").remove());
 
-  // Y-axis title
+  // Y-axis title (horizontal, above axis)
   mainGroup.append("text").attr("class", "chart-annotation")
-    .attr("transform", "rotate(-90)")
-    .attr("x", -dim.innerH / 2).attr("y", -46)
-    .attr("text-anchor", "middle").attr("fill", C.muted)
+    .attr("x", 0).attr("y", -10)
+    .attr("text-anchor", "start").attr("fill", C.muted)
     .text("% achieving threshold");
 }
 
@@ -1026,9 +1025,8 @@ function buildTeachersChart() {
     .call(g => g.select(".domain").remove());
 
   vacGroup.append("text").attr("class", "chart-annotation")
-    .attr("transform", "rotate(-90)")
-    .attr("x", -dim.innerH / 2).attr("y", -42)
-    .attr("text-anchor", "middle").attr("fill", C.muted)
+    .attr("x", 0).attr("y", -10)
+    .attr("text-anchor", "start").attr("fill", C.muted)
     .text("Teacher vacancy rate");
 
   // --- PUPIL-TEACHER RATIO (step 1, hidden) ---
@@ -1082,9 +1080,8 @@ function buildTeachersChart() {
     .call(g => g.select(".domain").remove());
 
   ratioGroup.append("text").attr("class", "chart-annotation")
-    .attr("transform", "rotate(-90)")
-    .attr("x", -dim.innerH / 2).attr("y", -42)
-    .attr("text-anchor", "middle").attr("fill", C.muted)
+    .attr("x", 0).attr("y", -10)
+    .attr("text-anchor", "start").attr("fill", C.muted)
     .text("Pupil-teacher ratio");
 
   // Axis break indicator (y-axis does not start at zero)
@@ -1186,9 +1183,8 @@ function buildHeChart() {
     .call(g => g.select(".domain").remove());
 
   partGroup.append("text").attr("class", "chart-annotation")
-    .attr("transform", "rotate(-90)")
-    .attr("x", -dim.innerH / 2).attr("y", -42)
-    .attr("text-anchor", "middle").attr("fill", C.muted)
+    .attr("x", 0).attr("y", -10)
+    .attr("text-anchor", "start").attr("fill", C.muted)
     .text("HE participation rate");
 
   // Axis break indicator (y-axis does not start at zero)
@@ -1289,9 +1285,8 @@ function buildHeChart() {
     .call(g => g.select(".domain").remove());
 
   degGroup.append("text").attr("class", "chart-annotation")
-    .attr("transform", "rotate(-90)")
-    .attr("x", -dim.innerH / 2).attr("y", -42)
-    .attr("text-anchor", "middle").attr("fill", C.muted)
+    .attr("x", 0).attr("y", -10)
+    .attr("text-anchor", "start").attr("fill", C.muted)
     .text("Degree classification (%)");
 }
 

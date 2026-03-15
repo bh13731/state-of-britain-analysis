@@ -407,7 +407,7 @@ function isMobile() { return window.innerWidth < MOBILE; }
 function chartDims(container) {
   const w = container.clientWidth;
   const h = Math.max(500, Math.min(600, window.innerHeight * 0.65));
-  const m = { top: 30, right: 60, bottom: 48, left: 55 };
+  const m = { top: 30, right: 100, bottom: 48, left: 55 };
   return { width: w, height: h, margin: m, innerW: w - m.left - m.right, innerH: h - m.top - m.bottom };
 }
 

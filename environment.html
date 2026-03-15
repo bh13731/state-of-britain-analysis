@@ -205,6 +205,7 @@ body {
 .axis path, .axis line { stroke: none; }
 .grid line { stroke: #E4E4DE; stroke-width: 1; }
 .grid path { stroke: none; }
+.chart-container svg { overflow: visible; max-width: 100%; height: auto; }
 
 /* ---------- Responsive ---------- */
 @media (max-width: 768px) {
@@ -470,7 +471,7 @@ function isMobile() { return window.innerWidth < MOBILE; }
 function chartDims(container) {
   const w = container.clientWidth;
   const h = Math.max(500, Math.min(600, window.innerHeight * 0.65));
-  const m = { top: 30, right: 70, bottom: 40, left: 62 };
+  const m = { top: 30, right: 100, bottom: 40, left: 62 };
   return { width: w, height: h, margin: m, innerW: w - m.left - m.right, innerH: h - m.top - m.bottom };
 }
 
@@ -747,18 +748,28 @@ function buildSectorsChart() {
     .attr("opacity", 1)
     .attr("data-key", d => d.key);
 
-  /* Direct labels at the right edge */
+  /* Direct labels at the right edge with collision avoidance */
   const lastYear = emissions[emissions.length - 1];
+  const stackEndLabels = [];
   series.forEach(s => {
     const lastPt = s[s.length - 1];
     const midY = (y(lastPt[0]) + y(lastPt[1])) / 2;
     const thickness = y(lastPt[0]) - y(lastPt[1]);
     if (thickness > 16) {
-      g.append("text").attr("class", "chart-annotation")
-        .attr("x", dim.innerW + 6).attr("y", midY + 4)
-        .attr("fill", stackColors[s.key]).attr("font-weight", 600).attr("font-size", "12px")
-        .text(stackLabels[s.key]);
+      stackEndLabels.push({ rawY: midY + 4, color: stackColors[s.key], text: stackLabels[s.key] });
     }
+  });
+  stackEndLabels.sort((a, b) => a.rawY - b.rawY);
+  for (let si = 1; si < stackEndLabels.length; si++) {
+    if (stackEndLabels[si].rawY - stackEndLabels[si - 1].rawY < 16) {
+      stackEndLabels[si].rawY = stackEndLabels[si - 1].rawY + 16;
+    }
+  }
+  stackEndLabels.forEach(l => {
+    g.append("text").attr("class", "chart-annotation")
+      .attr("x", dim.innerW + 6).attr("y", l.rawY)
+      .attr("fill", l.color).attr("font-weight", 600).attr("font-size", "12px")
+      .text(l.text);
   });
 
   /* Hover */

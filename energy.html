@@ -204,6 +204,7 @@ body {
 .axis path, .axis line { stroke: none; }
 .grid line { stroke: #F0F0EB; stroke-width: 1; }
 .grid path { stroke: none; }
+.chart-container svg { overflow: visible; max-width: 100%; height: auto; }
 
 /* ---------- Responsive ---------- */
 @media (max-width: 768px) {
@@ -460,7 +461,7 @@ function isMobile() { return window.innerWidth < MOBILE; }
 function chartDims(container) {
   const w = container.clientWidth;
   const h = Math.max(500, Math.min(600, window.innerHeight * 0.65));
-  const m = { top: 36, right: 90, bottom: 40, left: 56 };
+  const m = { top: 36, right: 110, bottom: 40, left: 56 };
   return { width: w, height: h, margin: m, innerW: w - m.left - m.right, innerH: h - m.top - m.bottom };
 }
 
@@ -813,13 +814,22 @@ function buildRenewablesChart() {
   var nucLine = d3.line().x(function(d) { return x(d.year); }).y(function(d) { return y(d.nuclear / 1000); }).curve(d3.curveMonotoneX);
   view1.append("path").datum(elec).attr("d", nucLine).attr("fill", "none").attr("stroke", C.nuclear).attr("stroke-width", 2).attr("stroke-dasharray", "6,3");
 
-  // Direct labels at end
-  view1.append("text").attr("class", "chart-annotation-bold")
-    .attr("x", x(2024) + 8).attr("y", y((last.convThermal + last.ccgt) / 1000) + 4).attr("fill", C.grey)
-    .text("Fossil " + Math.round((last.convThermal + last.ccgt) / 1000) + " TWh");
-  view1.append("text").attr("class", "chart-annotation-bold")
-    .attr("x", x(2024) + 8).attr("y", y(last.nuclear / 1000) + 4).attr("fill", C.nuclear)
-    .text("Nuclear " + Math.round(last.nuclear / 1000) + " TWh");
+  // Direct labels at end with collision avoidance
+  var elecEndLabels = [
+    { rawY: y((last.convThermal + last.ccgt) / 1000) + 4, color: C.grey, text: "Fossil " + Math.round((last.convThermal + last.ccgt) / 1000) + " TWh" },
+    { rawY: y(last.nuclear / 1000) + 4, color: C.nuclear, text: "Nuclear " + Math.round(last.nuclear / 1000) + " TWh" }
+  ];
+  elecEndLabels.sort(function(a, b) { return a.rawY - b.rawY; });
+  for (var eli = 1; eli < elecEndLabels.length; eli++) {
+    if (elecEndLabels[eli].rawY - elecEndLabels[eli - 1].rawY < 18) {
+      elecEndLabels[eli].rawY = elecEndLabels[eli - 1].rawY + 18;
+    }
+  }
+  elecEndLabels.forEach(function(l) {
+    view1.append("text").attr("class", "chart-annotation-bold")
+      .attr("x", x(2024) + 8).attr("y", l.rawY).attr("fill", l.color)
+      .text(l.text);
+  });
 
   // Crossover annotation
   var crossYear = 2020;
@@ -1206,17 +1216,24 @@ function buildHonestChart() {
   var elecLine = d3.line().x(function(d) { return x(d.year); }).y(function(d) { return y(d.domesticElectricity / 1000); }).curve(d3.curveMonotoneX);
   view0.append("path").datum(exp).attr("d", elecLine).attr("fill", "none").attr("stroke", C.amber).attr("stroke-width", 2);
 
-  // Direct labels
+  // Direct labels with collision avoidance
   var last = exp[exp.length - 1];
-  view0.append("text").attr("class", "chart-annotation-bold")
-    .attr("x", x(2024) + 8).attr("y", y(last.domesticTotal / 1000) + 4).attr("fill", C.red)
-    .text("Total \u00a3" + Math.round(last.domesticTotal / 1000) + "bn");
-  view0.append("text").attr("class", "chart-annotation-bold")
-    .attr("x", x(2024) + 8).attr("y", y(last.domesticElectricity / 1000) + 4).attr("fill", C.amber)
-    .text("Electricity \u00a3" + Math.round(last.domesticElectricity / 1000) + "bn");
-  view0.append("text").attr("class", "chart-annotation-bold")
-    .attr("x", x(2024) + 8).attr("y", y(last.domesticGas / 1000) + 4).attr("fill", C.gas)
-    .text("Gas \u00a3" + Math.round(last.domesticGas / 1000) + "bn");
+  var expLabels = [
+    { rawY: y(last.domesticTotal / 1000) + 4, color: C.red, text: "Total \u00a3" + Math.round(last.domesticTotal / 1000) + "bn" },
+    { rawY: y(last.domesticElectricity / 1000) + 4, color: C.amber, text: "Electricity \u00a3" + Math.round(last.domesticElectricity / 1000) + "bn" },
+    { rawY: y(last.domesticGas / 1000) + 4, color: C.gas, text: "Gas \u00a3" + Math.round(last.domesticGas / 1000) + "bn" }
+  ];
+  expLabels.sort(function(a, b) { return a.rawY - b.rawY; });
+  for (var ei = 1; ei < expLabels.length; ei++) {
+    if (expLabels[ei].rawY - expLabels[ei - 1].rawY < 18) {
+      expLabels[ei].rawY = expLabels[ei - 1].rawY + 18;
+    }
+  }
+  expLabels.forEach(function(l) {
+    view0.append("text").attr("class", "chart-annotation-bold")
+      .attr("x", x(2024) + 8).attr("y", l.rawY).attr("fill", l.color)
+      .text(l.text);
+  });
 
   // 2022 crisis annotation
   var d2022 = exp.find(function(d) { return d.year === 2022; });

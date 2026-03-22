@@ -3,14 +3,39 @@
   "version": "1.0.0",
   "description": "Analysis of UK government statistics using the [State of Britain](https://stateofbritain.uk/) open data API.",
   "main": "index.js",
+  "type": "module",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
-    "test": "node tests/mobile-responsiveness.test.js"
+    "start": "npx http-server . -p 8000 -c-1 --cors",
+    "dev": "npx http-server . -p 8000 -c-1 --cors -o",
+    "build": "node scripts/build.js",
+    "serve:dist": "npx http-server dist -p 8000 -c-1 --cors",
+    "lint": "npm run lint:js && npm run lint:css",
+    "lint:js": "npx eslint shared/ tests/ pages/js/",
+    "lint:css": "npx stylelint \"shared/**/*.css\" \"pages/**/*.css\"",
+    "test": "node tests/utils.test.cjs && node tests/security.test.cjs",
+    "test:build": "node tests/build.test.cjs",
+    "test:mobile": "node tests/mobile-responsiveness.test.cjs",
+    "test:e2e": "npx playwright test",
+    "test:e2e:headed": "npx playwright test --headed",
+    "test:all": "npm run test && npm run test:build && npm run test:mobile",
+    "validate": "npm run lint && npm run test",
+    "precommit": "npm run lint && npm run test",
+    "clean": "rm -rf dist"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/bh13731/state-of-britain-analysis.git"
   },
-  "keywords": [],
+  "keywords": [
+    "uk",
+    "data-journalism",
+    "d3",
+    "scrollytelling",
+    "government-data"
+  ],
   "author": "",
   "license": "ISC",
   "bugs": {
@@ -18,6 +43,14 @@
   },
   "homepage": "https://github.com/bh13731/state-of-britain-analysis#readme",
   "devDependencies": {
-    "puppeteer": "^24.39.1"
+    "@playwright/test": "^1.58.2",
+    "clean-css-cli": "^5.6.3",
+    "esbuild": "^0.27.4",
+    "eslint": "^10.1.0",
+    "html-validate": "^10.11.2",
+    "http-server": "^14.1.1",
+    "puppeteer": "^24.39.1",
+    "stylelint": "^17.5.0",
+    "stylelint-config-standard": "^40.0.0"
   }
 }

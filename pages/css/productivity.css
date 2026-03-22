@@ -1,0 +1,6 @@
+/* productivity.html — page-specific styles */
+/* Page-specific styles */
+#loading-screen .spinner { border-top-color: #4338CA; }
+.site-header .kicker { color: #4338CA; }
+.site-footer a { color: #4338CA; }
+.big-number.indigo { color: #4338CA; }

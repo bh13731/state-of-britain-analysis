@@ -1,0 +1,17 @@
+/* justice.html — page-specific styles */
+/* Page-specific styles */
+#loading-screen .spinner { border-top-color: #334155; }
+.site-header .kicker { color: #334155; }
+.site-footer a { color: #334155; }
+.big-number.slate { color: #334155; }
+.chart-title {
+  font-size: 15px;
+  font-weight: 600;
+  fill: #1A1A1A;
+  font-family: 'Inter', sans-serif;
+}
+.axis-break {
+  font-size: 18px;
+  fill: #999;
+  font-family: 'Inter', sans-serif;
+}

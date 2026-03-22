@@ -1,11 +1,24 @@
 """
 State of Britain — Public Spending Visualisations
-Fetches spending.json and produces a set of publication-quality charts.
+
+Fetches spending.json from the State of Britain API and produces a set of
+publication-quality charts saved as PNG files in the charts/ directory.
+
+Usage:
+    python spending_charts.py
+
+Dependencies:
+    matplotlib, pandas, numpy, requests (see requirements.txt)
 """
 
+from __future__ import annotations
+
 import json
+from typing import Any
+
 import requests
 import matplotlib.pyplot as plt
+import matplotlib.figure as mfigure
 import matplotlib.ticker as mticker
 import matplotlib.patheffects as pe
 import numpy as np
@@ -65,7 +78,13 @@ ACCENT_COLOURS = [BLUE, GREEN, RED, ORANGE, PURPLE, CYAN, PINK,
                   "#7EE787", "#FFBF69", "#FF7B72"]
 
 
-def save(fig, name):
+def save(fig: mfigure.Figure, name: str) -> None:
+    """Save a matplotlib figure to the charts/ directory and close it.
+
+    Args:
+        fig: The matplotlib figure to save.
+        name: Filename (without extension) for the output PNG.
+    """
     fig.savefig(f"charts/{name}.png")
     plt.close(fig)
     print(f"  ✓ charts/{name}.png")

@@ -1,9 +1,11 @@
+// @ts-check
 /**
- * State of Britain — Shared Utilities
- * Common JavaScript functions used across all story pages.
- *
+ * @file State of Britain — Shared Utilities
+ * @description Common JavaScript functions used across all story pages.
  * Depends on D3.js being loaded first.
- * Each page loads this script before its own inline <script> block.
+ * Each page loads this script before its own page-specific script.
+ * @author State of Britain
+ * @license ISC
  */
 
 /* =========================================================
@@ -51,7 +53,10 @@ function sobShowTooltip(html, event) {
   ttEl.style.top = y + "px";
 }
 
-/** Hide the tooltip */
+/**
+ * Hide the tooltip.
+ * @returns {void}
+ */
 function sobHideTooltip() {
   var ttEl = document.getElementById("tooltip");
   if (ttEl) ttEl.classList.remove("visible");
@@ -67,9 +72,27 @@ function sobIsMobile() {
 }
 
 /**
+ * @typedef {Object} ChartMargin
+ * @property {number} top - top margin in px
+ * @property {number} right - right margin in px
+ * @property {number} bottom - bottom margin in px
+ * @property {number} left - left margin in px
+ */
+
+/**
+ * @typedef {Object} ChartDimensions
+ * @property {number} width - total width in px
+ * @property {number} height - total height in px
+ * @property {ChartMargin} margin - margin object
+ * @property {number} innerW - inner width (width - left - right margins)
+ * @property {number} innerH - inner height (height - top - bottom margins)
+ */
+
+/**
  * Calculate chart dimensions based on container width and viewport.
+ * Returns responsive dimensions suitable for D3 chart rendering.
  * @param {HTMLElement} container - the chart container element
- * @returns {{ width: number, height: number, margin: object, innerW: number, innerH: number }}
+ * @returns {ChartDimensions}
  */
 function sobChartDims(container) {
   var w = container.clientWidth;
@@ -160,6 +183,7 @@ function sobDebounce(fn, ms) {
 /**
  * Standard data loading error handler — hides loading screen, shows error.
  * @param {Error} err - the error that occurred
+ * @returns {void}
  */
 function sobShowError(err) {
   document.getElementById("loading-screen").style.display = "none";
@@ -171,6 +195,7 @@ function sobShowError(err) {
 
 /**
  * Standard post-load reveal — hides loading screen, shows header/main/footer.
+ * @returns {void}
  */
 function sobRevealContent() {
   document.getElementById("loading-screen").classList.add("hidden");

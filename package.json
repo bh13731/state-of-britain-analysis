@@ -26,7 +26,13 @@
     "type": "git",
     "url": "git+https://github.com/bh13731/state-of-britain-analysis.git"
   },
-  "keywords": [],
+  "keywords": [
+    "uk",
+    "data-journalism",
+    "d3",
+    "scrollytelling",
+    "government-data"
+  ],
   "author": "",
   "license": "ISC",
   "bugs": {

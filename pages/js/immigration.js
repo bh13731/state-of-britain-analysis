@@ -451,7 +451,7 @@ function buildBrexitChart() {
       sobShowTooltip(`<div class="tt-label">${d.type} visas</div>
         <div class="tt-value">${fmtK(d.value)} (${Math.round(d.value / totalVisas * 100)}% of total)</div>`, event);
     })
-    .on("mouseleave", hideTooltip);
+    .on("mouseleave", sobHideTooltip);
 
   // Labels — type name inside bar (white on colour) or suppressed if bar too short (value label handles it)
   visaGroup.selectAll(".visa-name").data(visas).enter()
@@ -747,7 +747,7 @@ function buildDemographicsChart() {
         <div class="tt-value" style="color:${C.orange}">Net migration: ${fmtK(d.netMigration)}</div>
         <div class="tt-value" style="color:${d.naturalChange >= 0 ? C.blue : C.red}">Natural change: ${d.naturalChange >= 0 ? "+" : ""}${fmtK(d.naturalChange)}</div>`, event);
     })
-    .on("mouseleave", hideTooltip);
+    .on("mouseleave", sobHideTooltip);
 
   // Natural change bars
   popGroup.selectAll(".bar-nat").data(popComp).enter()
@@ -762,7 +762,7 @@ function buildDemographicsChart() {
         <div class="tt-value" style="color:${C.orange}">Net migration: ${fmtK(d.netMigration)}</div>
         <div class="tt-value" style="color:${d.naturalChange >= 0 ? C.blue : C.red}">Natural change: ${d.naturalChange >= 0 ? "+" : ""}${fmtK(d.naturalChange)}</div>`, event);
     })
-    .on("mouseleave", hideTooltip);
+    .on("mouseleave", sobHideTooltip);
 
   // Axes
   popGroup.append("g").attr("class", "axis x-axis")

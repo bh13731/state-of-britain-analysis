@@ -613,7 +613,7 @@ function buildEvChart() {
         <div class="tt-value" style="color:${C.teal}">BEV: ${d3.format(",")(d.bev)}</div>
         <div class="tt-value" style="color:${C.amber}">PHEV: ${d3.format(",")(d.phev)}</div>
         <div class="tt-value" style="color:${C.muted}">Other: ${d3.format(",")(d.other)}</div>`, event);
-    }).on("mouseleave", hideTooltip);
+    }).on("mouseleave", sobHideTooltip);
 
   /* --- STEP 1: Stacked BEV vs PHEV (hidden) --- */
   const stackGroup = g.append("g").attr("class", "stack-view").style("opacity", 0).style("pointer-events", "none");
@@ -686,7 +686,7 @@ function buildEvChart() {
         <div class="tt-value" style="color:${C.teal}">BEV: ${d3.format(",")(d.bev)} (${bevPct}%)</div>
         <div class="tt-value" style="color:${C.amber}">PHEV: ${d3.format(",")(d.phev)}</div>
         <div class="tt-value">Total: ${d3.format(",")(d.total)}</div>`, event);
-    }).on("mouseleave", hideTooltip);
+    }).on("mouseleave", sobHideTooltip);
 }
 
 function updateEvChart(step) {
@@ -1077,4 +1077,6 @@ function updateChart(section, step) {
 /* =========================================================
    SCROLLYTELLING — IntersectionObserver
    ========================================================= */
-function setupScrollObserver() { sobSetupScrollObserver("hook"); })();
+function setupScrollObserver() { sobSetupScrollObserver("hook"); }
+
+})();

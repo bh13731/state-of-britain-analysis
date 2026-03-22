@@ -463,7 +463,7 @@ function buildRoadsChart() {
         <div class="tt-value" style="color:${C.primary}">Potholes filled: ${d.filled}m</div>
         <div class="tt-value" style="color:${C.amber}">Repair backlog: \u00a3${d.backlogBn}bn</div>`, event);
     })
-    .on("mouseleave", hideTooltip);
+    .on("mouseleave", sobHideTooltip);
 }
 
 function updateRoadsChart(step) {

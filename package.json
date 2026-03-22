@@ -9,14 +9,18 @@
   },
   "scripts": {
     "start": "npx http-server . -p 8000 -c-1 --cors",
+    "dev": "npx http-server . -p 8000 -c-1 --cors -o",
+    "build": "node scripts/build.js",
+    "serve:dist": "npx http-server dist -p 8000 -c-1 --cors",
     "lint": "npm run lint:js && npm run lint:css",
-    "lint:js": "npx eslint shared/ tests/",
-    "lint:css": "npx stylelint shared/**/*.css",
+    "lint:js": "npx eslint shared/ tests/ pages/js/",
+    "lint:css": "npx stylelint \"shared/**/*.css\" \"pages/**/*.css\"",
     "test": "node tests/utils.test.cjs",
     "test:mobile": "node tests/mobile-responsiveness.test.cjs",
     "test:all": "npm run test && npm run test:mobile",
     "validate": "npm run lint && npm run test",
-    "precommit": "npm run lint && npm run test"
+    "precommit": "npm run lint && npm run test",
+    "clean": "rm -rf dist"
   },
   "repository": {
     "type": "git",
@@ -30,6 +34,8 @@
   },
   "homepage": "https://github.com/bh13731/state-of-britain-analysis#readme",
   "devDependencies": {
+    "clean-css-cli": "^5.6.3",
+    "esbuild": "^0.27.4",
     "eslint": "^10.1.0",
     "html-validate": "^10.11.2",
     "http-server": "^14.1.1",

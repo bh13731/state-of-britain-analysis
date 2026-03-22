@@ -1006,4 +1006,6 @@ function updateChart(section, step) {
 /* =========================================================
    SCROLLYTELLING — IntersectionObserver
    ========================================================= */
-function setupScrollObserver() { sobSetupScrollObserver("hook"); })();
+function setupScrollObserver() { sobSetupScrollObserver("hook"); }
+
+})();

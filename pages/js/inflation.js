@@ -921,7 +921,7 @@ function buildNowChart() {
         '<div class="tt-value" style="color:' + d.color + '">' + sobFmtPct(d.value) + ' year-on-year</div>' +
         '<div class="tt-value">' + (aboveTarget ? "Above" : "At or below") + ' the 2% target</div>', event);
     })
-    .on("mouseleave", hideTooltip);
+    .on("mouseleave", sobHideTooltip);
 
   // --- CUMULATIVE SUMMARY BAR (step 1) ---
   var summaryGroup = g.append("g").attr("class", "summary-view").style("opacity", 0).style("pointer-events", "none");
@@ -991,7 +991,7 @@ function buildNowChart() {
         '<div class="tt-value" style="color:' + d.color + '">+' + d3.format(".1f")(d.pct) + '% since Jan 2020</div>' +
         '<div class="tt-value">\u00a3100 then = \u00a3' + d3.format(".0f")(equiv) + ' now</div>', event);
     })
-    .on("mouseleave", hideTooltip);
+    .on("mouseleave", sobHideTooltip);
 }
 
 function updateNowChart(step) {
@@ -1020,4 +1020,6 @@ function updateChart(section, step) {
 /* =========================================================
    SCROLLYTELLING — IntersectionObserver
    ========================================================= */
-function setupScrollObserver() { sobSetupScrollObserver("hook"); })();
+function setupScrollObserver() { sobSetupScrollObserver("hook"); }
+
+})();

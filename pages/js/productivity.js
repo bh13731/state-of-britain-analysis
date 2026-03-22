@@ -300,7 +300,7 @@ function buildInternationalChart() {
   // Lines
   var intlEndLabels = [];
   countries.forEach(function(c) {
-    var lineData = ts.filter(function(d) { return d[c.key] != null; });
+    var lineData = ts.filter(function(d) { return d[c.key] !== null; });
     var lineGen = d3.line()
       .x(function(d) { return x(d.year); })
       .y(function(d) { return y(d[c.key]); })
@@ -369,7 +369,7 @@ function buildInternationalChart() {
     hoverLine.attr("x1", x(year)).attr("x2", x(year)).style("opacity", 1);
     var ttHtml = '<div class="tt-label">' + year + '</div>';
     countries.forEach(function(c) {
-      if (d[c.key] != null) {
+      if (d[c.key] !== null) {
         hoverDots[c.key].attr("cx", x(year)).attr("cy", y(d[c.key])).style("opacity", 1);
         ttHtml += '<div class="tt-value" style="color:' + c.color + '">' + (c.label === "United Kingdom" ? "UK" : c.label === "United States" ? "US" : c.key) + ': $' + d[c.key].toFixed(2) + '</div>';
       }
@@ -422,7 +422,7 @@ function buildInternationalChart() {
     .on("mousemove", function(event, d) {
       sobShowTooltip('<div class="tt-label">' + d.country + '</div><div class="tt-value">$' + d.usdPPP.toFixed(1) + ' per hour (PPP)</div>', event);
     })
-    .on("mouseleave", hideTooltip);
+    .on("mouseleave", sobHideTooltip);
 
   // Country labels
   barGroup.selectAll(".bar-label")
@@ -533,7 +533,7 @@ function buildSectorsChart() {
     .on("mousemove", function(event, d) {
       sobShowTooltip('<div class="tt-label">' + d.sector + '</div><div class="tt-value">\u00a3' + d.gbpPerHour.toFixed(2) + ' per hour</div>', event);
     })
-    .on("mouseleave", hideTooltip);
+    .on("mouseleave", sobHideTooltip);
 
   // Sector labels
   allGroup.selectAll(".sector-label")
@@ -593,7 +593,7 @@ function buildSectorsChart() {
     .on("mousemove", function(event, d) {
       sobShowTooltip('<div class="tt-label">' + d.sector + '</div><div class="tt-value">\u00a3' + d.gbpPerHour.toFixed(2) + ' per hour</div>', event);
     })
-    .on("mouseleave", hideTooltip);
+    .on("mouseleave", sobHideTooltip);
 
   // Sector labels
   highlightGroup.selectAll(".sector-label-hl")

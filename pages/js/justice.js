@@ -442,7 +442,7 @@ function buildPoliceChart() {
     if (!d) return;
     var total = d.officers + d.staff + d.pcsos;
     sobShowTooltip('<div class="tt-label">' + d.year + '</div><div class="tt-value">Officers: ' + fmtK(d.officers) + '</div><div class="tt-value">Staff: ' + fmtK(d.staff) + '</div><div class="tt-value">PCSOs: ' + fmtK(d.pcsos) + '</div><div class="tt-value" style="font-weight:600;">Total: ' + fmtK(total) + '</div>', event);
-  }).on("mouseleave", hideTooltip);
+  }).on("mouseleave", sobHideTooltip);
 }
 
 function updatePoliceChart(step) {
@@ -593,7 +593,7 @@ function buildCrimeChart() {
       var valStr = d.value >= 1000 ? d3.format(".1f")(d.value / 1000) + "m" : d3.format(",")(d.value) + "k";
       sobShowTooltip('<div class="tt-label">' + d.category + '</div><div class="tt-value">' + valStr + ' offences (' + Math.round(d.value / totalCrime * 100) + '% of total)</div>', event);
     })
-    .on("mouseleave", hideTooltip);
+    .on("mouseleave", sobHideTooltip);
 
   // Value labels
   barGroup.selectAll(".crime-val").data(sortedBreakdown).enter()
@@ -670,7 +670,7 @@ function buildCourtsChart() {
     .on("mousemove", function(event, d) {
       sobShowTooltip('<div class="tt-label">' + d.year + '</div><div class="tt-value">Outstanding cases: ' + d3.format(",.0f")(d.outstanding) + 'k</div>', event);
     })
-    .on("mouseleave", hideTooltip);
+    .on("mouseleave", sobHideTooltip);
 
   // Value labels on bars
   barGroup.selectAll(".court-label").data(courtData).enter()

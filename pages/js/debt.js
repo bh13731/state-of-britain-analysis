@@ -102,7 +102,7 @@ function buildScaleChart() {
     .on("mousemove", function(event, d) {
       sobShowTooltip(`<div class="tt-label">${d.label}</div><div class="tt-value">${sobFmtBnShort(d.value)} per year</div>`, event);
     })
-    .on("mouseleave", hideTooltip);
+    .on("mouseleave", sobHideTooltip);
 
   const mobile = sobIsMobile();
   barGroup.selectAll(".comp-label")
@@ -570,7 +570,7 @@ function buildQEChart() {
         <div class="tt-value" style="color:${C.blue}">APF indemnity: ${sobFmtBnShort(d.value)}</div>
         <div class="tt-value">Taxpayer cost of QE losses</div>`, event);
     })
-    .on("mouseleave", hideTooltip);
+    .on("mouseleave", sobHideTooltip);
 
   // Value labels on bars
   apfView.selectAll(".apf-label")
@@ -640,7 +640,7 @@ function buildQEChart() {
       sobShowTooltip(`<div class="tt-label">${d.label}</div>
         <div class="tt-value">${sobFmtBnShort(d.value)}${d.bold ? " (2020-2025)" : " (2024-25 annual)"}</div>`, event);
     })
-    .on("mouseleave", hideTooltip);
+    .on("mouseleave", sobHideTooltip);
 
   const mobileQE = sobIsMobile();
   compView.selectAll(".dept-label")

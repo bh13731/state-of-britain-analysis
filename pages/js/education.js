@@ -279,7 +279,7 @@ function buildIntlChart() {
       sobShowTooltip(`<div class="tt-label">${d.country}</div>
         <div class="tt-value">${d.pct}% of GDP on education</div>`, event);
     })
-    .on("mouseleave", hideTooltip);
+    .on("mouseleave", sobHideTooltip);
 
   // Value labels
   barGroup.selectAll(".intl-val").data(intlData).enter()
@@ -359,7 +359,7 @@ function buildIntlChart() {
           <div class="tt-value" style="color:${sub.color};opacity:0.7">OECD avg: ${d[sub.oecdKey]}</div>
           <div class="tt-value">Gap: ${d[sub.ukKey] > d[sub.oecdKey] ? "+" : ""}${d[sub.ukKey] - d[sub.oecdKey]} pts</div>`, event);
       })
-      .on("mouseleave", hideTooltip);
+      .on("mouseleave", sobHideTooltip);
   });
 
   // Axes
@@ -446,7 +446,7 @@ function buildGcseChart() {
       sobShowTooltip(`<div class="tt-label">${d.year}</div>
         <div class="tt-value">${d.rate}% &mdash; ${d.measure}</div>`, event);
     })
-    .on("mouseleave", hideTooltip);
+    .on("mouseleave", sobHideTooltip);
 
   // New measure dots
   mainGroup.selectAll(".new-dot").data(newMeasure).enter()
@@ -457,7 +457,7 @@ function buildGcseChart() {
       sobShowTooltip(`<div class="tt-label">${d.year}</div>
         <div class="tt-value">${d.rate}% &mdash; ${d.measure}</div>`, event);
     })
-    .on("mouseleave", hideTooltip);
+    .on("mouseleave", sobHideTooltip);
 
   // COVID highlight (step 1)
   const covidData = newMeasure.filter(d => d.year >= 2020 && d.year <= 2021);
@@ -573,7 +573,7 @@ function buildTeachersChart() {
         <div class="tt-value">Vacancy rate: ${d.vacancyRate}%</div>
         <div class="tt-value">${d.teachers}k teachers</div>`, event);
     })
-    .on("mouseleave", hideTooltip);
+    .on("mouseleave", sobHideTooltip);
 
   // Annotations
   const peak = data.reduce((a, b) => b.vacancyRate > a.vacancyRate ? b : a);
@@ -628,7 +628,7 @@ function buildTeachersChart() {
         <div class="tt-value">Pupil-teacher ratio: ${d.ratio}</div>
         <div class="tt-value">${d.teachers}k teachers</div>`, event);
     })
-    .on("mouseleave", hideTooltip);
+    .on("mouseleave", sobHideTooltip);
 
   // Peak ratio annotation
   const peakRatio = data.reduce((a, b) => b.ratio > a.ratio ? b : a);
@@ -718,7 +718,7 @@ function buildHeChart() {
       sobShowTooltip(`<div class="tt-label">${d.label}</div>
         <div class="tt-value">HE participation: ${d.rate}%</div>`, event);
     })
-    .on("mouseleave", hideTooltip);
+    .on("mouseleave", sobHideTooltip);
 
   // Fee hike annotation
   const feeYear = heData.find(d => d.year === 2012);
@@ -828,7 +828,7 @@ function buildHeChart() {
           <div class="tt-value" style="color:${stackColors.twoTwo}">2:2: ${d.twoTwo}%</div>
           <div class="tt-value" style="color:${stackColors.third}">Third/other: ${d.third}%</div>`, event);
       })
-      .on("mouseleave", hideTooltip);
+      .on("mouseleave", sobHideTooltip);
   });
 
   // Direct labels at end
@@ -890,4 +890,6 @@ function updateChart(section, step) {
 /* =========================================================
    SCROLLYTELLING — IntersectionObserver
    ========================================================= */
-function setupScrollObserver() { sobSetupScrollObserver("spending"); })();
+function setupScrollObserver() { sobSetupScrollObserver("spending"); }
+
+})();

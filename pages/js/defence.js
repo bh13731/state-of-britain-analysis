@@ -107,7 +107,7 @@ function buildHookChart() {
     .on("mousemove", function(event, d) {
       sobShowTooltip(`<div class="tt-label">${d.label}</div><div class="tt-value">${fmtK(d.value)} personnel</div>`, event);
     })
-    .on("mouseleave", hideTooltip);
+    .on("mouseleave", sobHideTooltip);
 
   // Bar labels
   barGroup.selectAll(".bar-label").data(categories).enter()
@@ -665,7 +665,7 @@ function buildEquipmentChart() {
       const pct = ((d.value / total) * 100).toFixed(0);
       sobShowTooltip(`<div class="tt-label">${d.category}</div><div class="tt-value">${fmtBn(d.value)} (${pct}% of plan)</div>`, event);
     })
-    .on("mouseleave", hideTooltip);
+    .on("mouseleave", sobHideTooltip);
 
   // Category labels (above bars, not overlapping)
   fullGroup.selectAll(".cat-label").data(eqData).enter()
@@ -708,7 +708,7 @@ function buildEquipmentChart() {
       const pct = ((d.value / total) * 100).toFixed(0);
       sobShowTooltip(`<div class="tt-label">${d.category}</div><div class="tt-value">${fmtBn(d.value)} (${pct}% of plan)</div>`, event);
     })
-    .on("mouseleave", hideTooltip);
+    .on("mouseleave", sobHideTooltip);
 
   // Category labels (above bars, not overlapping)
   highlightGroup.selectAll(".cat-label").data(eqData).enter()

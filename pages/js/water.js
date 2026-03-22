@@ -107,7 +107,7 @@ function buildHookChart() {
       sobShowTooltip(`<div class="tt-label">${d.label}</div>
         <div class="tt-value">${fmtDec(d.value, 1)} avg spills per overflow</div>`, event);
     })
-    .on("mouseleave", hideTooltip);
+    .on("mouseleave", sobHideTooltip);
 
   // Bar value labels
   barGroup.selectAll(".spill-label").data(spillData).enter()
@@ -291,7 +291,7 @@ function buildPollutionChart() {
         <div class="tt-value" style="color:${C.red}">Serious incidents: ${d.serious}</div>
         <div class="tt-value">Total incidents: ${fmtNum(d.total)}</div>`, event);
     })
-    .on("mouseleave", hideTooltip);
+    .on("mouseleave", sobHideTooltip);
 
   // Value labels — 10px padding from bar top
   seriousGroup.selectAll(".serious-label").data(pollData).enter()
@@ -357,7 +357,7 @@ function buildPollutionChart() {
       sobShowTooltip(`<div class="tt-label">${d.label.replace('\n', ' ')}</div>
         <div class="tt-value">${fmtDec(d.value, 1)} incidents per 10,000km of sewer</div>`, event);
     })
-    .on("mouseleave", hideTooltip);
+    .on("mouseleave", sobHideTooltip);
 
   // Value labels
   normGroup.selectAll(".norm-label").data(normData).enter()
@@ -572,7 +572,7 @@ function buildLeakageChart() {
         <div class="tt-value" style="color:${d.latest > 0 ? C.red : C.green}">Change: ${d.latest > 0 ? '+' : ''}${fmtDec(d.latest, 1)}%</div>
         <div class="tt-value">Commitment: ${fmtDec(d.commitment, 1)}%</div>`, event);
     })
-    .on("mouseleave", hideTooltip);
+    .on("mouseleave", sobHideTooltip);
 
   // Company name labels — always anchored left of the zero line for consistent alignment
   compGroup.selectAll(".comp-name").data(compData).enter()
@@ -683,7 +683,7 @@ function buildSystemChart() {
         <div class="tt-value">Latest (2024-25): ${d.latest} ${d.unit}</div>
         <div class="tt-value" style="color:${isWorsening(d) ? C.red : C.green}">Change: ${d.change > 0 ? '+' : ''}${d.change}%</div>`, event);
     })
-    .on("mouseleave", hideTooltip);
+    .on("mouseleave", sobHideTooltip);
 
   // Metric name labels — consistently anchored left of the zero line
   metricsGroup.selectAll(".metric-name").data(metrics).enter()

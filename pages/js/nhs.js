@@ -774,7 +774,7 @@ function buildAEChart() {
         <div class="tt-value" style="color:${C.red}">Type 1 (major): ${sobFmtPct(d.pctWithin4HoursType1)}</div>
         <div class="tt-value">${fmtNumFull(d.totalAttendances)} attendances</div>`, event);
     })
-    .on("mouseleave", hideTooltip);
+    .on("mouseleave", sobHideTooltip);
 
   // Type 1 bars
   barGroup.selectAll(".ae-bar-t1").data(ae).enter()
@@ -789,7 +789,7 @@ function buildAEChart() {
         <div class="tt-value" style="color:${C.red}">${sobFmtPct(d.pctWithin4HoursType1)} within 4 hours</div>
         <div class="tt-value">${fmtNumFull(d.over4Hours)} waited over 4 hours</div>`, event);
     })
-    .on("mouseleave", hideTooltip);
+    .on("mouseleave", sobHideTooltip);
 
   // Bar value labels - All types (10px padding from bar top; include % for unambiguous reading)
   barGroup.selectAll(".ae-val-all").data(ae).enter()

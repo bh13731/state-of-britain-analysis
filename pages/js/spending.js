@@ -534,7 +534,7 @@ function buildCompositionChart() {
       sobShowTooltip(`<div class="tt-label">${d.name}</div>
         <div class="tt-value">${sobFmtBnShort(d.value)} (${sobFmtPct(d.value / totalReceipts * 100)} of total)</div>`, event);
     })
-    .on("mouseleave", hideTooltip);
+    .on("mouseleave", sobHideTooltip);
 
   // Labels
   taxGroup.selectAll(".tax-label").data(receipts).enter()
@@ -588,7 +588,7 @@ function buildCompositionChart() {
         <div class="tt-value">${sobFmtBnShort(d.value)} (${Math.round(d.value / totalDept * 100)}% of dept. spending)</div>
         ${desc ? '<div class="tt-value" style="margin-top:4px;color:#555555;font-size:13px;">' + desc + '</div>' : ''}`, event);
     })
-    .on("mouseleave", hideTooltip);
+    .on("mouseleave", sobHideTooltip);
 
   // Labels
   deptGroup.selectAll(".dept-label").data(showDepts).enter()
@@ -709,7 +709,7 @@ function buildOutlookChart() {
         <div class="tt-value">From ${firstFy} to ${lastFy}</div>
         ${ctx ? '<div class="tt-value" style="margin-top:4px;color:#555555;font-size:13px;">' + ctx + '</div>' : ''}`, event);
     })
-    .on("mouseleave", hideTooltip);
+    .on("mouseleave", sobHideTooltip);
 
   // Name labels always left of zero line for clean alignment
   progGroup.selectAll(".prog-name").data(showProgs).enter()

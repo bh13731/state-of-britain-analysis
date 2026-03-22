@@ -32,16 +32,16 @@
 
 <div class="chart-tooltip" id="tooltip"></div>
 
-<header class="site-header hidden-until-loaded" id="site-header">
+<header class="site-header hidden-until-loaded" id="site-header" role="banner">
   <div class="kicker">State of Britain</div>
   <h1>Where the money goes</h1>
   <p class="deck">A visual guide to Britain's public finances &mdash; how much the government raises, what it spends, and why the gap keeps growing.</p>
 </header>
 
-<main id="main-content" class="hidden-until-loaded">
+<main id="main-content" class="hidden-until-loaded" role="main">
 
 <!-- ====== SECTION 1: The Gap ====== -->
-<section class="scroll-section" id="section-gap">
+<section class="scroll-section" id="section-gap" aria-label="Gap section">
   <div class="scroll-steps">
     <div class="step" data-section="gap" data-step="0">
       <div class="step-inner">
@@ -63,7 +63,7 @@
 </section>
 
 <!-- ====== SECTION 2: Debt ====== -->
-<section class="scroll-section" id="section-debt">
+<section class="scroll-section" id="section-debt" aria-label="Debt section">
   <div class="scroll-steps">
     <div class="step" data-section="debt" data-step="0">
       <div class="step-inner">
@@ -84,7 +84,7 @@
 </section>
 
 <!-- ====== SECTION 3: Revenue & Spending ====== -->
-<section class="scroll-section" id="section-composition">
+<section class="scroll-section" id="section-composition" aria-label="Composition section">
   <div class="scroll-steps">
     <div class="step" data-section="composition" data-step="0">
       <div class="step-inner">
@@ -105,7 +105,7 @@
 </section>
 
 <!-- ====== SECTION 4: Drivers & Outlook ====== -->
-<section class="scroll-section" id="section-outlook">
+<section class="scroll-section" id="section-outlook" aria-label="Outlook section">
   <div class="scroll-steps">
     <div class="step" data-section="outlook" data-step="0">
       <div class="step-inner">
@@ -127,7 +127,7 @@
 
 </main>
 
-<footer class="site-footer hidden-until-loaded" id="site-footer">
+<footer class="site-footer hidden-until-loaded" id="site-footer" role="contentinfo">
   <p><strong>Sources:</strong> OBR Public Finances Databank; HM Treasury PESA 2025.<br>
   Data via <a href="https://stateofbritain.uk" target="_blank" rel="noopener">stateofbritain.uk</a>.<br>
   Contains public sector information licensed under the <a href="https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/" target="_blank" rel="noopener">Open Government Licence v3.0</a>.</p>

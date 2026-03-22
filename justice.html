@@ -32,16 +32,16 @@
 
 <div class="chart-tooltip" id="tooltip"></div>
 
-<header class="site-header hidden-until-loaded" id="site-header">
+<header class="site-header hidden-until-loaded" id="site-header" role="banner">
   <div class="kicker">State of Britain</div>
   <h1>Justice Delayed</h1>
   <p class="deck">Britain&rsquo;s broken courts and overstuffed prisons &mdash; a system where only 5.5% of crimes lead to a charge, 73,000 cases wait for trial, and prisons are at 98% capacity.</p>
 </header>
 
-<main id="main-content" class="hidden-until-loaded">
+<main id="main-content" class="hidden-until-loaded" role="main">
 
 <!-- ====== SECTION 1: Hook — Charge Rate Collapse ====== -->
-<section class="scroll-section" id="section-hook">
+<section class="scroll-section" id="section-hook" aria-label="Hook section">
   <div class="scroll-steps">
     <div class="step" data-section="hook" data-step="0">
       <div class="step-inner">
@@ -63,7 +63,7 @@
 </section>
 
 <!-- ====== SECTION 2: Police Numbers ====== -->
-<section class="scroll-section" id="section-police">
+<section class="scroll-section" id="section-police" aria-label="Police section">
   <div class="scroll-steps">
     <div class="step" data-section="police" data-step="0">
       <div class="step-inner">
@@ -84,7 +84,7 @@
 </section>
 
 <!-- ====== SECTION 3: Crime Trends ====== -->
-<section class="scroll-section" id="section-crime">
+<section class="scroll-section" id="section-crime" aria-label="Crime section">
   <div class="scroll-steps">
     <div class="step" data-section="crime" data-step="0">
       <div class="step-inner">
@@ -105,7 +105,7 @@
 </section>
 
 <!-- ====== SECTION 4: Court Backlog ====== -->
-<section class="scroll-section" id="section-courts">
+<section class="scroll-section" id="section-courts" aria-label="Courts section">
   <div class="scroll-steps">
     <div class="step" data-section="courts" data-step="0">
       <div class="step-inner">
@@ -127,7 +127,7 @@
 </section>
 
 <!-- ====== SECTION 5: Prison Population ====== -->
-<section class="scroll-section" id="section-prison">
+<section class="scroll-section" id="section-prison" aria-label="Prison section">
   <div class="scroll-steps">
     <div class="step" data-section="prison" data-step="0">
       <div class="step-inner">
@@ -149,7 +149,7 @@
 
 </main>
 
-<footer class="site-footer hidden-until-loaded" id="site-footer">
+<footer class="site-footer hidden-until-loaded" id="site-footer" role="contentinfo">
   <p><strong>Sources:</strong> ONS Crime in England and Wales; Home Office Police Workforce Statistics; MoJ Prison Population Statistics; MoJ Criminal Court Statistics; Home Office Crime Outcomes.<br>
   Data via <a href="https://stateofbritain.uk" target="_blank" rel="noopener">stateofbritain.uk</a>.<br>
   Contains public sector information licensed under the <a href="https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/" target="_blank" rel="noopener">Open Government Licence v3.0</a>.</p>

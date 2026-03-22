@@ -84,17 +84,26 @@ cpSync(join(ROOT, 'render.yaml'), join(DIST, 'render.yaml'));
 
 console.log('\nBuild complete! Output in dist/');
 
-// Report sizes
+// Report sizes with per-category breakdown
 let totalSize = 0;
+const sizeByType = {};
 function countDir(dir) {
   for (const f of readdirSync(dir, { withFileTypes: true })) {
     const p = join(dir, f.name);
     if (f.isDirectory()) {
       countDir(p);
     } else {
-      totalSize += readFileSync(p).length;
+      const size = readFileSync(p).length;
+      totalSize += size;
+      const ext = extname(f.name) || '(none)';
+      sizeByType[ext] = (sizeByType[ext] || 0) + size;
     }
   }
 }
 countDir(DIST);
-console.log(`Total size: ${(totalSize / 1024).toFixed(1)} KB`);
+
+console.log('\nSize breakdown:');
+for (const [ext, size] of Object.entries(sizeByType).sort((a, b) => b[1] - a[1])) {
+  console.log(`  ${ext.padEnd(8)} ${(size / 1024).toFixed(1)} KB`);
+}
+console.log(`  ${'TOTAL'.padEnd(8)} ${(totalSize / 1024).toFixed(1)} KB`);

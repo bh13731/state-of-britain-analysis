@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * @file immigration.js — Net migration, visa categories, asylum, demographic impact
  * @description Interactive D3.js scrollytelling charts for the immigration story.
@@ -50,6 +51,7 @@ function fmtNum(v) { return d3.format(",")(Math.round(v)); }
 /* =========================================================
    DATA LOAD & INIT
    ========================================================= */
+/** @type {Object} API response data */
 let DATA;
 
 sobFetchJSON("https://stateofbritain.uk/api/data/immigration.json")

@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * @file nhs.js — NHS waiting lists, referral-to-treatment times, A&E performance
  * @description Interactive D3.js scrollytelling charts for the nhs story.
@@ -43,6 +44,7 @@ function formatPeriod(period) {
 /* =========================================================
    DATA LOAD & INIT
    ========================================================= */
+/** @type {Object} API response data */
 let DATA;
 
 sobFetchJSON("https://stateofbritain.uk/api/data/nhs.json")

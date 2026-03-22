@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * @file debt.js — National debt, debt interest, quantitative easing, gilt yields
  * @description Interactive D3.js scrollytelling charts for the debt story.
@@ -25,6 +26,7 @@ function truncLabel(s, max) { return s.length > max ? s.slice(0, max - 1) + "\u2
 /* =========================================================
    DATA LOAD & INIT
    ========================================================= */
+/** @type {Object} API response data */
 let DATA;
 
 sobFetchJSON("https://stateofbritain.uk/api/data/spending.json")

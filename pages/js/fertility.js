@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * @file fertility.js — Total fertility rate, birth rates, demographic projections
  * @description Interactive D3.js scrollytelling charts for the fertility story.
@@ -31,6 +32,7 @@ function fmtK(v) { return d3.format(",")(v) + "k"; }
 /* =========================================================
    DATA LOAD & INIT
    ========================================================= */
+/** @type {Object} API response data */
 let DATA;
 
 sobFetchJSON("https://stateofbritain.uk/api/data/family.json")

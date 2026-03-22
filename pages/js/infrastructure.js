@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * @file infrastructure.js — Broadband rollout, rail performance, road quality, housing
  * @description Interactive D3.js scrollytelling charts for the infrastructure story.
@@ -27,6 +28,7 @@ function fmtBn(v) { return "\u00a3" + d3.format(".1f")(v) + "bn"; }
 /* =========================================================
    DATA LOAD & INIT
    ========================================================= */
+/** @type {Object} API response data */
 let DATA;
 
 sobFetchJSON("https://stateofbritain.uk/api/data/infrastructure.json")

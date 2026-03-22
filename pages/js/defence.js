@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * @file defence.js — Defence spending as % GDP, military personnel, NATO comparisons
  * @description Interactive D3.js scrollytelling charts for the defence story.
@@ -29,6 +30,7 @@ function fmtBn(v) { return "\u00a3" + d3.format(".1f")(v) + "bn"; }
 /* =========================================================
    DATA LOAD & INIT
    ========================================================= */
+/** @type {Object} API response data */
 let DATA;
 
 sobFetchJSON("https://stateofbritain.uk/api/data/defence.json")

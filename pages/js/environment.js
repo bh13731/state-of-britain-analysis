@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * @file environment.js — GHG emissions, air quality, EV uptake, decarbonisation progress
  * @description Interactive D3.js scrollytelling charts for the environment story.
@@ -41,6 +42,7 @@ function fmtConc(v) { return d3.format(".1f")(v) + " \u00b5g/m\u00b3"; }
 /* =========================================================
    DATA LOAD & INIT
    ========================================================= */
+/** @type {Object} API response data */
 let DATA;
 
 sobFetchJSON("https://stateofbritain.uk/api/data/environment.json")

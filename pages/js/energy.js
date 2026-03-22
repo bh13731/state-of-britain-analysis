@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * @file energy.js — Energy mix by fuel type, renewables growth, capacity
  * @description Interactive D3.js scrollytelling charts for the energy story.
@@ -37,6 +38,7 @@ function fmtMtoe(v) { return d3.format(".1f")(v) + " Mtoe"; }
 /* =========================================================
    DATA LOAD & INIT
    ========================================================= */
+/** @type {Object} API response data */
 let DATA;
 
 sobFetchJSON("https://stateofbritain.uk/api/data/energy.json")

@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * @file productivity.js — Output per hour, OECD comparison, lost decade analysis
  * @description Interactive D3.js scrollytelling charts for the productivity story.
@@ -35,6 +36,7 @@ function chartDimsBar(container) {
 /* =========================================================
    DATA LOAD & INIT
    ========================================================= */
+/** @type {Object} API response data */
 let DATA;
 
 sobFetchJSON("https://stateofbritain.uk/api/data/productivity.json")

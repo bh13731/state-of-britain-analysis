@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * @file justice.js — Crime rates, police numbers, prison population, court backlogs
  * @description Interactive D3.js scrollytelling charts for the justice story.
@@ -33,6 +34,7 @@ function parseFinYear(fy) {
 /* =========================================================
    DATA LOAD & INIT
    ========================================================= */
+/** @type {Object} API response data */
 let DATA;
 
 sobFetchJSON("https://stateofbritain.uk/api/data/justice.json")

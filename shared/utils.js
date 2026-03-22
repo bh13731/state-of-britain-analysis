@@ -187,16 +187,32 @@ var SOB_FETCH_TIMEOUT = 15000;
 var SOB_FETCH_RETRIES = 1;
 
 /**
- * Fetch JSON data with timeout and retry logic.
+ * Fetch JSON data with timeout, retry logic, and sessionStorage caching.
+ * Cached data is stored for the duration of the browser session to avoid
+ * re-fetching on back navigation.
  * @param {string} url - the URL to fetch
  * @param {Object} [options] - optional configuration
  * @param {number} [options.timeout=15000] - timeout in ms
  * @param {number} [options.retries=1] - number of retries on failure
+ * @param {boolean} [options.cache=true] - whether to use sessionStorage cache
  * @returns {Promise<any>} parsed JSON response
  */
 function sobFetchJSON(url, options) {
   var timeout = (options && options.timeout) || SOB_FETCH_TIMEOUT;
   var retries = (options && options.retries !== undefined) ? options.retries : SOB_FETCH_RETRIES;
+  var useCache = (options && options.cache === false) ? false : true;
+
+  // Try sessionStorage cache first
+  if (useCache && typeof sessionStorage !== "undefined") {
+    try {
+      var cached = sessionStorage.getItem("sob:" + url);
+      if (cached) {
+        return Promise.resolve(JSON.parse(cached));
+      }
+    } catch (e) {
+      // sessionStorage may be unavailable or full; ignore
+    }
+  }
 
   function attempt(retriesLeft) {
     var controller = new AbortController();
@@ -207,6 +223,17 @@ function sobFetchJSON(url, options) {
         clearTimeout(timer);
         if (!r.ok) throw new Error("HTTP " + r.status);
         return r.json();
+      })
+      .then(function(data) {
+        // Cache in sessionStorage
+        if (useCache && typeof sessionStorage !== "undefined") {
+          try {
+            sessionStorage.setItem("sob:" + url, JSON.stringify(data));
+          } catch (e) {
+            // Ignore quota errors
+          }
+        }
+        return data;
       })
       .catch(function(err) {
         clearTimeout(timer);

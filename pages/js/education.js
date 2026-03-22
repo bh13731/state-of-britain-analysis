@@ -1,3 +1,8 @@
+/**
+ * @file education.js — Per-pupil spending, GCSE results, PISA scores, higher education
+ * @description Interactive D3.js scrollytelling charts for the education story.
+ * Depends on shared/utils.js being loaded first.
+ */
 (function() {
 "use strict";
 

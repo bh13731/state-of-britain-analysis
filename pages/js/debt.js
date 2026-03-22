@@ -1,3 +1,8 @@
+/**
+ * @file debt.js — National debt, debt interest, quantitative easing, gilt yields
+ * @description Interactive D3.js scrollytelling charts for the debt story.
+ * Depends on shared/utils.js being loaded first.
+ */
 (function() {
 "use strict";
 

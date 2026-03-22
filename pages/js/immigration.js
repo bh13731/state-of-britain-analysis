@@ -1,3 +1,8 @@
+/**
+ * @file immigration.js — Net migration, visa categories, asylum, demographic impact
+ * @description Interactive D3.js scrollytelling charts for the immigration story.
+ * Depends on shared/utils.js being loaded first.
+ */
 (function() {
 "use strict";
 

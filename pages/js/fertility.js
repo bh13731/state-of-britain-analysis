@@ -1,3 +1,8 @@
+/**
+ * @file fertility.js — Total fertility rate, birth rates, demographic projections
+ * @description Interactive D3.js scrollytelling charts for the fertility story.
+ * Depends on shared/utils.js being loaded first.
+ */
 (function() {
 "use strict";
 

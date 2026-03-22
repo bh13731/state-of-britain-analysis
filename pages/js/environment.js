@@ -1,3 +1,8 @@
+/**
+ * @file environment.js — GHG emissions, air quality, EV uptake, decarbonisation progress
+ * @description Interactive D3.js scrollytelling charts for the environment story.
+ * Depends on shared/utils.js being loaded first.
+ */
 (function() {
 "use strict";
 

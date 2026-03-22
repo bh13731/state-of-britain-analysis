@@ -1,3 +1,8 @@
+/**
+ * @file water.js — Sewage overflows, water company performance, pollution incidents
+ * @description Interactive D3.js scrollytelling charts for the water story.
+ * Depends on shared/utils.js being loaded first.
+ */
 (function() {
 "use strict";
 

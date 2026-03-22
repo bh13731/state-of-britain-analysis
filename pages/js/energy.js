@@ -1,3 +1,8 @@
+/**
+ * @file energy.js — Energy mix by fuel type, renewables growth, capacity
+ * @description Interactive D3.js scrollytelling charts for the energy story.
+ * Depends on shared/utils.js being loaded first.
+ */
 (function() {
 "use strict";
 

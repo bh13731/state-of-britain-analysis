@@ -1,3 +1,8 @@
+/**
+ * @file infrastructure.js — Broadband rollout, rail performance, road quality, housing
+ * @description Interactive D3.js scrollytelling charts for the infrastructure story.
+ * Depends on shared/utils.js being loaded first.
+ */
 (function() {
 "use strict";
 

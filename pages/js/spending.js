@@ -1,3 +1,8 @@
+/**
+ * @file spending.js — UK public finances — receipts vs expenditure, debt, spending composition, deficit outlook
+ * @description Interactive D3.js scrollytelling charts for the spending story.
+ * Depends on shared/utils.js being loaded first.
+ */
 (function() {
 "use strict";
 

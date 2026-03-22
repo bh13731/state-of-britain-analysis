@@ -1,3 +1,8 @@
+/**
+ * @file defence.js — Defence spending as % GDP, military personnel, NATO comparisons
+ * @description Interactive D3.js scrollytelling charts for the defence story.
+ * Depends on shared/utils.js being loaded first.
+ */
 (function() {
 "use strict";
 

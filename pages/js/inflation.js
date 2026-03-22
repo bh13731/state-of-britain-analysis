@@ -1,3 +1,8 @@
+/**
+ * @file inflation.js — Consumer price inflation (CPIH), sector breakdown, cumulative price rises
+ * @description Interactive D3.js scrollytelling charts for the inflation story.
+ * Depends on shared/utils.js being loaded first.
+ */
 (function() {
 "use strict";
 

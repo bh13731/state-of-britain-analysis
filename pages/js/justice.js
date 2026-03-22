@@ -1,3 +1,8 @@
+/**
+ * @file justice.js — Crime rates, police numbers, prison population, court backlogs
+ * @description Interactive D3.js scrollytelling charts for the justice story.
+ * Depends on shared/utils.js being loaded first.
+ */
 (function() {
 "use strict";
 

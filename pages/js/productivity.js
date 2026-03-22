@@ -1,3 +1,8 @@
+/**
+ * @file productivity.js — Output per hour, OECD comparison, lost decade analysis
+ * @description Interactive D3.js scrollytelling charts for the productivity story.
+ * Depends on shared/utils.js being loaded first.
+ */
 (function() {
 "use strict";
 

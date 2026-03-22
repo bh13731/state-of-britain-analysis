@@ -155,6 +155,7 @@
 </footer>
 
 <script src="https://d3js.org/d3.v7.min.js"></script>
+<script src="shared/utils.js"></script>
 <script>
 (function() {
 "use strict";
@@ -162,52 +163,22 @@
 /* =========================================================
    COLOURS & CONSTANTS
    ========================================================= */
-const C = {
-  teal: "#0D9488", tealDark: "#0B7C72", tealLight: "rgba(13,148,136,0.12)",
-  red: "#C53030", green: "#2E7D32", amber: "#A16B00", blue: "#2563A0",
-  faint: "#B0B0A8", ink: "#1A1A1A", secondary: "#3D3D3D", muted: "#555555",
-  grid: "#F0F0EB", bg: "#FAFAF7",
-  redLight: "rgba(197,48,48,0.12)", greenLight: "rgba(46,125,50,0.08)",
-  amberLight: "rgba(161,107,0,0.12)", blueLight: "rgba(37,99,160,0.12)",
-  purple: "#7C3AED", purpleLight: "rgba(124,58,237,0.12)",
-  orange: "#D97706", orangeLight: "rgba(217,119,6,0.12)"
-};
-const DURATION = 600;
+const C = SOB_COLORS;
+const DURATION = SOB_DURATION;
 const CROSSFADE = 900; // Longer duration for view-swapping transitions
-const MOBILE = 768;
+const MOBILE = SOB_MOBILE;
 
-/* =========================================================
-   TOOLTIP HELPER
-   ========================================================= */
-const ttEl = document.getElementById("tooltip");
-function showTooltip(html, event) {
-  ttEl.innerHTML = html;
-  ttEl.classList.add("visible");
-  const cx = event.touches ? event.touches[0].clientX : event.clientX;
-  const cy = event.touches ? event.touches[0].clientY : event.clientY;
-  const r = ttEl.getBoundingClientRect();
-  let x = cx + 14, y = cy - 10;
-  if (x + r.width > window.innerWidth - 10) x = cx - r.width - 14;
-  if (y + r.height > window.innerHeight - 10) y = cy - r.height - 10;
-  if (y < 10) y = 10;
-  if (x < 10) x = 10;
-  ttEl.style.left = x + "px";
-  ttEl.style.top = y + "px";
-}
-function hideTooltip() { ttEl.classList.remove("visible"); }
+/* Tooltip: uses sobShowTooltip / sobHideTooltip from shared/utils.js */
+const showTooltip = sobShowTooltip;
+const hideTooltip = sobHideTooltip;
 
 /* =========================================================
    HELPERS
    ========================================================= */
 function fmtGBP(v) { return "\u00a3" + d3.format(",")(Math.round(v)); }
-function isMobile() { return window.innerWidth < MOBILE; }
+function isMobile() { return sobIsMobile(); }
 
-function chartDims(container) {
-  const w = container.clientWidth;
-  const mobile = isMobile();
-  const h = mobile ? Math.max(280, Math.min(400, window.innerHeight * 0.42)) : Math.max(500, Math.min(600, window.innerHeight * 0.65));
-  const m = { top: 30, right: mobile ? 40 : 90, bottom: 40, left: mobile ? 44 : 62 };
-  return { width: w, height: h, margin: m, innerW: w - m.left - m.right, innerH: h - m.top - m.bottom };
+function chartDims(container) { return sobChartDims(container); };
 }
 
 function parseAcademicYear(s) {
@@ -224,19 +195,10 @@ let DATA;
 fetch("https://stateofbritain.uk/api/data/education.json")
   .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
   .then(d => { DATA = d; init(); })
-  .catch(err => {
-    document.getElementById("loading-screen").style.display = "none";
-    const es = document.getElementById("error-screen");
-    es.style.display = "flex";
-    document.getElementById("error-msg").textContent = "Failed to load data: " + err.message;
-  });
+  .catch(sobShowError);
 
 function init() {
-  document.getElementById("loading-screen").classList.add("hidden");
-  setTimeout(() => { document.getElementById("loading-screen").style.display = "none"; }, 600);
-  document.getElementById("site-header").style.display = "";
-  document.getElementById("main-content").style.display = "";
-  document.getElementById("site-footer").style.display = "";
+  sobRevealContent();
 
   // Set big number
   const snap = DATA.snapshot;
@@ -247,10 +209,7 @@ function init() {
   window.addEventListener("resize", debounce(rebuildAll, 250));
 }
 
-let resizeTimer;
-function debounce(fn, ms) {
-  return function() { clearTimeout(resizeTimer); resizeTimer = setTimeout(fn, ms); };
-}
+function debounce(fn, ms) { return sobDebounce(fn, ms); }
 function rebuildAll() {
   d3.selectAll("#chart-spending svg, #chart-intl svg, #chart-gcse svg, #chart-teachers svg, #chart-he svg").remove();
   buildAllCharts();
@@ -1096,28 +1055,7 @@ function updateChart(section, step) {
 /* =========================================================
    SCROLLYTELLING — IntersectionObserver
    ========================================================= */
-function setupScrollObserver() {
-  const steps = document.querySelectorAll(".step");
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      const inner = entry.target.querySelector(".step-inner");
-      if (entry.isIntersecting && entry.intersectionRatio >= 0.4) {
-        const section = entry.target.dataset.section;
-        document.querySelectorAll(`.step[data-section="${section}"] .step-inner`).forEach(el => el.classList.remove("active"));
-        inner.classList.add("active");
-        updateChart(section, +entry.target.dataset.step);
-      }
-    });
-  }, {
-    threshold: [0.4, 0.5, 0.6]
-  });
-
-  steps.forEach(step => observer.observe(step));
-
-  // Activate first step immediately
-  const firstStep = document.querySelector('.step[data-section="spending"][data-step="0"] .step-inner');
-  if (firstStep) firstStep.classList.add("active");
-}
+function setupScrollObserver() { sobSetupScrollObserver("spending"); }
 
 })();
 </script>

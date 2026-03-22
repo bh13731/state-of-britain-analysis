@@ -178,6 +178,7 @@
 </footer>
 
 <script src="https://d3js.org/d3.v7.min.js"></script>
+<script src="shared/utils.js"></script>
 <script>
 (function() {
 "use strict";
@@ -185,40 +186,13 @@
 /* =========================================================
    COLOURS & CONSTANTS
    ========================================================= */
-const C = {
-  green: "#059669", greenDark: "#047857", greenLight: "rgba(5,150,105,0.12)",
-  grey: "#64748B", greyLight: "rgba(100,116,139,0.12)",
-  fossil: "#64748B", fossilLight: "rgba(100,116,139,0.10)",
-  gas: "#94A3B8", coal: "#475569", petroleum: "#64748B",
-  nuclear: "#7C3AED", nuclearLight: "rgba(124,58,237,0.10)",
-  bio: "#059669", renewables: "#059669",
-  amber: "#D97706", amberLight: "rgba(217,119,6,0.12)",
-  red: "#DC2626", redLight: "rgba(220,38,38,0.10)",
-  ink: "#1A1A1A", secondary: "#3D3D3D", muted: "#555555",
-  faint: "#B0B0A8", grid: "#F0F0EB", bg: "#FAFAF7"
-};
-const DURATION = 600;
-const MOBILE = 768;
+const C = SOB_COLORS;
+const DURATION = SOB_DURATION;
+const MOBILE = SOB_MOBILE;
 
-/* =========================================================
-   TOOLTIP HELPER
-   ========================================================= */
-const ttEl = document.getElementById("tooltip");
-function showTooltip(html, event) {
-  ttEl.innerHTML = html;
-  ttEl.classList.add("visible");
-  const cx = event.touches ? event.touches[0].clientX : event.clientX;
-  const cy = event.touches ? event.touches[0].clientY : event.clientY;
-  const r = ttEl.getBoundingClientRect();
-  let x = cx + 14, y = cy - 10;
-  if (x + r.width > window.innerWidth - 10) x = cx - r.width - 14;
-  if (y + r.height > window.innerHeight - 10) y = cy - r.height - 10;
-  if (y < 10) y = 10;
-  if (x < 10) x = 10;
-  ttEl.style.left = x + "px";
-  ttEl.style.top = y + "px";
-}
-function hideTooltip() { ttEl.classList.remove("visible"); }
+/* Tooltip: uses sobShowTooltip / sobHideTooltip from shared/utils.js */
+const showTooltip = sobShowTooltip;
+const hideTooltip = sobHideTooltip;
 
 /* Bind touch events the same as mouse for all hover rects */
 function bindTouchTooltip(sel, moveFn, leaveFn) {
@@ -235,14 +209,9 @@ function fmtTWh(v) { return d3.format(",")(Math.round(v / 1000)) + " TWh"; }
 function fmtGWh(v) { return d3.format(",")(Math.round(v)) + " GWh"; }
 function fmtBn(v) { return "\u00a3" + d3.format(",")(Math.round(v / 1000)) + "bn"; }
 function fmtMtoe(v) { return d3.format(".1f")(v) + " Mtoe"; }
-function isMobile() { return window.innerWidth < MOBILE; }
+function isMobile() { return sobIsMobile(); }
 
-function chartDims(container) {
-  const w = container.clientWidth;
-  const mobile = isMobile();
-  const h = Math.max(mobile ? 280 : 500, Math.min(mobile ? 400 : 600, window.innerHeight * (mobile ? 0.42 : 0.65)));
-  const m = { top: 30, right: mobile ? 40 : 110, bottom: 36, left: mobile ? 44 : 56 };
-  return { width: w, height: h, margin: m, innerW: w - m.left - m.right, innerH: h - m.top - m.bottom };
+function chartDims(container) { return sobChartDims(container); };
 }
 
 
@@ -255,19 +224,10 @@ let DATA;
 fetch("https://stateofbritain.uk/api/data/energy.json")
   .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
   .then(d => { DATA = d; init(); })
-  .catch(err => {
-    document.getElementById("loading-screen").style.display = "none";
-    const es = document.getElementById("error-screen");
-    es.style.display = "flex";
-    document.getElementById("error-msg").textContent = "Failed to load data: " + err.message;
-  });
+  .catch(sobShowError);
 
 function init() {
-  document.getElementById("loading-screen").classList.add("hidden");
-  setTimeout(() => { document.getElementById("loading-screen").style.display = "none"; }, 600);
-  document.getElementById("site-header").style.display = "";
-  document.getElementById("main-content").style.display = "";
-  document.getElementById("site-footer").style.display = "";
+  sobRevealContent();
 
   // Set big numbers
   var elec1990 = DATA.electricity.find(d => d.year === 1990);
@@ -282,10 +242,7 @@ function init() {
   window.addEventListener("resize", debounce(rebuildAll, 250));
 }
 
-let resizeTimer;
-function debounce(fn, ms) {
-  return function() { clearTimeout(resizeTimer); resizeTimer = setTimeout(fn, ms); };
-}
+function debounce(fn, ms) { return sobDebounce(fn, ms); }
 function rebuildAll() {
   document.querySelectorAll(".chart-container svg").forEach(s => s.remove());
   buildAllCharts();
@@ -1113,24 +1070,7 @@ function updateHonestChart(step) {
 /* =========================================================
    SCROLL OBSERVER & CHART DISPATCH
    ========================================================= */
-function setupScrollObserver() {
-  var observer = new IntersectionObserver(function(entries) {
-    entries.forEach(function(entry) {
-      var inner = entry.target.querySelector(".step-inner");
-      if (!inner) return;
-      if (entry.isIntersecting && entry.intersectionRatio > 0.4) {
-        inner.classList.add("active");
-        var sec = entry.target.dataset.section;
-        var step = +entry.target.dataset.step;
-        updateChart(sec, step);
-      } else {
-        inner.classList.remove("active");
-      }
-    });
-  }, { threshold: [0, 0.4, 0.6, 1] });
-
-  document.querySelectorAll(".step").forEach(function(el) { observer.observe(el); });
-}
+function setupScrollObserver() { sobSetupScrollObserver("hook"); }
 
 function updateChart(section, step) {
   switch (section) {

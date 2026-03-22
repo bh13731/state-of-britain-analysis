@@ -135,6 +135,7 @@
 </footer>
 
 <script src="https://d3js.org/d3.v7.min.js"></script>
+<script src="shared/utils.js"></script>
 <script>
 (function() {
 "use strict";
@@ -142,34 +143,13 @@
 /* =========================================================
    COLOURS & CONSTANTS
    ========================================================= */
-const C = {
-  primary: "#5B7553", secondary: "#8B6C42",
-  red: "#C53030", green: "#2E7D32", amber: "#A16B00", blue: "#2563A0",
-  faint: "#8A8A82", ink: "#1A1A1A", secondaryText: "#3D3D3D", muted: "#555555",
-  grid: "#F0F0EB", bg: "#FAFAF7",
-  redLight: "rgba(197,48,48,0.12)", greenLight: "rgba(46,125,50,0.08)",
-  primaryLight: "rgba(91,117,83,0.12)", secondaryLight: "rgba(139,108,66,0.12)",
-  amberLight: "rgba(161,107,0,0.12)"
-};
-const DURATION = 600;
-const MOBILE = 768;
+const C = SOB_COLORS;
+const DURATION = SOB_DURATION;
+const MOBILE = SOB_MOBILE;
 
-/* =========================================================
-   TOOLTIP HELPER
-   ========================================================= */
-const ttEl = document.getElementById("tooltip");
-function showTooltip(html, event) {
-  ttEl.innerHTML = html;
-  ttEl.classList.add("visible");
-  const r = ttEl.getBoundingClientRect();
-  let x = event.clientX + 14, y = event.clientY - 10;
-  if (x + r.width > window.innerWidth - 10) x = event.clientX - r.width - 14;
-  if (y + r.height > window.innerHeight - 10) y = event.clientY - r.height - 10;
-  if (y < 10) y = 10;
-  ttEl.style.left = x + "px";
-  ttEl.style.top = y + "px";
-}
-function hideTooltip() { ttEl.classList.remove("visible"); }
+/* Tooltip: uses sobShowTooltip / sobHideTooltip from shared/utils.js */
+const showTooltip = sobShowTooltip;
+const hideTooltip = sobHideTooltip;
 
 /* =========================================================
    HELPERS
@@ -177,15 +157,9 @@ function hideTooltip() { ttEl.classList.remove("visible"); }
 function fmtNum(v) { return d3.format(",")(Math.round(v)); }
 function fmtDec(v, d) { return d3.format("." + (d || 1) + "f")(v); }
 function fmtPct(v) { return d3.format(".0f")(v) + "%"; }
-function isMobile() { return window.innerWidth < MOBILE; }
+function isMobile() { return sobIsMobile(); }
 
-function chartDims(container) {
-  const w = container.clientWidth;
-  const mobile = isMobile();
-  const h = mobile ? Math.max(280, window.innerHeight * 0.44) : Math.max(500, Math.min(600, window.innerHeight * 0.65));
-  const m = mobile
-    ? { top: 24, right: 16, bottom: 40, left: 44 }
-    : { top: 30, right: 100, bottom: 48, left: 55 };
+function chartDims(container) { return sobChartDims(container); };
   return { width: w, height: h, margin: m, innerW: w - m.left - m.right, innerH: h - m.top - m.bottom };
 }
 
@@ -199,19 +173,10 @@ let DATA;
 fetch("https://stateofbritain.uk/api/data/water.json")
   .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
   .then(d => { DATA = d; init(); })
-  .catch(err => {
-    document.getElementById("loading-screen").style.display = "none";
-    const es = document.getElementById("error-screen");
-    es.style.display = "flex";
-    document.getElementById("error-msg").textContent = "Failed to load data: " + err.message;
-  });
+  .catch(sobShowError);
 
 function init() {
-  document.getElementById("loading-screen").classList.add("hidden");
-  setTimeout(() => { document.getElementById("loading-screen").style.display = "none"; }, 600);
-  document.getElementById("site-header").style.display = "";
-  document.getElementById("main-content").style.display = "";
-  document.getElementById("site-footer").style.display = "";
+  sobRevealContent();
 
   // Set big numbers
   document.getElementById("bn-spills").textContent = fmtDec(DATA.stormOverflows.avgSpillsPerOverflow2024, 1);
@@ -221,10 +186,7 @@ function init() {
   window.addEventListener("resize", debounce(rebuildAll, 250));
 }
 
-let resizeTimer;
-function debounce(fn, ms) {
-  return function() { clearTimeout(resizeTimer); resizeTimer = setTimeout(fn, ms); };
-}
+function debounce(fn, ms) { return sobDebounce(fn, ms); }
 function rebuildAll() {
   d3.selectAll("#chart-hook svg, #chart-pollution svg, #chart-leakage svg, #chart-system svg").remove();
   buildAllCharts();
@@ -1000,28 +962,7 @@ function updateChart(section, step) {
 /* =========================================================
    SCROLLYTELLING — IntersectionObserver
    ========================================================= */
-function setupScrollObserver() {
-  const steps = document.querySelectorAll(".step");
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      const inner = entry.target.querySelector(".step-inner");
-      if (entry.isIntersecting && entry.intersectionRatio >= 0.4) {
-        const section = entry.target.dataset.section;
-        document.querySelectorAll(`.step[data-section="${section}"] .step-inner`).forEach(el => el.classList.remove("active"));
-        inner.classList.add("active");
-        updateChart(section, +entry.target.dataset.step);
-      }
-    });
-  }, {
-    threshold: [0.4, 0.5, 0.6]
-  });
-
-  steps.forEach(step => observer.observe(step));
-
-  // Activate first step immediately
-  const firstStep = document.querySelector('.step[data-section="hook"][data-step="0"] .step-inner');
-  if (firstStep) firstStep.classList.add("active");
-}
+function setupScrollObserver() { sobSetupScrollObserver("hook"); }
 
 })();
 </script>

@@ -167,6 +167,7 @@
 </footer>
 
 <script src="https://d3js.org/d3.v7.min.js"></script>
+<script src="shared/utils.js"></script>
 <script>
 (function() {
 "use strict";
@@ -174,36 +175,13 @@
 /* =========================================================
    COLOURS & CONSTANTS
    ========================================================= */
-const C = {
-  slate: "#334155", red: "#C53030", green: "#2E7D32", amber: "#A16B00", blue: "#2563A0",
-  faint: "#B0B0A8", ink: "#1A1A1A", secondary: "#3D3D3D", muted: "#555555",
-  grid: "#F0F0EB", bg: "#FAFAF7",
-  slateLight: "rgba(51,65,85,0.12)", redLight: "rgba(197,48,48,0.12)",
-  greenLight: "rgba(46,125,50,0.08)", amberLight: "rgba(161,107,0,0.12)",
-  blueLight: "rgba(37,99,160,0.12)"
-};
-const DURATION = 600;
-const MOBILE = 768;
+const C = SOB_COLORS;
+const DURATION = SOB_DURATION;
+const MOBILE = SOB_MOBILE;
 
-/* =========================================================
-   TOOLTIP HELPER
-   ========================================================= */
-const ttEl = document.getElementById("tooltip");
-function showTooltip(html, event) {
-  ttEl.innerHTML = html;
-  ttEl.classList.add("visible");
-  const cx = event.touches ? event.touches[0].clientX : event.clientX;
-  const cy = event.touches ? event.touches[0].clientY : event.clientY;
-  const r = ttEl.getBoundingClientRect();
-  let x = cx + 14, y = cy - 10;
-  if (x + r.width > window.innerWidth - 10) x = cx - r.width - 14;
-  if (y + r.height > window.innerHeight - 10) y = cy - r.height - 10;
-  if (y < 10) y = 10;
-  if (x < 10) x = 10;
-  ttEl.style.left = x + "px";
-  ttEl.style.top = y + "px";
-}
-function hideTooltip() { ttEl.classList.remove("visible"); }
+/* Tooltip: uses sobShowTooltip / sobHideTooltip from shared/utils.js */
+const showTooltip = sobShowTooltip;
+const hideTooltip = sobHideTooltip;
 
 /* =========================================================
    HELPERS
@@ -212,15 +190,9 @@ function fmtK(v) { return d3.format(",.1f")(v) + "k"; }
 function fmtM(v) { return d3.format(",.2f")(v) + "m"; }
 function fmtPct(v) { return d3.format(".1f")(v) + "%"; }
 
-function isMobile() { return window.innerWidth < MOBILE; }
+function isMobile() { return sobIsMobile(); }
 
-function chartDims(container) {
-  const w = container.clientWidth;
-  const mobile = isMobile();
-  const h = mobile ? Math.max(280, window.innerHeight * 0.44) : Math.max(500, Math.min(600, window.innerHeight * 0.65));
-  const m = mobile
-    ? { top: 24, right: 16, bottom: 36, left: 44 }
-    : { top: 30, right: 100, bottom: 40, left: 62 };
+function chartDims(container) { return sobChartDims(container); };
   return { width: w, height: h, margin: m, innerW: w - m.left - m.right, innerH: h - m.top - m.bottom };
 }
 
@@ -238,19 +210,10 @@ let DATA;
 fetch("https://stateofbritain.uk/api/data/justice.json")
   .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
   .then(d => { DATA = d; init(); })
-  .catch(err => {
-    document.getElementById("loading-screen").style.display = "none";
-    const es = document.getElementById("error-screen");
-    es.style.display = "flex";
-    document.getElementById("error-msg").textContent = "Failed to load data: " + err.message;
-  });
+  .catch(sobShowError);
 
 function init() {
-  document.getElementById("loading-screen").classList.add("hidden");
-  setTimeout(() => { document.getElementById("loading-screen").style.display = "none"; }, 600);
-  document.getElementById("site-header").style.display = "";
-  document.getElementById("main-content").style.display = "";
-  document.getElementById("site-footer").style.display = "";
+  sobRevealContent();
 
   // Set big numbers
   document.getElementById("bn-charge-rate").textContent = DATA.snapshot.chargeRate + "%";
@@ -261,10 +224,7 @@ function init() {
   window.addEventListener("resize", debounce(rebuildAll, 250));
 }
 
-let resizeTimer;
-function debounce(fn, ms) {
-  return function() { clearTimeout(resizeTimer); resizeTimer = setTimeout(fn, ms); };
-}
+function debounce(fn, ms) { return sobDebounce(fn, ms); }
 function rebuildAll() {
   d3.selectAll("#chart-hook svg, #chart-police svg, #chart-crime svg, #chart-courts svg, #chart-prison svg").remove();
   buildAllCharts();
@@ -1239,28 +1199,7 @@ function updateChart(section, step) {
 /* =========================================================
    SCROLLYTELLING — IntersectionObserver
    ========================================================= */
-function setupScrollObserver() {
-  var steps = document.querySelectorAll(".step");
-  var observer = new IntersectionObserver(function(entries) {
-    entries.forEach(function(entry) {
-      var inner = entry.target.querySelector(".step-inner");
-      if (entry.isIntersecting && entry.intersectionRatio >= 0.4) {
-        var section = entry.target.dataset.section;
-        document.querySelectorAll('.step[data-section="' + section + '"] .step-inner').forEach(function(el) { el.classList.remove("active"); });
-        inner.classList.add("active");
-        updateChart(section, +entry.target.dataset.step);
-      }
-    });
-  }, {
-    threshold: [0.4, 0.5, 0.6]
-  });
-
-  steps.forEach(function(step) { observer.observe(step); });
-
-  // Activate first step immediately
-  var firstStep = document.querySelector('.step[data-section="hook"][data-step="0"] .step-inner');
-  if (firstStep) firstStep.classList.add("active");
-}
+function setupScrollObserver() { sobSetupScrollObserver("hook"); }
 
 })();
 </script>

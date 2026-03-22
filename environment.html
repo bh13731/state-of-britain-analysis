@@ -179,6 +179,7 @@
 </footer>
 
 <script src="https://d3js.org/d3.v7.min.js"></script>
+<script src="shared/utils.js"></script>
 <script>
 (function() {
 "use strict";
@@ -186,24 +187,9 @@
 /* =========================================================
    COLOURS & CONSTANTS
    ========================================================= */
-const C = {
-  teal: "#0891B2", tealDark: "#0E7490", tealLight: "rgba(8,145,178,0.12)",
-  green: "#2E7D32", greenLight: "rgba(46,125,50,0.08)",
-  amber: "#D97706", amberDark: "#B45309", amberLight: "rgba(217,119,6,0.12)",
-  red: "#C53030",
-  faint: "#B0B0A8", ink: "#1A1A1A", secondary: "#3D3D3D", muted: "#555555",
-  grid: "#E4E4DE", bg: "#FAFAF7",
-  electricity: "#0891B2",
-  industry: "#5B21B6",
-  transport: "#D97706",
-  buildings: "#C53030",
-  agriculture: "#92400E",
-  waste: "#6B7280",
-  fuel: "#64748B",
-  lulucf: "#A3A3A3"
-};
-const DURATION = 600;
-const MOBILE = 768;
+const C = SOB_COLORS;
+const DURATION = SOB_DURATION;
+const MOBILE = SOB_MOBILE;
 
 /* sector display config */
 const SECTORS = [
@@ -217,25 +203,9 @@ const SECTORS = [
   { key: "lulucf", label: "Land use", color: C.lulucf }
 ];
 
-/* =========================================================
-   TOOLTIP HELPER
-   ========================================================= */
-const ttEl = document.getElementById("tooltip");
-function showTooltip(html, event) {
-  ttEl.innerHTML = html;
-  ttEl.classList.add("visible");
-  const cx = event.touches ? event.touches[0].clientX : event.clientX;
-  const cy = event.touches ? event.touches[0].clientY : event.clientY;
-  const r = ttEl.getBoundingClientRect();
-  let x = cx + 14, y = cy - 10;
-  if (x + r.width > window.innerWidth - 10) x = cx - r.width - 14;
-  if (y + r.height > window.innerHeight - 10) y = cy - r.height - 10;
-  if (y < 10) y = 10;
-  if (x < 10) x = 10;
-  ttEl.style.left = x + "px";
-  ttEl.style.top = y + "px";
-}
-function hideTooltip() { ttEl.classList.remove("visible"); }
+/* Tooltip: uses sobShowTooltip / sobHideTooltip from shared/utils.js */
+const showTooltip = sobShowTooltip;
+const hideTooltip = sobHideTooltip;
 
 /* =========================================================
    HELPERS
@@ -244,14 +214,9 @@ function fmtMt(v) { return d3.format(",.0f")(v) + " Mt"; }
 function fmtPct(v) { return d3.format("+.0f")(v) + "%"; }
 function fmtK(v) { return v >= 1000 ? d3.format(",.0f")(v / 1000) + "k" : d3.format(",.0f")(v); }
 function fmtConc(v) { return d3.format(".1f")(v) + " \u00b5g/m\u00b3"; }
-function isMobile() { return window.innerWidth < MOBILE; }
+function isMobile() { return sobIsMobile(); }
 
-function chartDims(container) {
-  const w = container.clientWidth;
-  const mobile = isMobile();
-  const h = Math.max(mobile ? 280 : 500, Math.min(mobile ? 400 : 600, window.innerHeight * (mobile ? 0.42 : 0.65)));
-  const m = { top: 24, right: mobile ? 40 : 100, bottom: 36, left: mobile ? 44 : 62 };
-  return { width: w, height: h, margin: m, innerW: w - m.left - m.right, innerH: h - m.top - m.bottom };
+function chartDims(container) { return sobChartDims(container); };
 }
 
 
@@ -264,19 +229,10 @@ let DATA;
 fetch("https://stateofbritain.uk/api/data/environment.json")
   .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
   .then(d => { DATA = d; init(); })
-  .catch(err => {
-    document.getElementById("loading-screen").style.display = "none";
-    const es = document.getElementById("error-screen");
-    es.style.display = "flex";
-    document.getElementById("error-msg").textContent = "Failed to load data: " + err.message;
-  });
+  .catch(sobShowError);
 
 function init() {
-  document.getElementById("loading-screen").classList.add("hidden");
-  setTimeout(() => { document.getElementById("loading-screen").style.display = "none"; }, 600);
-  document.getElementById("site-header").style.display = "";
-  document.getElementById("main-content").style.display = "";
-  document.getElementById("site-footer").style.display = "";
+  sobRevealContent();
 
   /* Set big numbers */
   const first = DATA.ghgEmissions[0];
@@ -289,10 +245,7 @@ function init() {
   window.addEventListener("resize", debounce(rebuildAll, 250));
 }
 
-let resizeTimer;
-function debounce(fn, ms) {
-  return function() { clearTimeout(resizeTimer); resizeTimer = setTimeout(fn, ms); };
-}
+function debounce(fn, ms) { return sobDebounce(fn, ms); }
 function rebuildAll() {
   document.querySelectorAll(".chart-container svg").forEach(el => el.remove());
   buildAllCharts();
@@ -1314,24 +1267,7 @@ function updateChart(section, step) {
 /* =========================================================
    SCROLLYTELLING — IntersectionObserver
    ========================================================= */
-function setupScrollObserver() {
-  const steps = document.querySelectorAll(".step");
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      const inner = entry.target.querySelector(".step-inner");
-      if (entry.isIntersecting && entry.intersectionRatio >= 0.4) {
-        const section = entry.target.dataset.section;
-        document.querySelectorAll(`.step[data-section="${section}"] .step-inner`).forEach(el => el.classList.remove("active"));
-        inner.classList.add("active");
-        updateChart(section, +entry.target.dataset.step);
-      }
-    });
-  }, {
-    threshold: [0.4, 0.5, 0.6]
-  });
-
-  steps.forEach(step => observer.observe(step));
-}
+function setupScrollObserver() { sobSetupScrollObserver("hook"); }
 
 })();
 </script>

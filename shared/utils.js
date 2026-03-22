@@ -343,6 +343,22 @@ function sobShowError(err) {
     }
     msg.textContent = text;
   }
+  sobAddRetryButton();
+}
+
+/**
+ * Add a refresh/retry button to the error screen.
+ * @returns {void}
+ */
+function sobAddRetryButton() {
+  var es = document.getElementById("error-screen");
+  if (es && !es.querySelector("button")) {
+    var btn = document.createElement("button");
+    btn.textContent = "Retry";
+    btn.style.cssText = "margin-top:16px;padding:10px 24px;font-size:14px;font-weight:600;background:#2563A0;color:#fff;border:none;border-radius:6px;cursor:pointer;min-height:44px;";
+    btn.addEventListener("click", function() { window.location.reload(); });
+    es.appendChild(btn);
+  }
 }
 
 /**

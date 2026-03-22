@@ -70,6 +70,7 @@ function createElement(id, overrides) {
     querySelectorAll() { return []; },
     querySelector() { return null; },
     closest() { return null; },
+    appendChild() {},
     dataset: {},
     ...overrides,
   };
@@ -90,7 +91,20 @@ createElement('site-footer');
 global.document = {
   getElementById(id) { return elements[id] || null; },
   querySelectorAll() { return []; },
-  querySelector() { return null; },
+  querySelector(sel) {
+    // Support querySelector("button") for retry button check
+    return null;
+  },
+  createElement(tag) {
+    return {
+      tagName: tag.toUpperCase(),
+      textContent: '',
+      style: { cssText: '' },
+      addEventListener() {},
+      appendChild() {},
+      querySelector() { return null; },
+    };
+  },
 };
 
 // Mock global window

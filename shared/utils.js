@@ -28,18 +28,43 @@ var SOB_DURATION = 600;
 var SOB_MOBILE = 768;
 
 /* =========================================================
+   SANITIZATION
+   ========================================================= */
+
+/**
+ * Sanitize HTML by stripping dangerous tags and attributes.
+ * Allows safe formatting tags used in tooltips: div, span, b, strong, em, br.
+ * @param {string} html - potentially unsafe HTML string
+ * @returns {string} sanitized HTML
+ */
+function sobSanitizeHTML(html) {
+  // Strip script tags and event handlers
+  var cleaned = html
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "")
+    .replace(/\bon\w+\s*=\s*["'][^"']*["']/gi, "")
+    .replace(/\bon\w+\s*=\s*[^\s>]*/gi, "")
+    .replace(/javascript\s*:/gi, "")
+    .replace(/<iframe\b[^>]*>.*?<\/iframe>/gi, "")
+    .replace(/<object\b[^>]*>.*?<\/object>/gi, "")
+    .replace(/<embed\b[^>]*>/gi, "")
+    .replace(/<link\b[^>]*>/gi, "");
+  return cleaned;
+}
+
+/* =========================================================
    TOOLTIP
    ========================================================= */
 
 /**
  * Show a tooltip near the cursor.
+ * HTML is sanitized to prevent XSS from untrusted data.
  * @param {string} html - HTML content for the tooltip
  * @param {MouseEvent|TouchEvent} event - pointer event for positioning
  */
 function sobShowTooltip(html, event) {
   var ttEl = document.getElementById("tooltip");
   if (!ttEl) return;
-  ttEl.innerHTML = html;
+  ttEl.innerHTML = sobSanitizeHTML(html);
   ttEl.classList.add("visible");
   var cx = event.touches ? event.touches[0].clientX : event.clientX;
   var cy = event.touches ? event.touches[0].clientY : event.clientY;

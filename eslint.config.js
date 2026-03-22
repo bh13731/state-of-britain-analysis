@@ -70,6 +70,10 @@ export default [
         sobFmtBnShort: "readonly",
         sobFmt: "readonly",
         sobFmtComma: "readonly",
+        sobCreateChart: "readonly",
+        sobAddHoverOverlay: "readonly",
+        sobAddHoverLine: "readonly",
+        sobSanitizeHTML: "readonly",
       },
     },
     rules: {

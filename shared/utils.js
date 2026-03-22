@@ -129,6 +129,57 @@ function sobChartDims(container) {
   return { width: w, height: h, margin: m, innerW: w - m.left - m.right, innerH: h - m.top - m.bottom };
 }
 
+/**
+ * @typedef {Object} ChartScaffold
+ * @property {Object} svg - D3 selection of the SVG element
+ * @property {Object} g - D3 selection of the inner group (translated by margins)
+ * @property {ChartDimensions} dim - chart dimensions
+ */
+
+/**
+ * Create the standard SVG + translated group for a chart.
+ * Eliminates the 5-line boilerplate repeated in every chart builder.
+ * @param {string} containerId - DOM id of the chart container
+ * @returns {ChartScaffold|null} scaffold object, or null if container not found
+ */
+function sobCreateChart(containerId) {
+  var container = document.getElementById(containerId);
+  if (!container) return null;
+  var dim = sobChartDims(container);
+  var svg = d3.select(container).append("svg")
+    .attr("width", dim.width).attr("height", dim.height)
+    .attr("viewBox", "0 0 " + dim.width + " " + dim.height);
+  var g = svg.append("g")
+    .attr("transform", "translate(" + dim.margin.left + "," + dim.margin.top + ")");
+  return { svg: svg, g: g, dim: dim, container: container };
+}
+
+/**
+ * Add a transparent hover overlay rectangle to a chart group.
+ * @param {Object} g - D3 selection of the chart group
+ * @param {number} width - overlay width
+ * @param {number} height - overlay height
+ * @returns {Object} D3 selection of the hover rect
+ */
+function sobAddHoverOverlay(g, width, height) {
+  return g.append("rect")
+    .attr("width", width).attr("height", height)
+    .attr("fill", "transparent").style("cursor", "crosshair");
+}
+
+/**
+ * Add a vertical hover line to a chart group.
+ * @param {Object} g - D3 selection of the chart group
+ * @param {number} height - line height
+ * @returns {Object} D3 selection of the hover line (initially hidden)
+ */
+function sobAddHoverLine(g, height) {
+  return g.append("line")
+    .attr("y1", 0).attr("y2", height)
+    .attr("stroke", "#999").attr("stroke-width", 1).attr("stroke-dasharray", "3,2")
+    .style("opacity", 0);
+}
+
 /* =========================================================
    FORMATTERS (require D3)
    ========================================================= */

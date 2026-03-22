@@ -1,6 +1,9 @@
 (function() {
 "use strict";
 
+sobInstallErrorHandler();
+if (!sobCheckD3()) return;
+
 /* =========================================================
    COLOURS & CONSTANTS
    ========================================================= */
@@ -31,8 +34,7 @@ function fmtMtoe(v) { return d3.format(".1f")(v) + " Mtoe"; }
    ========================================================= */
 let DATA;
 
-fetch("https://stateofbritain.uk/api/data/energy.json")
-  .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
+sobFetchJSON("https://stateofbritain.uk/api/data/energy.json")
   .then(d => { DATA = d; init(); })
   .catch(sobShowError);
 

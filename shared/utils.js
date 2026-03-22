@@ -180,17 +180,66 @@ function sobDebounce(fn, ms) {
    DATA LOADING HELPERS
    ========================================================= */
 
+/** @type {number} Default fetch timeout in milliseconds */
+var SOB_FETCH_TIMEOUT = 15000;
+
+/** @type {number} Number of retry attempts for failed fetches */
+var SOB_FETCH_RETRIES = 1;
+
+/**
+ * Fetch JSON data with timeout and retry logic.
+ * @param {string} url - the URL to fetch
+ * @param {Object} [options] - optional configuration
+ * @param {number} [options.timeout=15000] - timeout in ms
+ * @param {number} [options.retries=1] - number of retries on failure
+ * @returns {Promise<any>} parsed JSON response
+ */
+function sobFetchJSON(url, options) {
+  var timeout = (options && options.timeout) || SOB_FETCH_TIMEOUT;
+  var retries = (options && options.retries !== undefined) ? options.retries : SOB_FETCH_RETRIES;
+
+  function attempt(retriesLeft) {
+    var controller = new AbortController();
+    var timer = setTimeout(function() { controller.abort(); }, timeout);
+
+    return fetch(url, { signal: controller.signal })
+      .then(function(r) {
+        clearTimeout(timer);
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        return r.json();
+      })
+      .catch(function(err) {
+        clearTimeout(timer);
+        if (retriesLeft > 0) {
+          return attempt(retriesLeft - 1);
+        }
+        throw err;
+      });
+  }
+
+  return attempt(retries);
+}
+
 /**
  * Standard data loading error handler — hides loading screen, shows error.
  * @param {Error} err - the error that occurred
  * @returns {void}
  */
 function sobShowError(err) {
-  document.getElementById("loading-screen").style.display = "none";
+  var ls = document.getElementById("loading-screen");
+  if (ls) ls.style.display = "none";
   var es = document.getElementById("error-screen");
   if (es) es.style.display = "flex";
   var msg = document.getElementById("error-msg");
-  if (msg) msg.textContent = "Failed to load data: " + err.message;
+  if (msg) {
+    var text = "Failed to load data.";
+    if (err && err.name === "AbortError") {
+      text = "Request timed out. Please check your connection and refresh.";
+    } else if (err && err.message) {
+      text = "Failed to load data: " + err.message;
+    }
+    msg.textContent = text;
+  }
 }
 
 /**
@@ -198,14 +247,43 @@ function sobShowError(err) {
  * @returns {void}
  */
 function sobRevealContent() {
-  document.getElementById("loading-screen").classList.add("hidden");
-  setTimeout(function() { document.getElementById("loading-screen").style.display = "none"; }, 600);
+  var ls = document.getElementById("loading-screen");
+  if (ls) {
+    ls.classList.add("hidden");
+    setTimeout(function() { ls.style.display = "none"; }, 600);
+  }
   var header = document.getElementById("site-header");
   if (header) header.style.display = "";
   var main = document.getElementById("main-content");
   if (main) main.style.display = "";
   var footer = document.getElementById("site-footer");
   if (footer) footer.style.display = "";
+}
+
+/**
+ * Install a global error handler that shows the error screen on uncaught exceptions.
+ * Call once per page after DOM is ready.
+ * @returns {void}
+ */
+function sobInstallErrorHandler() {
+  window.onerror = function(message) {
+    sobShowError(new Error(String(message)));
+  };
+  window.onunhandledrejection = function(event) {
+    sobShowError(event.reason instanceof Error ? event.reason : new Error(String(event.reason)));
+  };
+}
+
+/**
+ * Check that D3.js loaded successfully, show error if not.
+ * @returns {boolean} true if D3 is available
+ */
+function sobCheckD3() {
+  if (typeof d3 === "undefined") {
+    sobShowError(new Error("Chart library (D3.js) failed to load. Please refresh the page."));
+    return false;
+  }
+  return true;
 }
 
 /* =========================================================

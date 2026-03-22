@@ -1,6 +1,9 @@
 (function() {
 "use strict";
 
+sobInstallErrorHandler();
+if (!sobCheckD3()) return;
+
 /* =========================================================
    COLOURS & CONSTANTS
    ========================================================= */
@@ -35,8 +38,7 @@ function fmtConc(v) { return d3.format(".1f")(v) + " \u00b5g/m\u00b3"; }
    ========================================================= */
 let DATA;
 
-fetch("https://stateofbritain.uk/api/data/environment.json")
-  .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
+sobFetchJSON("https://stateofbritain.uk/api/data/environment.json")
   .then(d => { DATA = d; init(); })
   .catch(sobShowError);
 

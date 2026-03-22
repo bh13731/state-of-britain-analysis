@@ -331,6 +331,102 @@ global.document.querySelectorAll = function() { return []; };
 global.document.querySelector = function() { return null; };
 
 /* =========================================================
+   Tests: sobShowError edge cases
+   ========================================================= */
+
+console.log('\n--- sobShowError edge cases ---');
+
+// Test timeout error message
+elements['loading-screen'].style.display = '';
+elements['error-screen'].style.display = 'none';
+const abortErr = new Error('The operation was aborted');
+abortErr.name = 'AbortError';
+sobShowError(abortErr);
+assertEqual(elements['error-msg'].textContent, 'Request timed out. Please check your connection and refresh.', 'showError handles AbortError with timeout message');
+
+// Test null error
+elements['error-screen'].style.display = 'none';
+sobShowError(null);
+assertEqual(elements['error-msg'].textContent, 'Failed to load data.', 'showError handles null error');
+
+/* =========================================================
+   Tests: sobCheckD3
+   ========================================================= */
+
+console.log('\n--- sobCheckD3 ---');
+
+// d3 is not defined in test env
+elements['loading-screen'].style.display = '';
+elements['error-screen'].style.display = 'none';
+assertEqual(sobCheckD3(), false, 'sobCheckD3 returns false when d3 is not loaded');
+assertEqual(elements['error-screen'].style.display, 'flex', 'sobCheckD3 shows error screen when d3 missing');
+
+// Mock d3
+global.d3 = {};
+elements['error-screen'].style.display = 'none';
+assertEqual(sobCheckD3(), true, 'sobCheckD3 returns true when d3 is available');
+delete global.d3;
+
+/* =========================================================
+   Tests: sobInstallErrorHandler
+   ========================================================= */
+
+console.log('\n--- sobInstallErrorHandler ---');
+global.window.onerror = null;
+global.window.onunhandledrejection = null;
+sobInstallErrorHandler();
+assert(typeof global.window.onerror === 'function', 'sobInstallErrorHandler sets window.onerror');
+assert(typeof global.window.onunhandledrejection === 'function', 'sobInstallErrorHandler sets window.onunhandledrejection');
+
+/* =========================================================
+   Tests: sobFetchJSON
+   ========================================================= */
+
+console.log('\n--- sobFetchJSON ---');
+
+// Mock fetch and AbortController
+global.AbortController = function() {
+  this.signal = {};
+  this.abort = function() {};
+};
+global.fetch = function(url, opts) {
+  return Promise.resolve({
+    ok: true,
+    json: function() { return Promise.resolve({ test: true }); }
+  });
+};
+
+sobFetchJSON('https://example.com/data.json')
+  .then(function(data) {
+    assert(data.test === true, 'sobFetchJSON returns parsed JSON');
+  })
+  .catch(function() {
+    assert(false, 'sobFetchJSON should not reject on success');
+  })
+  .then(function() {
+    // Test retry on failure
+    let attempts = 0;
+    global.fetch = function() {
+      attempts++;
+      if (attempts <= 1) return Promise.reject(new Error('network'));
+      return Promise.resolve({
+        ok: true,
+        json: function() { return Promise.resolve({ retried: true }); }
+      });
+    };
+    return sobFetchJSON('https://example.com/data.json', { retries: 1 });
+  })
+  .then(function(data) {
+    assert(data.retried === true, 'sobFetchJSON retries on failure');
+  })
+  .then(function() {
+    // Print final summary
+    printSummary();
+  });
+
+function printSummary() {
+
+/* =========================================================
    Summary
    ========================================================= */
 
@@ -343,3 +439,4 @@ if (failures.length > 0) {
 console.log('='.repeat(50));
 
 process.exit(failed > 0 ? 1 : 0);
+} // end printSummary

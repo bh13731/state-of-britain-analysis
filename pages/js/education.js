@@ -1,6 +1,9 @@
 (function() {
 "use strict";
 
+sobInstallErrorHandler();
+if (!sobCheckD3()) return;
+
 /* =========================================================
    COLOURS & CONSTANTS
    ========================================================= */
@@ -26,8 +29,7 @@ function parseAcademicYear(s) {
    ========================================================= */
 let DATA;
 
-fetch("https://stateofbritain.uk/api/data/education.json")
-  .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
+sobFetchJSON("https://stateofbritain.uk/api/data/education.json")
   .then(d => { DATA = d; init(); })
   .catch(sobShowError);
 

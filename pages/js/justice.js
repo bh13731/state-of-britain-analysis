@@ -1,6 +1,9 @@
 (function() {
 "use strict";
 
+sobInstallErrorHandler();
+if (!sobCheckD3()) return;
+
 /* =========================================================
    COLOURS & CONSTANTS
    ========================================================= */
@@ -27,8 +30,7 @@ function parseFinYear(fy) {
    ========================================================= */
 let DATA;
 
-fetch("https://stateofbritain.uk/api/data/justice.json")
-  .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
+sobFetchJSON("https://stateofbritain.uk/api/data/justice.json")
   .then(d => { DATA = d; init(); })
   .catch(sobShowError);
 

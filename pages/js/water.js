@@ -1,6 +1,9 @@
 (function() {
 "use strict";
 
+sobInstallErrorHandler();
+if (!sobCheckD3()) return;
+
 /* =========================================================
    COLOURS & CONSTANTS
    ========================================================= */
@@ -22,8 +25,7 @@ function fmtDec(v, d) { return d3.format("." + (d || 1) + "f")(v); }
    ========================================================= */
 let DATA;
 
-fetch("https://stateofbritain.uk/api/data/water.json")
-  .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
+sobFetchJSON("https://stateofbritain.uk/api/data/water.json")
   .then(d => { DATA = d; init(); })
   .catch(sobShowError);
 

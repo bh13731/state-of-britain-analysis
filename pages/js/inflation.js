@@ -1,6 +1,9 @@
 (function() {
 "use strict";
 
+sobInstallErrorHandler();
+if (!sobCheckD3()) return;
+
 /* =========================================================
    COLOURS & CONSTANTS
    ========================================================= */
@@ -54,8 +57,7 @@ function computeRates(series) {
 /* =========================================================
    DATA LOAD & INIT
    ========================================================= */
-fetch("https://stateofbritain.uk/api/data/cpih.json")
-  .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
+sobFetchJSON("https://stateofbritain.uk/api/data/cpih.json")
   .then(d => { DATA = d; SERIES = d.series; AGGREGATES = d.aggregates; RATES = computeRates(SERIES); init(); })
   .catch(sobShowError);
 

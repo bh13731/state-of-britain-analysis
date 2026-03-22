@@ -1,6 +1,9 @@
 (function() {
 "use strict";
 
+sobInstallErrorHandler();
+if (!sobCheckD3()) return;
+
 /* =========================================================
    COLOURS & CONSTANTS
    ========================================================= */
@@ -19,8 +22,7 @@ function truncLabel(s, max) { return s.length > max ? s.slice(0, max - 1) + "\u2
    ========================================================= */
 let DATA;
 
-fetch("https://stateofbritain.uk/api/data/spending.json")
-  .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
+sobFetchJSON("https://stateofbritain.uk/api/data/spending.json")
   .then(d => { DATA = d; init(); })
   .catch(sobShowError);
 

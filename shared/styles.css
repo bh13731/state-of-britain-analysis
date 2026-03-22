@@ -290,7 +290,7 @@ a:focus-visible {
   padding: 0;
   margin: -1px;
   overflow: hidden;
-  clip: rect(0, 0, 0, 0);
+  clip-path: inset(50%);
   white-space: nowrap;
   border: 0;
 }
@@ -380,6 +380,6 @@ a:focus-visible {
   .story-nav, .skip-link, #loading-screen, #error-screen { display: none !important; }
   .scroll-section { display: block; }
   .scroll-graphic { position: static; height: auto; }
-  .step { min-height: auto; page-break-inside: avoid; }
+  .step { min-height: auto; break-inside: avoid; }
   .step-inner { opacity: 1 !important; }
 }

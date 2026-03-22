@@ -428,7 +428,7 @@ sobFetchJSON('https://example.com/data.json')
         json: function() { return Promise.resolve({ retried: true }); }
       });
     };
-    return sobFetchJSON('https://example.com/data.json', { retries: 1 });
+    return sobFetchJSON('https://example.com/retry-test.json', { retries: 1 });
   })
   .then(function(data) {
     assert(data.retried === true, 'sobFetchJSON retries on failure');

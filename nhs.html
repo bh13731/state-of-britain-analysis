@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="NHS waiting times, A&E performance, and how the health service stopped meeting its own standards. Interactive data visualisation.">
 <title>State of Britain — NHS Waiting Times</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -17,10 +18,11 @@
 </style>
 </head>
 <body>
+<a class="skip-link" href="#main-content">Skip to content</a>
 
 <nav class="story-nav"><a href="index.html" style="color:#2563A0;text-decoration:none;font-weight:500;">&larr; All stories</a><span style="margin:0 12px;color:#8A8A82;">|</span><span style="color:#555555;font-weight:600;">NHS</span></nav>
 
-<div id="loading-screen">
+<div id="loading-screen" role="status" aria-live="polite">
   <div class="spinner"></div>
   <p>Loading NHS data&hellip;</p>
 </div>
@@ -58,7 +60,7 @@
     </div>
   </div>
   <div class="scroll-graphic">
-    <div class="chart-container" id="chart-hook"></div>
+    <div class="chart-container" id="chart-hook" role="img" aria-label="Hook chart"></div>
   </div>
 </section>
 
@@ -80,7 +82,7 @@
     </div>
   </div>
   <div class="scroll-graphic">
-    <div class="chart-container" id="chart-18week"></div>
+    <div class="chart-container" id="chart-18week" role="img" aria-label="18Week chart"></div>
   </div>
 </section>
 
@@ -102,7 +104,7 @@
     </div>
   </div>
   <div class="scroll-graphic">
-    <div class="chart-container" id="chart-longwait"></div>
+    <div class="chart-container" id="chart-longwait" role="img" aria-label="Longwait chart"></div>
   </div>
 </section>
 
@@ -124,7 +126,7 @@
     </div>
   </div>
   <div class="scroll-graphic">
-    <div class="chart-container" id="chart-median"></div>
+    <div class="chart-container" id="chart-median" role="img" aria-label="Median chart"></div>
   </div>
 </section>
 
@@ -146,7 +148,7 @@
     </div>
   </div>
   <div class="scroll-graphic">
-    <div class="chart-container" id="chart-ae"></div>
+    <div class="chart-container" id="chart-ae" role="img" aria-label="Ae chart"></div>
   </div>
 </section>
 
@@ -167,7 +169,7 @@
     </div>
   </div>
   <div class="scroll-graphic">
-    <div class="chart-container" id="chart-outlook"></div>
+    <div class="chart-container" id="chart-outlook" role="img" aria-label="Outlook chart"></div>
   </div>
 </section>
 
@@ -179,7 +181,7 @@
   Contains public sector information licensed under the <a href="https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/" target="_blank" rel="noopener">Open Government Licence v3.0</a>.</p>
 </footer>
 
-<script src="https://d3js.org/d3.v7.min.js"></script>
+<script src="https://d3js.org/d3.v7.min.js" integrity="sha384-CjloA8y00+1SDAUkjs099PVfnY2KmDC2BZnws9kh8D/lX1s46w6EPhpXdqMfjK6i" crossorigin="anonymous"></script>
 <script src="shared/utils.js"></script>
 <script>
 (function() {

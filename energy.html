@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="How Britain's electricity grid transformed from coal to renewables — a quiet revolution in energy generation.">
 <title>State of Britain — Energy</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,8 +19,9 @@
 </style>
 </head>
 <body>
+<a class="skip-link" href="#main-content">Skip to content</a>
 
-<div id="loading-screen">
+<div id="loading-screen" role="status" aria-live="polite">
   <div class="spinner"></div>
   <p>Loading energy data&hellip;</p>
 </div>
@@ -60,7 +62,7 @@
     </div>
   </div>
   <div class="scroll-graphic">
-    <div class="chart-container" id="chart-hook"></div>
+    <div class="chart-container" id="chart-hook" role="img" aria-label="Hook chart"></div>
   </div>
 </section>
 
@@ -81,7 +83,7 @@
     </div>
   </div>
   <div class="scroll-graphic">
-    <div class="chart-container" id="chart-coal"></div>
+    <div class="chart-container" id="chart-coal" role="img" aria-label="Coal chart"></div>
   </div>
 </section>
 
@@ -102,7 +104,7 @@
     </div>
   </div>
   <div class="scroll-graphic">
-    <div class="chart-container" id="chart-renewables"></div>
+    <div class="chart-container" id="chart-renewables" role="img" aria-label="Renewables chart"></div>
   </div>
 </section>
 
@@ -123,7 +125,7 @@
     </div>
   </div>
   <div class="scroll-graphic">
-    <div class="chart-container" id="chart-mix"></div>
+    <div class="chart-container" id="chart-mix" role="img" aria-label="Mix chart"></div>
   </div>
 </section>
 
@@ -144,7 +146,7 @@
     </div>
   </div>
   <div class="scroll-graphic">
-    <div class="chart-container" id="chart-imports"></div>
+    <div class="chart-container" id="chart-imports" role="img" aria-label="Imports chart"></div>
   </div>
 </section>
 
@@ -165,7 +167,7 @@
     </div>
   </div>
   <div class="scroll-graphic">
-    <div class="chart-container" id="chart-honest"></div>
+    <div class="chart-container" id="chart-honest" role="img" aria-label="Honest chart"></div>
   </div>
 </section>
 
@@ -177,7 +179,7 @@
   Contains public sector information licensed under the <a href="https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/" target="_blank" rel="noopener">Open Government Licence v3.0</a>.</p>
 </footer>
 
-<script src="https://d3js.org/d3.v7.min.js"></script>
+<script src="https://d3js.org/d3.v7.min.js" integrity="sha384-CjloA8y00+1SDAUkjs099PVfnY2KmDC2BZnws9kh8D/lX1s46w6EPhpXdqMfjK6i" crossorigin="anonymous"></script>
 <script src="shared/utils.js"></script>
 <script>
 (function() {

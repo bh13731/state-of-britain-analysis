@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Britain's defence spending, military personnel numbers, and the gap between NATO commitments and reality.">
 <title>State of Britain — Defence</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,10 +19,11 @@
 </style>
 </head>
 <body>
+<a class="skip-link" href="#main-content">Skip to content</a>
 
 <nav class="story-nav"><a href="index.html" style="color:#2563A0;text-decoration:none;font-weight:500;">&larr; All stories</a><span style="margin:0 12px;color:#8A8A82;">|</span><span style="color:#555555;font-weight:600;">Defence</span></nav>
 
-<div id="loading-screen">
+<div id="loading-screen" role="status" aria-live="polite">
   <div class="spinner"></div>
   <p>Loading defence data&hellip;</p>
 </div>
@@ -60,7 +62,7 @@
     </div>
   </div>
   <div class="scroll-graphic">
-    <div class="chart-container" id="chart-hook"></div>
+    <div class="chart-container" id="chart-hook" role="img" aria-label="Hook chart"></div>
   </div>
 </section>
 
@@ -81,7 +83,7 @@
     </div>
   </div>
   <div class="scroll-graphic">
-    <div class="chart-container" id="chart-spending"></div>
+    <div class="chart-container" id="chart-spending" role="img" aria-label="Spending chart"></div>
   </div>
 </section>
 
@@ -102,7 +104,7 @@
     </div>
   </div>
   <div class="scroll-graphic">
-    <div class="chart-container" id="chart-personnel"></div>
+    <div class="chart-container" id="chart-personnel" role="img" aria-label="Personnel chart"></div>
   </div>
 </section>
 
@@ -123,7 +125,7 @@
     </div>
   </div>
   <div class="scroll-graphic">
-    <div class="chart-container" id="chart-equipment"></div>
+    <div class="chart-container" id="chart-equipment" role="img" aria-label="Equipment chart"></div>
   </div>
 </section>
 
@@ -144,7 +146,7 @@
     </div>
   </div>
   <div class="scroll-graphic">
-    <div class="chart-container" id="chart-reserves"></div>
+    <div class="chart-container" id="chart-reserves" role="img" aria-label="Reserves chart"></div>
   </div>
 </section>
 
@@ -165,7 +167,7 @@
     </div>
   </div>
   <div class="scroll-graphic">
-    <div class="chart-container" id="chart-ambition"></div>
+    <div class="chart-container" id="chart-ambition" role="img" aria-label="Ambition chart"></div>
   </div>
 </section>
 
@@ -177,7 +179,7 @@
   Contains public sector information licensed under the <a href="https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/" target="_blank" rel="noopener">Open Government Licence v3.0</a>.</p>
 </footer>
 
-<script src="https://d3js.org/d3.v7.min.js"></script>
+<script src="https://d3js.org/d3.v7.min.js" integrity="sha384-CjloA8y00+1SDAUkjs099PVfnY2KmDC2BZnws9kh8D/lX1s46w6EPhpXdqMfjK6i" crossorigin="anonymous"></script>
 <script src="shared/utils.js"></script>
 <script>
 (function() {

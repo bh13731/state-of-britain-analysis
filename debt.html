@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="The cost of Britain's national debt — £106bn a year in interest payments, the legacy of QE, and what it means for public services.">
 <title>State of Britain &mdash; The Debt Bill</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -25,8 +26,9 @@
 </style>
 </head>
 <body>
+<a class="skip-link" href="#main-content">Skip to content</a>
 
-<div id="loading-screen">
+<div id="loading-screen" role="status" aria-live="polite">
   <div class="spinner"></div>
   <p>Loading fiscal data&hellip;</p>
 </div>
@@ -67,7 +69,7 @@
     </div>
   </div>
   <div class="scroll-graphic">
-    <div class="chart-container" id="chart-scale"></div>
+    <div class="chart-container" id="chart-scale" role="img" aria-label="Scale chart"></div>
   </div>
 </section>
 
@@ -90,7 +92,7 @@
     </div>
   </div>
   <div class="scroll-graphic">
-    <div class="chart-container" id="chart-cause"></div>
+    <div class="chart-container" id="chart-cause" role="img" aria-label="Cause chart"></div>
   </div>
 </section>
 
@@ -114,7 +116,7 @@
     </div>
   </div>
   <div class="scroll-graphic">
-    <div class="chart-container" id="chart-qe"></div>
+    <div class="chart-container" id="chart-qe" role="img" aria-label="Qe chart"></div>
   </div>
 </section>
 
@@ -136,7 +138,7 @@
     </div>
   </div>
   <div class="scroll-graphic">
-    <div class="chart-container" id="chart-outlook"></div>
+    <div class="chart-container" id="chart-outlook" role="img" aria-label="Outlook chart"></div>
   </div>
 </section>
 
@@ -148,7 +150,7 @@
   Contains public sector information licensed under the <a href="https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/" target="_blank" rel="noopener">Open Government Licence v3.0</a>.</p>
 </footer>
 
-<script src="https://d3js.org/d3.v7.min.js"></script>
+<script src="https://d3js.org/d3.v7.min.js" integrity="sha384-CjloA8y00+1SDAUkjs099PVfnY2KmDC2BZnws9kh8D/lX1s46w6EPhpXdqMfjK6i" crossorigin="anonymous"></script>
 <script src="shared/utils.js"></script>
 <script>
 (function() {

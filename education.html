@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="UK education spending, GCSE results, and PISA scores — a generation educated on less.">
 <title>State of Britain — Education</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -17,8 +18,9 @@
 </style>
 </head>
 <body>
+<a class="skip-link" href="#main-content">Skip to content</a>
 
-<div id="loading-screen">
+<div id="loading-screen" role="status" aria-live="polite">
   <div class="spinner"></div>
   <p>Loading education data&hellip;</p>
 </div>
@@ -58,7 +60,7 @@
     </div>
   </div>
   <div class="scroll-graphic">
-    <div class="chart-container" id="chart-spending"></div>
+    <div class="chart-container" id="chart-spending" role="img" aria-label="Spending chart"></div>
   </div>
 </section>
 
@@ -79,7 +81,7 @@
     </div>
   </div>
   <div class="scroll-graphic">
-    <div class="chart-container" id="chart-intl"></div>
+    <div class="chart-container" id="chart-intl" role="img" aria-label="Intl chart"></div>
   </div>
 </section>
 
@@ -100,7 +102,7 @@
     </div>
   </div>
   <div class="scroll-graphic">
-    <div class="chart-container" id="chart-gcse"></div>
+    <div class="chart-container" id="chart-gcse" role="img" aria-label="Gcse chart"></div>
   </div>
 </section>
 
@@ -121,7 +123,7 @@
     </div>
   </div>
   <div class="scroll-graphic">
-    <div class="chart-container" id="chart-teachers"></div>
+    <div class="chart-container" id="chart-teachers" role="img" aria-label="Teachers chart"></div>
   </div>
 </section>
 
@@ -142,7 +144,7 @@
     </div>
   </div>
   <div class="scroll-graphic">
-    <div class="chart-container" id="chart-he"></div>
+    <div class="chart-container" id="chart-he" role="img" aria-label="He chart"></div>
   </div>
 </section>
 
@@ -154,7 +156,7 @@
   Contains public sector information licensed under the <a href="https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/" target="_blank" rel="noopener">Open Government Licence v3.0</a>.</p>
 </footer>
 
-<script src="https://d3js.org/d3.v7.min.js"></script>
+<script src="https://d3js.org/d3.v7.min.js" integrity="sha384-CjloA8y00+1SDAUkjs099PVfnY2KmDC2BZnws9kh8D/lX1s46w6EPhpXdqMfjK6i" crossorigin="anonymous"></script>
 <script src="shared/utils.js"></script>
 <script>
 (function() {

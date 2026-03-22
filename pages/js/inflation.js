@@ -64,7 +64,7 @@ function computeRates(series) {
    DATA LOAD & INIT
    ========================================================= */
 sobFetchJSON("https://stateofbritain.uk/api/data/cpih.json")
-  .then(d => { DATA = d; SERIES = d.series; AGGREGATES = d.aggregates; RATES = computeRates(SERIES); init(); })
+  .then(d => { DATA = sobUnwrapApiResponse(d); SERIES = DATA.series; AGGREGATES = DATA.aggregates; RATES = computeRates(SERIES); init(); })
   .catch(sobShowError);
 
 function init() {

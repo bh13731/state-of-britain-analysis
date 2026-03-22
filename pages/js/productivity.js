@@ -40,7 +40,7 @@ function chartDimsBar(container) {
 let DATA;
 
 sobFetchJSON("https://stateofbritain.uk/api/data/productivity.json")
-  .then(d => { DATA = d; init(); })
+  .then(d => { DATA = sobUnwrapApiResponse(d); init(); })
   .catch(sobShowError);
 
 function init() {

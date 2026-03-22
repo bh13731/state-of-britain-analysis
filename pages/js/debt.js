@@ -30,7 +30,7 @@ function truncLabel(s, max) { return s.length > max ? s.slice(0, max - 1) + "\u2
 let DATA;
 
 sobFetchJSON("https://stateofbritain.uk/api/data/spending.json")
-  .then(d => { DATA = d; init(); })
+  .then(d => { DATA = sobUnwrapApiResponse(d); init(); })
   .catch(sobShowError);
 
 function init() {

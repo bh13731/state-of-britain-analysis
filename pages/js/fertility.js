@@ -36,7 +36,7 @@ function fmtK(v) { return d3.format(",")(v) + "k"; }
 let DATA;
 
 sobFetchJSON("https://stateofbritain.uk/api/data/family.json")
-  .then(d => { DATA = d; init(); })
+  .then(d => { DATA = sobUnwrapApiResponse(d); init(); })
   .catch(sobShowError);
 
 function init() {

@@ -26,7 +26,7 @@ const MOBILE = SOB_MOBILE;
 let DATA;
 
 sobFetchJSON("https://stateofbritain.uk/api/data/spending.json")
-  .then(d => { DATA = d; init(); })
+  .then(d => { DATA = sobUnwrapApiResponse(d); init(); })
   .catch(sobShowError);
 
 function init() {

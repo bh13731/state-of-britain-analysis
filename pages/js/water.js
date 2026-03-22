@@ -33,7 +33,7 @@ function fmtDec(v, d) { return d3.format("." + (d || 1) + "f")(v); }
 let DATA;
 
 sobFetchJSON("https://stateofbritain.uk/api/data/water.json")
-  .then(d => { DATA = d; init(); })
+  .then(d => { DATA = sobUnwrapApiResponse(d); init(); })
   .catch(sobShowError);
 
 function init() {

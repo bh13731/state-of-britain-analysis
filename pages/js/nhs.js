@@ -47,8 +47,8 @@ function formatPeriod(period) {
 /** @type {Object} API response data */
 let DATA;
 
-sobFetchJSON("https://stateofbritain.uk/api/data/nhs.json")
-  .then(d => { DATA = d; init(); })
+sobFetchJSON("https://stateofbritain.uk/api/data/nhs-waiting.json")
+  .then(d => { DATA = sobUnwrapApiResponse(d); init(); })
   .catch(sobShowError);
 
 function init() {

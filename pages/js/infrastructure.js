@@ -32,7 +32,7 @@ function fmtBn(v) { return "\u00a3" + d3.format(".1f")(v) + "bn"; }
 let DATA;
 
 sobFetchJSON("https://stateofbritain.uk/api/data/infrastructure.json")
-  .then(d => { DATA = d; init(); })
+  .then(d => { DATA = sobUnwrapApiResponse(d); init(); })
   .catch(sobShowError);
 
 function init() {

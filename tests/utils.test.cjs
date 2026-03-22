@@ -156,6 +156,52 @@ assertEqual(SOB_COLORS.amber, '#A16B00', 'SOB_COLORS.amber is correct');
 assertEqual(SOB_COLORS.bg, '#FAFAF7', 'SOB_COLORS.bg is correct');
 assert(SOB_COLORS.redLight.startsWith('rgba'), 'SOB_COLORS.redLight is rgba');
 
+// Ensure every color referenced by page scripts exists in SOB_COLORS
+var requiredColors = [
+  'agriculture', 'amber', 'amberDark', 'amberLight', 'army', 'bg', 'blue',
+  'blueLight', 'buildings', 'coal', 'crimson', 'crimsonDark', 'crimsonLight',
+  'electricity', 'faint', 'food', 'france', 'fuel', 'gas', 'gbr', 'germany',
+  'green', 'greenLight', 'grey', 'greyLight', 'grid', 'housing', 'indigo',
+  'industry', 'ink', 'invert', 'lulucf', 'mauve', 'muted', 'navy', 'nuclear',
+  'oecd', 'orange', 'orangeLight', 'overall', 'primary', 'primaryLight',
+  'purple', 'raf', 'recreation', 'red', 'redLight', 'regulars', 'reserves',
+  'rose', 'roseLight', 'roseMid', 'secondary', 'secondaryLight', 'slate',
+  'slateLight', 'target', 'teal', 'tealDark', 'tealLight', 'transport',
+  'trendDash', 'usa', 'warm', 'waste'
+];
+requiredColors.forEach(function(name) {
+  assert(SOB_COLORS[name] !== undefined, 'SOB_COLORS.' + name + ' is defined');
+  assert(typeof SOB_COLORS[name] === 'string' && SOB_COLORS[name].length > 0,
+    'SOB_COLORS.' + name + ' is a non-empty string');
+});
+
+// Ensure sobUnwrapApiResponse exists and works
+console.log('\n--- sobUnwrapApiResponse ---');
+assert(typeof sobUnwrapApiResponse === 'function', 'sobUnwrapApiResponse is a function');
+
+// Test: unwraps series.X.data to X
+var wrapped = { series: { foo: { sourceId: 's', timeField: 'year', data: [1, 2, 3] } } };
+var unwrapped = sobUnwrapApiResponse(wrapped);
+assert(Array.isArray(unwrapped.foo), 'unwraps series.X.data arrays');
+assertEqual(unwrapped.foo.length, 3, 'unwrapped array has correct length');
+
+// Test: preserves top-level snapshot
+var withSnap = { series: { bar: { data: [1] } }, snapshot: { total: 42 } };
+var unwrappedSnap = sobUnwrapApiResponse(withSnap);
+assertEqual(unwrappedSnap.snapshot.total, 42, 'preserves top-level snapshot');
+
+// Test: handles dotted keys (e.g. infrastructure)
+var dotted = { series: { 'broadband.fttp': { data: [10, 20] } } };
+var unwrappedDot = sobUnwrapApiResponse(dotted);
+assert(unwrappedDot.broadband && Array.isArray(unwrappedDot.broadband.fttp),
+  'dotted keys become nested objects');
+
+// Test: no series wrapper (e.g. energy) copies top-level data
+var flat = { meta: {}, energyMix: [1, 2], electricity: [3, 4] };
+var unwrappedFlat = sobUnwrapApiResponse(flat);
+assert(Array.isArray(unwrappedFlat.energyMix), 'copies top-level arrays when no series wrapper');
+assert(unwrappedFlat.meta === undefined, 'strips metadata keys');
+
 /* =========================================================
    Tests: SOB_DURATION & SOB_MOBILE
    ========================================================= */

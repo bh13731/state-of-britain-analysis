@@ -55,7 +55,7 @@ function fmtNum(v) { return d3.format(",")(Math.round(v)); }
 let DATA;
 
 sobFetchJSON("https://stateofbritain.uk/api/data/immigration.json")
-  .then(d => { DATA = d; init(); })
+  .then(d => { DATA = sobUnwrapApiResponse(d); init(); })
   .catch(sobShowError);
 
 function init() {

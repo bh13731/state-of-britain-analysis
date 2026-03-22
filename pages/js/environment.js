@@ -46,7 +46,7 @@ function fmtConc(v) { return d3.format(".1f")(v) + " \u00b5g/m\u00b3"; }
 let DATA;
 
 sobFetchJSON("https://stateofbritain.uk/api/data/environment.json")
-  .then(d => { DATA = d; init(); })
+  .then(d => { DATA = sobUnwrapApiResponse(d); init(); })
   .catch(sobShowError);
 
 function init() {

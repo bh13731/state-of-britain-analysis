@@ -14,11 +14,47 @@
 
 /** Common colour palette used across all story charts */
 var SOB_COLORS = {
+  // Core palette
   red: "#C53030", green: "#2E7D32", amber: "#A16B00", blue: "#2563A0",
   faint: "#B0B0A8", ink: "#1A1A1A", secondary: "#3D3D3D", muted: "#555555",
   grid: "#F0F0EB", bg: "#FAFAF7",
   redLight: "rgba(197,48,48,0.12)", greenLight: "rgba(46,125,50,0.08)",
-  amberLight: "rgba(161,107,0,0.12)", blueLight: "rgba(37,99,160,0.12)"
+  amberLight: "rgba(161,107,0,0.12)", blueLight: "rgba(37,99,160,0.12)",
+
+  // Extended accent colours
+  indigo: "#4338CA", crimson: "#991B1B", crimsonDark: "#7F1D1D",
+  crimsonLight: "rgba(153,27,27,0.12)",
+  teal: "#0891B2", tealDark: "#0E7490", tealLight: "rgba(8,145,178,0.12)",
+  purple: "#7C3AED", orange: "#B45309", orangeLight: "rgba(180,83,9,0.12)",
+  navy: "#1E40AF", mauve: "#7E22CE",
+  rose: "#9F1239", roseMid: "#E11D48", roseLight: "rgba(159,18,57,0.12)",
+  grey: "#64748B", greyLight: "rgba(100,116,139,0.12)",
+  warm: "#B45309", slate: "#475569", slateLight: "rgba(71,85,105,0.12)",
+  amberDark: "#D97706", secondaryLight: "rgba(61,61,61,0.12)",
+  primary: "#2563A0", primaryLight: "rgba(37,99,160,0.12)",
+  invert: "#FFFFFF",
+
+  // Defence
+  army: "#4A5D23", raf: "#1E40AF", reserves: "#64748B", regulars: "#334155",
+
+  // Energy
+  coal: "#475569", gas: "#94A3B8", nuclear: "#7C3AED",
+
+  // Environment (emissions by sector)
+  electricity: "#1E40AF", transport: "#B45309", buildings: "#C53030",
+  fuel: "#64748B", industry: "#5B21B6", agriculture: "#4A5D23",
+  waste: "#8B6C42", lulucf: "#059669",
+
+  // International comparisons
+  gbr: "#4338CA", usa: "#C53030", france: "#2563A0", germany: "#475569",
+  oecd: "#B0B0A8",
+
+  // Inflation categories
+  housing: "#B45309", food: "#059669", recreation: "#7C3AED",
+  overall: "#B0B0A8", target: "#C53030", trendDash: "#B0B0A8",
+
+  // Fertility
+  order: "#9F1239"
 };
 
 /** Default animation duration (ms) */
@@ -321,6 +357,65 @@ function sobFetchJSON(url, options) {
   }
 
   return attempt(retries);
+}
+
+/**
+ * Unwrap an API response from the State of Britain data API into the flat
+ * shape that page scripts expect.
+ *
+ * The API returns data like:
+ *   { series: { keyName: { sourceId, timeField, data: [...] } }, snapshot: {...} }
+ *
+ * Page scripts expect:
+ *   { keyName: [...], snapshot: {...} }
+ *
+ * This function also handles:
+ *  - Dotted series keys ("broadband.fttp") → nested objects (result.broadband.fttp)
+ *  - Endpoints without a series wrapper (e.g. energy.json) — top-level arrays/objects
+ *    are copied as-is.
+ *
+ * @param {Object} response - raw JSON from the API
+ * @returns {Object} flattened data object
+ */
+function sobUnwrapApiResponse(response) {
+  var result = {};
+  var META_KEYS = ["$schema", "id", "pillar", "topic", "generated", "sources", "meta"];
+
+  // Preserve top-level snapshot if present
+  if (response.snapshot) result.snapshot = response.snapshot;
+
+  if (response.series && typeof response.series === "object" && !Array.isArray(response.series)) {
+    // Standard wrapped format
+    var series = response.series;
+    for (var key in series) {
+      if (!series.hasOwnProperty(key)) continue;
+      var val = series[key];
+      var unwrapped = (val && typeof val === "object" && !Array.isArray(val) && "data" in val)
+        ? val.data
+        : val;
+      // Handle dotted keys like "broadband.fttp"
+      if (key.indexOf(".") >= 0) {
+        var parts = key.split(".");
+        var cur = result;
+        for (var i = 0; i < parts.length - 1; i++) {
+          if (!cur[parts[i]]) cur[parts[i]] = {};
+          cur = cur[parts[i]];
+        }
+        cur[parts[parts.length - 1]] = unwrapped;
+      } else {
+        result[key] = unwrapped;
+      }
+    }
+  } else {
+    // No series wrapper (e.g. energy.json) — copy everything except metadata
+    for (var topKey in response) {
+      if (!response.hasOwnProperty(topKey)) continue;
+      if (META_KEYS.indexOf(topKey) >= 0) continue;
+      result[topKey] = response[topKey];
+    }
+  }
+
+  return result;
 }
 
 /**

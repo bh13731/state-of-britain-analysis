@@ -42,7 +42,7 @@ function fmtMtoe(v) { return d3.format(".1f")(v) + " Mtoe"; }
 let DATA;
 
 sobFetchJSON("https://stateofbritain.uk/api/data/energy.json")
-  .then(d => { DATA = d; init(); })
+  .then(d => { DATA = sobUnwrapApiResponse(d); init(); })
   .catch(sobShowError);
 
 function init() {

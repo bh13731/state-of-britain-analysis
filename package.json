@@ -12,8 +12,8 @@
     "lint": "npm run lint:js && npm run lint:css",
     "lint:js": "npx eslint shared/ tests/",
     "lint:css": "npx stylelint shared/**/*.css",
-    "test": "node tests/utils.test.js",
-    "test:mobile": "node tests/mobile-responsiveness.test.js",
+    "test": "node tests/utils.test.cjs",
+    "test:mobile": "node tests/mobile-responsiveness.test.cjs",
     "test:all": "npm run test && npm run test:mobile",
     "validate": "npm run lint && npm run test",
     "precommit": "npm run lint && npm run test"

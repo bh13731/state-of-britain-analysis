@@ -33,7 +33,7 @@ export default [
     },
   },
   {
-    files: ["tests/**/*.js"],
+    files: ["tests/**/*.js", "tests/**/*.cjs"],
     languageOptions: {
       ecmaVersion: 2020,
       sourceType: "commonjs",

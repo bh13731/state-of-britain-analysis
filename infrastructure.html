@@ -203,21 +203,11 @@ const C = SOB_COLORS;
 const DURATION = SOB_DURATION;
 const MOBILE = SOB_MOBILE;
 
-/* Tooltip: uses sobShowTooltip / sobHideTooltip from shared/utils.js */
-const showTooltip = sobShowTooltip;
-const hideTooltip = sobHideTooltip;
 
 /* =========================================================
    HELPERS
    ========================================================= */
-function fmtPct(v) { return d3.format(".1f")(v) + "%"; }
 function fmtBn(v) { return "\u00a3" + d3.format(".1f")(v) + "bn"; }
-function fmtBnShort(v) { return "\u00a3" + d3.format(v >= 10 ? ".0f" : ".1f")(v) + "bn"; }
-function isMobile() { return sobIsMobile(); }
-
-function chartDims(container) { return sobChartDims(container); };
-  return { width: w, height: h, margin: m, innerW: w - m.left - m.right, innerH: h - m.top - m.bottom };
-}
 
 
 
@@ -243,10 +233,9 @@ function init() {
 
   buildAllCharts();
   setupScrollObserver();
-  window.addEventListener("resize", debounce(rebuildAll, 250));
+  window.addEventListener("resize", sobDebounce(rebuildAll, 250));
 }
 
-function debounce(fn, ms) { return sobDebounce(fn, ms); }
 function rebuildAll() {
   d3.selectAll("#chart-hook svg, #chart-roads svg, #chart-rail svg, #chart-broadband svg, #chart-traffic svg, #chart-investment svg").remove();
   buildAllCharts();
@@ -275,7 +264,7 @@ function buildAllCharts() {
    ========================================================= */
 function buildHookChart() {
   const container = document.getElementById("chart-hook");
-  const dim = chartDims(container);
+  const dim = sobChartDims(container);
   const svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
     .attr("viewBox", `0 0 ${dim.width} ${dim.height}`)
@@ -359,11 +348,11 @@ function buildHookChart() {
     if (!d) return;
     hoverLine.attr("x1", xP(year)).attr("x2", xP(year)).style("opacity", 1);
     hoverDot.attr("cx", xP(year)).attr("cy", yP(d.backlogBn)).style("opacity", 1);
-    showTooltip(`<div class="tt-label">${d.year}</div>
+    sobShowTooltip(`<div class="tt-label">${d.year}</div>
       <div class="tt-value">Backlog: \u00a3${d.backlogBn}bn</div>
       <div class="tt-value">Potholes filled: ${d.filled}m</div>`, event);
   }).on("mouseleave", function() {
-    hoverLine.style("opacity", 0); hoverDot.style("opacity", 0); hideTooltip();
+    hoverLine.style("opacity", 0); hoverDot.style("opacity", 0); sobHideTooltip();
   });
 
   // --- RAIL PUNCTUALITY VIEW (step 1, hidden) ---
@@ -459,11 +448,11 @@ function buildHookChart() {
     if (!d) return;
     hoverLine2.attr("x1", xR(year)).attr("x2", xR(year)).style("opacity", 1);
     hoverDot2.attr("cx", xR(year)).attr("cy", yR(d.ppm)).style("opacity", 1);
-    showTooltip(`<div class="tt-label">${d.fy}</div>
+    sobShowTooltip(`<div class="tt-label">${d.fy}</div>
       <div class="tt-value">Punctuality: ${d.ppm}%</div>
       <div class="tt-value" style="color:${C.amber}">${(100 - d.ppm).toFixed(1)}% of trains late</div>`, event);
   }).on("mouseleave", function() {
-    hoverLine2.style("opacity", 0); hoverDot2.style("opacity", 0); hideTooltip();
+    hoverLine2.style("opacity", 0); hoverDot2.style("opacity", 0); sobHideTooltip();
   });
 }
 
@@ -483,7 +472,7 @@ function updateHookChart(step) {
    ========================================================= */
 function buildRoadsChart() {
   const container = document.getElementById("chart-roads");
-  const dim = chartDims(container);
+  const dim = sobChartDims(container);
   const svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
     .attr("viewBox", `0 0 ${dim.width} ${dim.height}`)
@@ -585,12 +574,12 @@ function buildRoadsChart() {
     const d = cond.find(a => a.year === year);
     if (!d) return;
     hoverLine.attr("x1", xC(year)).attr("x2", xC(year)).style("opacity", 1);
-    showTooltip(`<div class="tt-label">${d.year}</div>
+    sobShowTooltip(`<div class="tt-label">${d.year}</div>
       <div class="tt-value" style="color:${C.amber}">Unclassified: ${d.unclassifiedPoor}% poor</div>
       <div class="tt-value" style="color:${C.secondary}">B & C roads: ${d.bAndcPoor}% poor</div>
       <div class="tt-value" style="color:${C.primary}">A roads: ${d.aRoadsPoor}% poor</div>`, event);
   }).on("mouseleave", function() {
-    hoverLine.style("opacity", 0); hideTooltip();
+    hoverLine.style("opacity", 0); sobHideTooltip();
   });
 
   // --- POTHOLE FILLED VS BACKLOG VIEW (step 1, hidden) ---
@@ -663,7 +652,7 @@ function buildRoadsChart() {
   // Hover
   potGroup.selectAll(".pot-bar")
     .on("mousemove", function(event, d) {
-      showTooltip(`<div class="tt-label">${d.year}</div>
+      sobShowTooltip(`<div class="tt-label">${d.year}</div>
         <div class="tt-value" style="color:${C.primary}">Potholes filled: ${d.filled}m</div>
         <div class="tt-value" style="color:${C.amber}">Repair backlog: \u00a3${d.backlogBn}bn</div>`, event);
     })
@@ -686,7 +675,7 @@ function updateRoadsChart(step) {
    ========================================================= */
 function buildRailChart() {
   const container = document.getElementById("chart-rail");
-  const dim = chartDims(container);
+  const dim = sobChartDims(container);
   const svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
     .attr("viewBox", `0 0 ${dim.width} ${dim.height}`)
@@ -806,11 +795,11 @@ function buildRailChart() {
     if (!d) return;
     hoverLine.attr("x1", xP(year)).attr("x2", xP(year)).style("opacity", 1);
     hoverDot.attr("cx", xP(year)).attr("cy", yP(d.ppm)).style("opacity", 1);
-    showTooltip(`<div class="tt-label">${d.fy}</div>
+    sobShowTooltip(`<div class="tt-label">${d.fy}</div>
       <div class="tt-value">On time: ${d.ppm}%</div>
       <div class="tt-value" style="color:${C.amber}">Late: ${(100 - d.ppm).toFixed(1)}%</div>`, event);
   }).on("mouseleave", function() {
-    hoverLine.style("opacity", 0); hoverDot.style("opacity", 0); hideTooltip();
+    hoverLine.style("opacity", 0); hoverDot.style("opacity", 0); sobHideTooltip();
   });
 
   // --- JOURNEYS VIEW (step 1, hidden) ---
@@ -902,10 +891,10 @@ function buildRailChart() {
     if (!d) return;
     hoverLine2.attr("x1", xJ(year)).attr("x2", xJ(year)).style("opacity", 1);
     hoverDot2.attr("cx", xJ(year)).attr("cy", yJ(d.journeysMn)).style("opacity", 1);
-    showTooltip(`<div class="tt-label">${d.fy}</div>
+    sobShowTooltip(`<div class="tt-label">${d.fy}</div>
       <div class="tt-value">Journeys: ${d3.format(",")(Math.round(d.journeysMn))} million</div>`, event);
   }).on("mouseleave", function() {
-    hoverLine2.style("opacity", 0); hoverDot2.style("opacity", 0); hideTooltip();
+    hoverLine2.style("opacity", 0); hoverDot2.style("opacity", 0); sobHideTooltip();
   });
 }
 
@@ -925,7 +914,7 @@ function updateRailChart(step) {
    ========================================================= */
 function buildBroadbandChart() {
   const container = document.getElementById("chart-broadband");
-  const dim = chartDims(container);
+  const dim = sobChartDims(container);
   const svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
     .attr("viewBox", `0 0 ${dim.width} ${dim.height}`)
@@ -1034,9 +1023,9 @@ function buildBroadbandChart() {
     let html = `<div class="tt-label">${year}</div>`;
     if (df) html += `<div class="tt-value" style="color:${C.green}">FTTP: ${df.pct}% (${df.premises}m premises)</div>`;
     if (dg) html += `<div class="tt-value" style="color:${C.blue}">Gigabit: ${dg.pct}%</div>`;
-    showTooltip(html, event);
+    sobShowTooltip(html, event);
   }).on("mouseleave", function() {
-    hoverLine.style("opacity", 0); hoverDotF.style("opacity", 0); hoverDotG.style("opacity", 0); hideTooltip();
+    hoverLine.style("opacity", 0); hoverDotF.style("opacity", 0); hoverDotG.style("opacity", 0); sobHideTooltip();
   });
 
   // --- SPEEDS VIEW (step 1, hidden) ---
@@ -1139,11 +1128,11 @@ function buildBroadbandChart() {
     hoverLine2.attr("x1", xS(year)).attr("x2", xS(year)).style("opacity", 1);
     hoverDotD.attr("cx", xS(year)).attr("cy", yS(d.medianDown)).style("opacity", 1);
     hoverDotU.attr("cx", xS(year)).attr("cy", yS(d.medianUp)).style("opacity", 1);
-    showTooltip(`<div class="tt-label">${year}</div>
+    sobShowTooltip(`<div class="tt-label">${year}</div>
       <div class="tt-value" style="color:${C.primary}">Download: ${d.medianDown} Mbps</div>
       <div class="tt-value" style="color:${C.secondary}">Upload: ${d.medianUp} Mbps</div>`, event);
   }).on("mouseleave", function() {
-    hoverLine2.style("opacity", 0); hoverDotD.style("opacity", 0); hoverDotU.style("opacity", 0); hideTooltip();
+    hoverLine2.style("opacity", 0); hoverDotD.style("opacity", 0); hoverDotU.style("opacity", 0); sobHideTooltip();
   });
 }
 
@@ -1163,7 +1152,7 @@ function updateBroadbandChart(step) {
    ========================================================= */
 function buildTrafficChart() {
   const container = document.getElementById("chart-traffic");
-  const dim = chartDims(container);
+  const dim = sobChartDims(container);
   const svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
     .attr("viewBox", `0 0 ${dim.width} ${dim.height}`)
@@ -1226,8 +1215,8 @@ function buildTrafficChart() {
 
   // Legend
   stackLabels.forEach((label, i) => {
-    const lx = isMobile() ? (i % 2) * 140 : i * 110;
-    const ly = isMobile() ? Math.floor(i / 2) * 18 : 0;
+    const lx = sobIsMobile() ? (i % 2) * 140 : i * 110;
+    const ly = sobIsMobile() ? Math.floor(i / 2) * 18 : 0;
     trafficGroup.append("rect").attr("x", lx).attr("y", dim.innerH + 22 + ly).attr("width", 12).attr("height", 12)
       .attr("fill", stackColors[i]).attr("opacity", 0.82).attr("rx", 2);
     trafficGroup.append("text").attr("class", "chart-annotation")
@@ -1263,14 +1252,14 @@ function buildTrafficChart() {
     const d = traffic.find(a => a.year === year);
     if (!d) return;
     hoverLine.attr("x1", xT(year)).attr("x2", xT(year)).style("opacity", 1);
-    showTooltip(`<div class="tt-label">${d.year}</div>
+    sobShowTooltip(`<div class="tt-label">${d.year}</div>
       <div class="tt-value"><strong>Total: ${d3.format(".1f")(d.totalBnMiles)}bn miles</strong></div>
       <div class="tt-value" style="color:${C.primary}">Cars: ${d3.format(".1f")(d.cars)}bn</div>
       <div class="tt-value" style="color:${C.secondary}">Vans: ${d3.format(".1f")(d.lcvs)}bn</div>
       <div class="tt-value" style="color:${C.amber}">HGVs: ${d3.format(".1f")(d.hgvs)}bn</div>
       <div class="tt-value" style="color:${C.faint}">Buses: ${d3.format(".1f")(d.buses)}bn</div>`, event);
   }).on("mouseleave", function() {
-    hoverLine.style("opacity", 0); hideTooltip();
+    hoverLine.style("opacity", 0); sobHideTooltip();
   });
 
   // --- ROAD LENGTH VIEW (step 1, hidden) ---
@@ -1351,11 +1340,11 @@ function buildTrafficChart() {
   lengthGroup.append("text").attr("class", "chart-annotation")
     .attr("x", 34).attr("y", -6).attr("fill", C.primary).text("Major road network (km)");
 
-  lengthGroup.append("line").attr("x1", isMobile() ? 0 : 220).attr("x2", isMobile() ? 30 : 250)
-    .attr("y1", isMobile() ? 4 : -10).attr("y2", isMobile() ? 4 : -10)
+  lengthGroup.append("line").attr("x1", sobIsMobile() ? 0 : 220).attr("x2", sobIsMobile() ? 30 : 250)
+    .attr("y1", sobIsMobile() ? 4 : -10).attr("y2", sobIsMobile() ? 4 : -10)
     .attr("stroke", C.amber).attr("stroke-width", 2.5).attr("stroke-dasharray", "6,4");
   lengthGroup.append("text").attr("class", "chart-annotation")
-    .attr("x", isMobile() ? 34 : 254).attr("y", isMobile() ? 8 : -6).attr("fill", C.amber).text("Traffic index (2000 = 100)");
+    .attr("x", sobIsMobile() ? 34 : 254).attr("y", sobIsMobile() ? 8 : -6).attr("fill", C.amber).text("Traffic index (2000 = 100)");
 
   // Axes
   lengthGroup.append("g").attr("class", "axis x-axis")
@@ -1386,9 +1375,9 @@ function buildTrafficChart() {
     if (dr) html += `<div class="tt-value" style="color:${C.primary}">Major roads: ${d3.format(",")(dr.allMajorKm)} km</div>
       <div class="tt-value" style="color:${C.primary}">Motorways: ${d3.format(",")(dr.motorwaysKm)} km</div>`;
     if (dt) html += `<div class="tt-value" style="color:${C.amber}">Traffic: ${d3.format(".1f")(dt.totalBnMiles)}bn miles</div>`;
-    showTooltip(html, event);
+    sobShowTooltip(html, event);
   }).on("mouseleave", function() {
-    hoverLine2.style("opacity", 0); hideTooltip();
+    hoverLine2.style("opacity", 0); sobHideTooltip();
   });
 }
 
@@ -1408,7 +1397,7 @@ function updateTrafficChart(step) {
    ========================================================= */
 function buildInvestmentChart() {
   const container = document.getElementById("chart-investment");
-  const dim = chartDims(container);
+  const dim = sobChartDims(container);
   const svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
     .attr("viewBox", `0 0 ${dim.width} ${dim.height}`)
@@ -1504,11 +1493,11 @@ function buildInvestmentChart() {
     if (!d) return;
     hoverLine.attr("x1", xE(year)).attr("x2", xE(year)).style("opacity", 1);
     hoverDot.attr("cx", xE(year)).attr("cy", yE(d.pct)).style("opacity", 1);
-    showTooltip(`<div class="tt-label">${d.year}</div>
+    sobShowTooltip(`<div class="tt-label">${d.year}</div>
       <div class="tt-value" style="color:${C.green}">Electrified: ${d3.format(".1f")(d.pct)}%</div>
       <div class="tt-value">${d3.format(",")(d.electKm)} of ${d3.format(",")(d.routeKm)} km</div>`, event);
   }).on("mouseleave", function() {
-    hoverLine.style("opacity", 0); hoverDot.style("opacity", 0); hideTooltip();
+    hoverLine.style("opacity", 0); hoverDot.style("opacity", 0); sobHideTooltip();
   });
 
   // --- ROUTE KM + 4G VIEW (step 1, hidden) ---
@@ -1622,12 +1611,12 @@ function buildInvestmentChart() {
     if (!d) return;
     hoverLine2.attr("x1", xR(year)).attr("x2", xR(year)).style("opacity", 1);
     hoverDot2.attr("cx", xR(year)).attr("cy", yR(d.routeKm)).style("opacity", 1);
-    showTooltip(`<div class="tt-label">${d.year}</div>
+    sobShowTooltip(`<div class="tt-label">${d.year}</div>
       <div class="tt-value">Total route: ${d3.format(",")(d.routeKm)} km</div>
       <div class="tt-value">Electrified: ${d3.format(",")(d.electRouteKm)} km</div>
       ${d.newElectKm !== null ? '<div class="tt-value" style="color:' + C.green + '">New electrification: ' + d3.format(".1f")(d.newElectKm) + ' km</div>' : ''}`, event);
   }).on("mouseleave", function() {
-    hoverLine2.style("opacity", 0); hoverDot2.style("opacity", 0); hideTooltip();
+    hoverLine2.style("opacity", 0); hoverDot2.style("opacity", 0); sobHideTooltip();
   });
 }
 

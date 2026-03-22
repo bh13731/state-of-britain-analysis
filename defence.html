@@ -192,23 +192,13 @@ const C = SOB_COLORS;
 const DURATION = SOB_DURATION;
 const MOBILE = SOB_MOBILE;
 
-/* Tooltip: uses sobShowTooltip / sobHideTooltip from shared/utils.js */
-const showTooltip = sobShowTooltip;
-const hideTooltip = sobHideTooltip;
 
 /* =========================================================
    HELPERS
    ========================================================= */
 function fmtK(v) { return d3.format(",.1f")(v) + "k"; }
-function fmtPct(v) { return d3.format(".1f")(v) + "%"; }
 function fmtBn(v) { return "\u00a3" + d3.format(".1f")(v) + "bn"; }
-function fmtBnShort(v) { return "\u00a3" + d3.format(",.0f")(v) + "bn"; }
 
-function isMobile() { return sobIsMobile(); }
-
-function chartDims(container) { return sobChartDims(container); };
-  return { width: w, height: h, margin: m, innerW: w - m.left - m.right, innerH: h - m.top - m.bottom };
-}
 
 
 
@@ -231,10 +221,9 @@ function init() {
 
   buildAllCharts();
   setupScrollObserver();
-  window.addEventListener("resize", debounce(rebuildAll, 250));
+  window.addEventListener("resize", sobDebounce(rebuildAll, 250));
 }
 
-function debounce(fn, ms) { return sobDebounce(fn, ms); }
 function rebuildAll() {
   d3.selectAll(".chart-container svg").remove();
   buildAllCharts();
@@ -263,7 +252,7 @@ function buildAllCharts() {
    ========================================================= */
 function buildHookChart() {
   const container = document.getElementById("chart-hook");
-  const dim = chartDims(container);
+  const dim = sobChartDims(container);
   const svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
     .attr("viewBox", `0 0 ${dim.width} ${dim.height}`)
@@ -298,7 +287,7 @@ function buildHookChart() {
     .attr("fill", (d, i) => i === 0 ? C.primary : C.red)
     .attr("rx", 1)
     .on("mousemove", function(event, d) {
-      showTooltip(`<div class="tt-label">${d.label}</div><div class="tt-value">${fmtK(d.value)} personnel</div>`, event);
+      sobShowTooltip(`<div class="tt-label">${d.label}</div><div class="tt-value">${fmtK(d.value)} personnel</div>`, event);
     })
     .on("mouseleave", hideTooltip);
 
@@ -397,9 +386,9 @@ function buildHookChart() {
     if (!d) return;
     hoverLine.attr("x1", xLine(year)).attr("x2", xLine(year)).style("opacity", 1);
     hoverDot.attr("cx", xLine(year)).attr("cy", yLine(d.total)).style("opacity", 1);
-    showTooltip(`<div class="tt-label">${d.year}</div><div class="tt-value">Total: ${fmtK(d.total)}</div>`, event);
+    sobShowTooltip(`<div class="tt-label">${d.year}</div><div class="tt-value">Total: ${fmtK(d.total)}</div>`, event);
   }).on("mouseleave", function() {
-    hoverLine.style("opacity", 0); hoverDot.style("opacity", 0); hideTooltip();
+    hoverLine.style("opacity", 0); hoverDot.style("opacity", 0); sobHideTooltip();
   });
 }
 
@@ -416,7 +405,7 @@ function updateHookChart(step) {
    ========================================================= */
 function buildSpendingChart() {
   const container = document.getElementById("chart-spending");
-  const dim = chartDims(container);
+  const dim = sobChartDims(container);
   const svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
     .attr("viewBox", `0 0 ${dim.width} ${dim.height}`)
@@ -460,7 +449,7 @@ function buildSpendingChart() {
     .attr("fill", C.primary).attr("stroke", "#fff").attr("stroke-width", 2);
   mainGroup.append("text").attr("class", "chart-annotation-bold")
     .attr("x", x(first.year) + 10).attr("y", y(first.pct) - 14)
-    .attr("fill", C.primary).text(fmtPct(first.pct));
+    .attr("fill", C.primary).text(sobFmtPct(first.pct));
 
   // End label
   const last = spData[spData.length - 1];
@@ -468,7 +457,7 @@ function buildSpendingChart() {
     .attr("fill", C.primary).attr("stroke", "#fff").attr("stroke-width", 2);
   mainGroup.append("text").attr("class", "chart-annotation-bold")
     .attr("x", x(last.year) + 10).attr("y", y(last.pct) - 14)
-    .attr("fill", C.primary).text(fmtPct(last.pct));
+    .attr("fill", C.primary).text(sobFmtPct(last.pct));
 
   // Annotation: 2015 nadir — offset below with leader line
   const nadir = spData.find(d => d.year === 2015);
@@ -507,9 +496,9 @@ function buildSpendingChart() {
     if (!d) return;
     hoverLine.attr("x1", x(year)).attr("x2", x(year)).style("opacity", 1);
     hoverDot.attr("cx", x(year)).attr("cy", y(d.pct)).style("opacity", 1);
-    showTooltip(`<div class="tt-label">${d.year}</div><div class="tt-value">Defence: ${fmtPct(d.pct)} of GDP</div>`, event);
+    sobShowTooltip(`<div class="tt-label">${d.year}</div><div class="tt-value">Defence: ${sobFmtPct(d.pct)} of GDP</div>`, event);
   }).on("mouseleave", function() {
-    hoverLine.style("opacity", 0); hoverDot.style("opacity", 0); hideTooltip();
+    hoverLine.style("opacity", 0); hoverDot.style("opacity", 0); sobHideTooltip();
   });
 
   // --- Zoomed view (step 1): 2010-2024 with NATO 2% and 2.5% target ---
@@ -571,7 +560,7 @@ function buildSpendingChart() {
     .attr("fill", C.primary).attr("stroke", "#fff").attr("stroke-width", 2);
   zoomGroup.append("text").attr("class", "chart-annotation-bold")
     .attr("x", x2(lastRecent.year) + 10).attr("y", y2(lastRecent.pct) - 14)
-    .attr("fill", C.primary).text(fmtPct(lastRecent.pct));
+    .attr("fill", C.primary).text(sobFmtPct(lastRecent.pct));
 
   // Gap annotation — placed in white space above gap, with leader line into shaded area
   const gapMidYear = 2018;
@@ -613,11 +602,11 @@ function buildSpendingChart() {
     hoverLine2.attr("x1", x2(year)).attr("x2", x2(year)).style("opacity", 1);
     hoverDot2.attr("cx", x2(year)).attr("cy", y2(d.pct)).style("opacity", 1);
     const gap = (2.5 - d.pct).toFixed(1);
-    showTooltip(`<div class="tt-label">${d.year}</div>
-      <div class="tt-value">Defence: ${fmtPct(d.pct)} of GDP</div>
+    sobShowTooltip(`<div class="tt-label">${d.year}</div>
+      <div class="tt-value">Defence: ${sobFmtPct(d.pct)} of GDP</div>
       <div class="tt-value" style="color:${C.red}">Gap to 2.5%: ${gap}pp</div>`, event);
   }).on("mouseleave", function() {
-    hoverLine2.style("opacity", 0); hoverDot2.style("opacity", 0); hideTooltip();
+    hoverLine2.style("opacity", 0); hoverDot2.style("opacity", 0); sobHideTooltip();
   });
 }
 
@@ -634,7 +623,7 @@ function updateSpendingChart(step) {
    ========================================================= */
 function buildPersonnelChart() {
   const container = document.getElementById("chart-personnel");
-  const dim = chartDims(container);
+  const dim = sobChartDims(container);
   const svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
     .attr("viewBox", `0 0 ${dim.width} ${dim.height}`)
@@ -717,13 +706,13 @@ function buildPersonnelChart() {
     const d = personnel.find(a => a.year === year);
     if (!d) return;
     hoverLine.attr("x1", x(year)).attr("x2", x(year)).style("opacity", 1);
-    showTooltip(`<div class="tt-label">${d.year}</div>
+    sobShowTooltip(`<div class="tt-label">${d.year}</div>
       <div class="tt-value" style="color:${C.army}">Army: ${fmtK(d.army)}</div>
       <div class="tt-value" style="color:${C.navy}">Navy: ${fmtK(d.navy)}</div>
       <div class="tt-value" style="color:${C.raf}">RAF: ${fmtK(d.raf)}</div>
       <div class="tt-value" style="font-weight:600">Total: ${fmtK(d.army + d.navy + d.raf)}</div>`, event);
   }).on("mouseleave", function() {
-    hoverLine.style("opacity", 0); hideTooltip();
+    hoverLine.style("opacity", 0); sobHideTooltip();
   });
 
   // --- Index view (step 1): rebased to 100 ---
@@ -796,12 +785,12 @@ function buildPersonnelChart() {
     const armyIdx = ((d.army / base.army) * 100).toFixed(0);
     const navyIdx = ((d.navy / base.navy) * 100).toFixed(0);
     const rafIdx = ((d.raf / base.raf) * 100).toFixed(0);
-    showTooltip(`<div class="tt-label">${d.year} (indexed to 2000 = 100)</div>
+    sobShowTooltip(`<div class="tt-label">${d.year} (indexed to 2000 = 100)</div>
       <div class="tt-value" style="color:${C.army}">Army: ${armyIdx}</div>
       <div class="tt-value" style="color:${C.navy}">Navy: ${navyIdx}</div>
       <div class="tt-value" style="color:${C.raf}">RAF: ${rafIdx}</div>`, event);
   }).on("mouseleave", function() {
-    hoverLine2.style("opacity", 0); hideTooltip();
+    hoverLine2.style("opacity", 0); sobHideTooltip();
   });
 }
 
@@ -818,7 +807,7 @@ function updatePersonnelChart(step) {
    ========================================================= */
 function buildEquipmentChart() {
   const container = document.getElementById("chart-equipment");
-  const dim = chartDims(container);
+  const dim = sobChartDims(container);
   const h = Math.max(520, dim.height);
   const m = { top: 40, right: 90, bottom: 50, left: 10 };
   const innerW = dim.width - m.left - m.right;
@@ -856,7 +845,7 @@ function buildEquipmentChart() {
     .attr("rx", 1)
     .on("mousemove", function(event, d) {
       const pct = ((d.value / total) * 100).toFixed(0);
-      showTooltip(`<div class="tt-label">${d.category}</div><div class="tt-value">${fmtBn(d.value)} (${pct}% of plan)</div>`, event);
+      sobShowTooltip(`<div class="tt-label">${d.category}</div><div class="tt-value">${fmtBn(d.value)} (${pct}% of plan)</div>`, event);
     })
     .on("mouseleave", hideTooltip);
 
@@ -899,7 +888,7 @@ function buildEquipmentChart() {
     .attr("rx", 1)
     .on("mousemove", function(event, d) {
       const pct = ((d.value / total) * 100).toFixed(0);
-      showTooltip(`<div class="tt-label">${d.category}</div><div class="tt-value">${fmtBn(d.value)} (${pct}% of plan)</div>`, event);
+      sobShowTooltip(`<div class="tt-label">${d.category}</div><div class="tt-value">${fmtBn(d.value)} (${pct}% of plan)</div>`, event);
     })
     .on("mouseleave", hideTooltip);
 
@@ -953,7 +942,7 @@ function updateEquipmentChart(step) {
    ========================================================= */
 function buildReservesChart() {
   const container = document.getElementById("chart-reserves");
-  const dim = chartDims(container);
+  const dim = sobChartDims(container);
   const svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
     .attr("viewBox", `0 0 ${dim.width} ${dim.height}`)
@@ -1035,9 +1024,9 @@ function buildReservesChart() {
     hoverLine.attr("x1", x(year)).attr("x2", x(year)).style("opacity", 1);
     hoverDot.attr("cx", x(year)).attr("cy", y(d.strength)).style("opacity", 1);
     const fromPeak = d.strength < peak.strength ? ` (${((d.strength - peak.strength) / peak.strength * 100).toFixed(0)}% from peak)` : " (peak)";
-    showTooltip(`<div class="tt-label">${d.year}</div><div class="tt-value">Reserves: ${fmtK(d.strength)}${fromPeak}</div>`, event);
+    sobShowTooltip(`<div class="tt-label">${d.year}</div><div class="tt-value">Reserves: ${fmtK(d.strength)}${fromPeak}</div>`, event);
   }).on("mouseleave", function() {
-    hoverLine.style("opacity", 0); hoverDot.style("opacity", 0); hideTooltip();
+    hoverLine.style("opacity", 0); hoverDot.style("opacity", 0); sobHideTooltip();
   });
 
   // --- Combined view (step 1): regulars + reserves stacked ---
@@ -1116,12 +1105,12 @@ function buildReservesChart() {
     const d = combData.find(a => a.year === year);
     if (!d) return;
     hoverLine2.attr("x1", xC(year)).attr("x2", xC(year)).style("opacity", 1);
-    showTooltip(`<div class="tt-label">${d.year}</div>
+    sobShowTooltip(`<div class="tt-label">${d.year}</div>
       <div class="tt-value" style="color:${C.primary}">Regulars: ${fmtK(d.regulars)}</div>
       <div class="tt-value" style="color:${C.secondary}">Reserves: ${fmtK(d.reserves)}</div>
       <div class="tt-value" style="font-weight:600">Total: ${fmtK(d.regulars + d.reserves)}</div>`, event);
   }).on("mouseleave", function() {
-    hoverLine2.style("opacity", 0); hideTooltip();
+    hoverLine2.style("opacity", 0); sobHideTooltip();
   });
 }
 
@@ -1138,7 +1127,7 @@ function updateReservesChart(step) {
    ========================================================= */
 function buildAmbitionChart() {
   const container = document.getElementById("chart-ambition");
-  const dim = chartDims(container);
+  const dim = sobChartDims(container);
   const svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
     .attr("viewBox", `0 0 ${dim.width} ${dim.height}`)
@@ -1200,7 +1189,7 @@ function buildAmbitionChart() {
     .attr("fill", C.primary).attr("stroke", "#fff").attr("stroke-width", 2);
   gapGroup.append("text").attr("class", "chart-annotation-bold")
     .attr("x", x(last.year) + 10).attr("y", y(last.pct) - 14)
-    .attr("fill", C.primary).text(fmtPct(last.pct));
+    .attr("fill", C.primary).text(sobFmtPct(last.pct));
 
   // Gap label — positioned in white space above the 2.5% target, with leader line
   gapGroup.append("text").attr("class", "chart-annotation-bold")
@@ -1240,11 +1229,11 @@ function buildAmbitionChart() {
     hoverDot.attr("cx", x(year)).attr("cy", y(d.pct)).style("opacity", 1);
     const gap25 = +(2.5 - d.pct).toFixed(1);
     const gapText = gap25 > 0 ? gap25.toFixed(1) + "pp short" : "Exceeded";
-    showTooltip(`<div class="tt-label">${d.year}</div>
-      <div class="tt-value">Defence: ${fmtPct(d.pct)} of GDP</div>
+    sobShowTooltip(`<div class="tt-label">${d.year}</div>
+      <div class="tt-value">Defence: ${sobFmtPct(d.pct)} of GDP</div>
       <div class="tt-value" style="color:${gap25 > 0 ? C.red : C.green}">vs 2.5% target: ${gapText}</div>`, event);
   }).on("mouseleave", function() {
-    hoverLineEl.style("opacity", 0); hoverDot.style("opacity", 0); hideTooltip();
+    hoverLineEl.style("opacity", 0); hoverDot.style("opacity", 0); sobHideTooltip();
   });
 
   // --- Real spending view (step 1) ---
@@ -1326,9 +1315,9 @@ function buildAmbitionChart() {
     if (!d) return;
     hoverLine2.attr("x1", xR(year)).attr("x2", xR(year)).style("opacity", 1);
     hoverDot2.attr("cx", xR(year)).attr("cy", yR(d.value)).style("opacity", 1);
-    showTooltip(`<div class="tt-label">${d.year}</div><div class="tt-value">Real spending: ${fmtBn(d.value)}</div>`, event);
+    sobShowTooltip(`<div class="tt-label">${d.year}</div><div class="tt-value">Real spending: ${fmtBn(d.value)}</div>`, event);
   }).on("mouseleave", function() {
-    hoverLine2.style("opacity", 0); hoverDot2.style("opacity", 0); hideTooltip();
+    hoverLine2.style("opacity", 0); hoverDot2.style("opacity", 0); sobHideTooltip();
   });
 }
 

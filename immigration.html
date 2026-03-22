@@ -149,9 +149,6 @@ const C = SOB_COLORS;
 const DURATION = SOB_DURATION;
 const MOBILE = SOB_MOBILE;
 
-/* Tooltip: uses sobShowTooltip / sobHideTooltip from shared/utils.js */
-const showTooltip = sobShowTooltip;
-const hideTooltip = sobHideTooltip;
 
 // Touch support: map touchmove/touchend to mousemove/mouseleave for chart tooltips
 function addTouchSupport(selection) {
@@ -179,13 +176,7 @@ function fmtK(v) {
   const s = d3.format(",")(abs);
   return (v < 0 ? "\u2212" : "") + s + "k";
 }
-function fmtPct(v) { return d3.format(".1f")(v) + "%"; }
 function fmtNum(v) { return d3.format(",")(Math.round(v)); }
-function isMobile() { return sobIsMobile(); }
-
-function chartDims(container) { return sobChartDims(container); };
-  return { width: w, height: h, margin: m, innerW: w - m.left - m.right, innerH: h - m.top - m.bottom };
-}
 
 
 
@@ -207,10 +198,9 @@ function init() {
 
   buildAllCharts();
   setupScrollObserver();
-  window.addEventListener("resize", debounce(rebuildAll, 250));
+  window.addEventListener("resize", sobDebounce(rebuildAll, 250));
 }
 
-function debounce(fn, ms) { return sobDebounce(fn, ms); }
 function rebuildAll() {
   d3.selectAll("#chart-hook svg, #chart-brexit svg, #chart-asylum svg, #chart-demographics svg").remove();
   buildAllCharts();
@@ -237,7 +227,7 @@ function buildAllCharts() {
    ========================================================= */
 function buildHookChart() {
   const container = document.getElementById("chart-hook");
-  const dim = chartDims(container);
+  const dim = sobChartDims(container);
   const svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
     .attr("viewBox", `0 0 ${dim.width} ${dim.height}`)
@@ -421,14 +411,14 @@ function buildHookChart() {
     hoverDotI.attr("cx", xLine(year)).attr("cy", yLine(d.immigration)).style("opacity", 1);
     hoverDotE.attr("cx", xLine(year)).attr("cy", yLine(d.emigration)).style("opacity", 1);
     hoverDotN.attr("cx", xLine(year)).attr("cy", yLine(d.net)).style("opacity", 1);
-    showTooltip(`<div class="tt-label">${d.year}</div>
+    sobShowTooltip(`<div class="tt-label">${d.year}</div>
       <div class="tt-value" style="color:${C.orange}">Immigration: ${fmtK(d.immigration)}</div>
       <div class="tt-value" style="color:${C.blue}">Emigration: ${fmtK(d.emigration)}</div>
       <div class="tt-value" style="color:${C.ink};font-weight:600">Net: ${fmtK(d.net)}</div>`, event);
   }).on("mouseleave", function() {
     hoverLine.style("opacity", 0); hoverDotI.style("opacity", 0);
     hoverDotE.style("opacity", 0); hoverDotN.style("opacity", 0);
-    hideTooltip();
+    sobHideTooltip();
   });
   addTouchSupport(hoverRect);
 }
@@ -449,7 +439,7 @@ function updateHookChart(step) {
    ========================================================= */
 function buildBrexitChart() {
   const container = document.getElementById("chart-brexit");
-  const dim = chartDims(container);
+  const dim = sobChartDims(container);
   const svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
     .attr("viewBox", `0 0 ${dim.width} ${dim.height}`)
@@ -553,12 +543,12 @@ function buildBrexitChart() {
     if (!d) return;
     hoverLine.attr("x1", xLine(year)).attr("x2", xLine(year)).style("opacity", 1);
     hoverDot.attr("cx", xLine(year)).attr("cy", yLine(d.net)).style("opacity", 1);
-    showTooltip(`<div class="tt-label">${d.year}</div>
+    sobShowTooltip(`<div class="tt-label">${d.year}</div>
       <div class="tt-value" style="color:${C.orange}">Net migration: ${fmtK(d.net)}</div>
       <div class="tt-value">Immigration: ${fmtK(d.immigration)}</div>
       <div class="tt-value">Emigration: ${fmtK(d.emigration)}</div>`, event);
   }).on("mouseleave", function() {
-    hoverLine.style("opacity", 0); hoverDot.style("opacity", 0); hideTooltip();
+    hoverLine.style("opacity", 0); hoverDot.style("opacity", 0); sobHideTooltip();
   });
   addTouchSupport(hoverRect);
 
@@ -597,7 +587,7 @@ function buildBrexitChart() {
     .attr("width", d => xVisa(d.value)).attr("height", yVisa.bandwidth())
     .attr("fill", d => visaColors[d.type] || C.faint).attr("rx", 3)
     .on("mousemove", function(event, d) {
-      showTooltip(`<div class="tt-label">${d.type} visas</div>
+      sobShowTooltip(`<div class="tt-label">${d.type} visas</div>
         <div class="tt-value">${fmtK(d.value)} (${Math.round(d.value / totalVisas * 100)}% of total)</div>`, event);
     })
     .on("mouseleave", hideTooltip);
@@ -641,7 +631,7 @@ function updateBrexitChart(step) {
    ========================================================= */
 function buildAsylumChart() {
   const container = document.getElementById("chart-asylum");
-  const dim = chartDims(container);
+  const dim = sobChartDims(container);
   const svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
     .attr("viewBox", `0 0 ${dim.width} ${dim.height}`)
@@ -729,10 +719,10 @@ function buildAsylumChart() {
     if (!d) return;
     hoverLine.attr("x1", x(year)).attr("x2", x(year)).style("opacity", 1);
     hoverDotA.attr("cx", x(year)).attr("cy", yApp(d.applications)).style("opacity", 1);
-    showTooltip(`<div class="tt-label">${d.year}</div>
+    sobShowTooltip(`<div class="tt-label">${d.year}</div>
       <div class="tt-value" style="color:${C.orange}">Applications: ${d3.format(".1f")(d.applications)}k</div>`, event);
   }).on("mouseleave", function() {
-    hoverLine.style("opacity", 0); hoverDotA.style("opacity", 0); hideTooltip();
+    hoverLine.style("opacity", 0); hoverDotA.style("opacity", 0); sobHideTooltip();
   });
   addTouchSupport(hoverRect);
 
@@ -830,13 +820,13 @@ function buildAsylumChart() {
     hoverDotApp.attr("cx", x(year)).attr("cy", yGrant(d.applications)).style("opacity", 1);
     hoverDotGrant.attr("cx", x(year)).attr("cy", yGrant(d.grants)).style("opacity", 1);
     const gap = d.applications - d.grants;
-    showTooltip(`<div class="tt-label">${d.year}</div>
+    sobShowTooltip(`<div class="tt-label">${d.year}</div>
       <div class="tt-value" style="color:${C.orange}">Applications: ${d3.format(".1f")(d.applications)}k</div>
       <div class="tt-value" style="color:${C.blue}">Grants: ${d3.format(".1f")(d.grants)}k</div>
       <div class="tt-value">Gap: ${d3.format(".1f")(gap)}k</div>`, event);
   }).on("mouseleave", function() {
     hoverLine2.style("opacity", 0); hoverDotApp.style("opacity", 0); hoverDotGrant.style("opacity", 0);
-    hideTooltip();
+    sobHideTooltip();
   });
   addTouchSupport(hoverRect2);
 }
@@ -857,7 +847,7 @@ function updateAsylumChart(step) {
    ========================================================= */
 function buildDemographicsChart() {
   const container = document.getElementById("chart-demographics");
-  const dim = chartDims(container);
+  const dim = sobChartDims(container);
   const svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
     .attr("viewBox", `0 0 ${dim.width} ${dim.height}`)
@@ -892,7 +882,7 @@ function buildDemographicsChart() {
     .attr("height", d => Math.abs(yPop(0) - yPop(d.netMigration)))
     .attr("fill", C.orange).attr("rx", 2)
     .on("mousemove", function(event, d) {
-      showTooltip(`<div class="tt-label">${d.year}</div>
+      sobShowTooltip(`<div class="tt-label">${d.year}</div>
         <div class="tt-value" style="color:${C.orange}">Net migration: ${fmtK(d.netMigration)}</div>
         <div class="tt-value" style="color:${d.naturalChange >= 0 ? C.blue : C.red}">Natural change: ${d.naturalChange >= 0 ? "+" : ""}${fmtK(d.naturalChange)}</div>`, event);
     })
@@ -907,7 +897,7 @@ function buildDemographicsChart() {
     .attr("height", d => Math.abs(yPop(0) - yPop(d.naturalChange)))
     .attr("fill", d => d.naturalChange >= 0 ? C.blue : C.red).attr("rx", 2)
     .on("mousemove", function(event, d) {
-      showTooltip(`<div class="tt-label">${d.year}</div>
+      sobShowTooltip(`<div class="tt-label">${d.year}</div>
         <div class="tt-value" style="color:${C.orange}">Net migration: ${fmtK(d.netMigration)}</div>
         <div class="tt-value" style="color:${d.naturalChange >= 0 ? C.blue : C.red}">Natural change: ${d.naturalChange >= 0 ? "+" : ""}${fmtK(d.naturalChange)}</div>`, event);
     })
@@ -1020,7 +1010,7 @@ function buildDemographicsChart() {
   const lastDep = depFiltered[depFiltered.length - 1];
   fbGroup.append("text").attr("class", "chart-annotation-bold")
     .attr("x", xFB(lastFB.year) + 10).attr("y", yFB(lastFB.pct) - 12)
-    .attr("fill", C.orange).text(fmtPct(lastFB.pct) + " foreign-born");
+    .attr("fill", C.orange).text(sobFmtPct(lastFB.pct) + " foreign-born");
   fbGroup.append("text").attr("class", "chart-annotation-bold")
     .attr("x", xFB(lastDep.year) + 10).attr("y", yDep(lastDep.ratio) + 22)
     .attr("fill", C.blue).text(d3.format(".1f")(lastDep.ratio) + " dep. ratio");
@@ -1032,7 +1022,7 @@ function buildDemographicsChart() {
     .attr("fill", C.orange).attr("stroke", "#fff").attr("stroke-width", 2);
   fbGroup.append("text").attr("class", "chart-annotation")
     .attr("x", xFB(firstFB.year) + 10).attr("y", yFB(firstFB.pct) - 10)
-    .attr("fill", C.orange).text(fmtPct(firstFB.pct) + " (2004)");
+    .attr("fill", C.orange).text(sobFmtPct(firstFB.pct) + " (2004)");
 
   // Hover
   const hoverRect3 = fbGroup.append("rect")
@@ -1059,13 +1049,13 @@ function buildDemographicsChart() {
       hoverDotDep.attr("cx", xFB(year)).attr("cy", yDep(dep.ratio)).style("opacity", 1);
     }
     let html = `<div class="tt-label">${year}</div>`;
-    if (fb) html += `<div class="tt-value" style="color:${C.orange}">Foreign-born: ${fmtPct(fb.pct)}</div>`;
+    if (fb) html += `<div class="tt-value" style="color:${C.orange}">Foreign-born: ${sobFmtPct(fb.pct)}</div>`;
     if (dep) html += `<div class="tt-value" style="color:${C.blue}">Dependency ratio: ${d3.format(".1f")(dep.ratio)}</div>
       <div class="tt-value" style="font-size:13px;color:${C.muted}">Old-age: ${d3.format(".1f")(dep.old)} | Young: ${d3.format(".1f")(dep.young)}</div>`;
-    showTooltip(html, event);
+    sobShowTooltip(html, event);
   }).on("mouseleave", function() {
     hoverLine3.style("opacity", 0); hoverDotFB.style("opacity", 0); hoverDotDep.style("opacity", 0);
-    hideTooltip();
+    sobHideTooltip();
   });
   addTouchSupport(hoverRect3);
 }

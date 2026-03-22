@@ -146,26 +146,6 @@ const C = SOB_COLORS;
 const DURATION = SOB_DURATION;
 const MOBILE = SOB_MOBILE;
 
-/* Tooltip: uses sobShowTooltip / sobHideTooltip from shared/utils.js */
-const showTooltip = sobShowTooltip;
-const hideTooltip = sobHideTooltip;
-
-/* =========================================================
-   HELPERS
-   ========================================================= */
-function fmt(v, decimals) {
-  if (decimals === undefined) decimals = 0;
-  if (Math.abs(v) >= 1000) return (v < 0 ? "-" : "") + "\u00a3" + d3.format(",")(Math.round(Math.abs(v))) + "bn";
-  return (v < 0 ? "-" : "") + "\u00a3" + d3.format(decimals > 0 ? "."+decimals+"f" : ",")(Math.abs(v)) + "bn";
-}
-function fmtPct(v) { return d3.format(".1f")(v) + "%"; }
-function fmtBnShort(v) { return "\u00a3" + d3.format(",")(Math.round(v)) + "bn"; }
-
-function isMobile() { return sobIsMobile(); }
-
-function chartDims(container) { return sobChartDims(container); };
-}
-
 
 
 /* =========================================================
@@ -187,10 +167,9 @@ function init() {
 
   buildAllCharts();
   setupScrollObserver();
-  window.addEventListener("resize", debounce(rebuildAll, 250));
+  window.addEventListener("resize", sobDebounce(rebuildAll, 250));
 }
 
-function debounce(fn, ms) { return sobDebounce(fn, ms); }
 function rebuildAll() {
   d3.selectAll("#chart-gap svg, #chart-debt svg, #chart-composition svg, #chart-outlook svg").remove();
   buildAllCharts();
@@ -218,7 +197,7 @@ function buildAllCharts() {
    ========================================================= */
 function buildGapChart() {
   const container = document.getElementById("chart-gap");
-  const dim = chartDims(container);
+  const dim = sobChartDims(container);
   const svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
     .attr("viewBox", `0 0 ${dim.width} ${dim.height}`);
@@ -271,14 +250,14 @@ function buildGapChart() {
   // Bar labels
   barGroup.append("text").attr("class", "chart-annotation-bold")
     .attr("x", xBar("Receipts") + xBar.bandwidth() / 2).attr("y", yBar(latest.receipts) - 10)
-    .attr("text-anchor", "middle").text(fmtBnShort(latest.receipts));
+    .attr("text-anchor", "middle").text(sobFmtBnShort(latest.receipts));
   barGroup.append("text").attr("class", "chart-annotation")
     .attr("x", xBar("Receipts") + xBar.bandwidth() / 2).attr("y", dim.innerH + 28)
     .attr("text-anchor", "middle").attr("fill", C.green).attr("font-weight", 600).text("Receipts");
 
   barGroup.append("text").attr("class", "chart-annotation-bold")
     .attr("x", xBar("Expenditure") + xBar.bandwidth() / 2).attr("y", yBar(latest.tme) - 10)
-    .attr("text-anchor", "middle").text(fmtBnShort(latest.tme));
+    .attr("text-anchor", "middle").text(sobFmtBnShort(latest.tme));
   barGroup.append("text").attr("class", "chart-annotation")
     .attr("x", xBar("Expenditure") + xBar.bandwidth() / 2).attr("y", dim.innerH + 28)
     .attr("text-anchor", "middle").attr("fill", C.red).attr("font-weight", 600).text("Expenditure");
@@ -339,7 +318,7 @@ function buildGapChart() {
   // X axis
   lineGroup.append("g").attr("class", "axis x-axis")
     .attr("transform", `translate(0,${dim.innerH})`)
-    .call(d3.axisBottom(xLine).ticks(isMobile() ? 5 : 10).tickFormat(d3.format("d")).tickSize(0))
+    .call(d3.axisBottom(xLine).ticks(sobIsMobile() ? 5 : 10).tickFormat(d3.format("d")).tickSize(0))
     .call(g => g.select(".domain").remove());
 
   // Y axis
@@ -413,13 +392,13 @@ function buildGapChart() {
     hoverLine.attr("x1", xLine(year)).attr("x2", xLine(year)).style("opacity", 1);
     hoverDotR.attr("cx", xLine(year)).attr("cy", yLine(d.receipts)).style("opacity", 1);
     hoverDotE.attr("cx", xLine(year)).attr("cy", yLine(d.tme)).style("opacity", 1);
-    showTooltip(`<div class="tt-label">${d.fy}${d.forecast ? " (forecast)" : ""}</div>
-      <div class="tt-value" style="color:${C.green}">Revenue: ${fmtBnShort(d.receipts)}</div>
-      <div class="tt-value" style="color:${C.red}">Spending: ${fmtBnShort(d.tme)}</div>
-      <div class="tt-value" style="color:${d.borrowing > 0 ? C.red : C.green}">${d.borrowing > 0 ? "Deficit" : "Surplus"}: ${fmtBnShort(Math.abs(d.borrowing))}</div>`, event);
+    sobShowTooltip(`<div class="tt-label">${d.fy}${d.forecast ? " (forecast)" : ""}</div>
+      <div class="tt-value" style="color:${C.green}">Revenue: ${sobFmtBnShort(d.receipts)}</div>
+      <div class="tt-value" style="color:${C.red}">Spending: ${sobFmtBnShort(d.tme)}</div>
+      <div class="tt-value" style="color:${d.borrowing > 0 ? C.red : C.green}">${d.borrowing > 0 ? "Deficit" : "Surplus"}: ${sobFmtBnShort(Math.abs(d.borrowing))}</div>`, event);
   }).on("mouseleave", function() {
     hoverLine.style("opacity", 0); hoverDotR.style("opacity", 0); hoverDotE.style("opacity", 0);
-    hideTooltip();
+    sobHideTooltip();
   });
 }
 
@@ -440,7 +419,7 @@ function updateGapChart(step) {
    ========================================================= */
 function buildDebtChart() {
   const container = document.getElementById("chart-debt");
-  const dim = chartDims(container);
+  const dim = sobChartDims(container);
   const svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
     .attr("viewBox", `0 0 ${dim.width} ${dim.height}`);
@@ -481,7 +460,7 @@ function buildDebtChart() {
   // Axes
   debtGroup.append("g").attr("class", "axis x-axis")
     .attr("transform", `translate(0,${dim.innerH})`)
-    .call(d3.axisBottom(x).ticks(isMobile() ? 5 : 10).tickFormat(d3.format("d")).tickSize(0))
+    .call(d3.axisBottom(x).ticks(sobIsMobile() ? 5 : 10).tickFormat(d3.format("d")).tickSize(0))
     .call(g => g.select(".domain").remove());
   debtGroup.append("g").attr("class", "axis y-axis")
     .call(d3.axisLeft(yDebt).ticks(6).tickFormat(d => d === 0 ? "0" : d + "%").tickSize(0))
@@ -497,7 +476,7 @@ function buildDebtChart() {
     .attr("fill", C.amber).attr("stroke", "#fff").attr("stroke-width", 2);
   debtGroup.append("text").attr("class", "chart-annotation-bold")
     .attr("x", x(1990) + 8).attr("y", yDebt(low.debt) + 4).attr("fill", C.amber)
-    .text(fmtPct(low.debt) + " low");
+    .text(sobFmtPct(low.debt) + " low");
 
   // Financial crisis
   debtGroup.append("text").attr("class", "chart-annotation")
@@ -519,7 +498,7 @@ function buildDebtChart() {
   const cur = pctGDP.find(d => d.year === 2024);
   debtGroup.append("text").attr("class", "chart-annotation-bold")
     .attr("x", x(2030) + 10).attr("y", yDebt(pctGDP[pctGDP.length - 1].debt) + 5).attr("fill", C.amber)
-    .text(fmtPct(pctGDP[pctGDP.length - 1].debt));
+    .text(sobFmtPct(pctGDP[pctGDP.length - 1].debt));
 
   // Hover
   const hoverRect = debtGroup.append("rect")
@@ -538,10 +517,10 @@ function buildDebtChart() {
     if (!d) return;
     hoverLine.attr("x1", x(year)).attr("x2", x(year)).style("opacity", 1);
     hoverDot.attr("cx", x(year)).attr("cy", yDebt(d.debt)).style("opacity", 1);
-    showTooltip(`<div class="tt-label">${d.fy}${d.forecast ? " (forecast)" : ""}</div>
-      <div class="tt-value">Debt: ${fmtPct(d.debt)} of GDP</div>`, event);
+    sobShowTooltip(`<div class="tt-label">${d.fy}${d.forecast ? " (forecast)" : ""}</div>
+      <div class="tt-value">Debt: ${sobFmtPct(d.debt)} of GDP</div>`, event);
   }).on("mouseleave", function() {
-    hoverLine.style("opacity", 0); hoverDot.style("opacity", 0); hideTooltip();
+    hoverLine.style("opacity", 0); hoverDot.style("opacity", 0); sobHideTooltip();
   });
 
   // --- DEBT INTEREST VIEW (step 1, hidden) ---
@@ -586,7 +565,7 @@ function buildDebtChart() {
   // Axes
   intGroup.append("g").attr("class", "axis x-axis")
     .attr("transform", `translate(0,${dim.innerH})`)
-    .call(d3.axisBottom(x).ticks(isMobile() ? 5 : 10).tickFormat(d3.format("d")).tickSize(0))
+    .call(d3.axisBottom(x).ticks(sobIsMobile() ? 5 : 10).tickFormat(d3.format("d")).tickSize(0))
     .call(g => g.select(".domain").remove());
   intGroup.append("g").attr("class", "axis y-axis")
     .call(d3.axisLeft(yInt).ticks(6).tickFormat(d => d === 0 ? "0" : d).tickSize(0))
@@ -615,7 +594,7 @@ function buildDebtChart() {
   const lastAgg = agg[agg.length - 1];
   intGroup.append("text").attr("class", "chart-annotation-bold")
     .attr("x", x(lastAgg.year) + 10).attr("y", yInt(lastAgg.debtInterest) + 5)
-    .attr("fill", C.blue).text(fmtBnShort(lastAgg.debtInterest));
+    .attr("fill", C.blue).text(sobFmtBnShort(lastAgg.debtInterest));
 
   // Hover
   const hoverRect2 = intGroup.append("rect")
@@ -635,11 +614,11 @@ function buildDebtChart() {
     hoverLine2.attr("x1", x(year)).attr("x2", x(year)).style("opacity", 1);
     hoverDot2.attr("cx", x(year)).attr("cy", yInt(d.debtInterest)).style("opacity", 1);
     const pctOfRev = d.receipts > 0 ? d3.format(".1f")(d.debtInterest / d.receipts * 100) : "—";
-    showTooltip(`<div class="tt-label">${d.fy}${d.forecast ? " (forecast)" : ""}</div>
-      <div class="tt-value">Debt interest: ${fmtBnShort(d.debtInterest)}</div>
+    sobShowTooltip(`<div class="tt-label">${d.fy}${d.forecast ? " (forecast)" : ""}</div>
+      <div class="tt-value">Debt interest: ${sobFmtBnShort(d.debtInterest)}</div>
       <div class="tt-value" style="color:#555555">${pctOfRev}% of revenue</div>`, event);
   }).on("mouseleave", function() {
-    hoverLine2.style("opacity", 0); hoverDot2.style("opacity", 0); hideTooltip();
+    hoverLine2.style("opacity", 0); hoverDot2.style("opacity", 0); sobHideTooltip();
   });
 }
 
@@ -659,10 +638,10 @@ function updateDebtChart(step) {
    ========================================================= */
 function buildCompositionChart() {
   const container = document.getElementById("chart-composition");
-  const dim = chartDims(container);
+  const dim = sobChartDims(container);
   // Make chart taller for horizontal bars
   const h = Math.max(580, dim.height);
-  const m = { top: 30, right: 120, bottom: 20, left: isMobile() ? 120 : 180 };
+  const m = { top: 30, right: 120, bottom: 20, left: sobIsMobile() ? 120 : 180 };
   const innerW = dim.width - m.left - m.right;
   const innerH = h - m.top - m.bottom;
 
@@ -688,8 +667,8 @@ function buildCompositionChart() {
     .attr("fill", d => top3Names.includes(d.name) ? C.blue : C.faint)
     .attr("rx", 2)
     .on("mousemove", function(event, d) {
-      showTooltip(`<div class="tt-label">${d.name}</div>
-        <div class="tt-value">${fmtBnShort(d.value)} (${fmtPct(d.value / totalReceipts * 100)} of total)</div>`, event);
+      sobShowTooltip(`<div class="tt-label">${d.name}</div>
+        <div class="tt-value">${sobFmtBnShort(d.value)} (${sobFmtPct(d.value / totalReceipts * 100)} of total)</div>`, event);
     })
     .on("mouseleave", hideTooltip);
 
@@ -699,7 +678,7 @@ function buildCompositionChart() {
     .attr("x", d => xTax(d.value) + 6)
     .attr("y", d => yTax(d.name) + yTax.bandwidth() / 2 + 4.5)
     .attr("fill", d => top3Names.includes(d.name) ? C.ink : C.muted)
-    .text(d => `${fmtBnShort(d.value)} (${Math.round(d.value / totalReceipts * 100)}%)`);
+    .text(d => `${sobFmtBnShort(d.value)} (${Math.round(d.value / totalReceipts * 100)}%)`);
 
   // Name labels on left of bars
   taxGroup.selectAll(".tax-name").data(receipts).enter()
@@ -709,7 +688,7 @@ function buildCompositionChart() {
     .attr("fill", d => top3Names.includes(d.name) ? C.ink : C.muted)
     .attr("font-weight", d => top3Names.includes(d.name) ? 600 : 400)
     .text(d => {
-      const maxLen = isMobile() ? 16 : 26;
+      const maxLen = sobIsMobile() ? 16 : 26;
       return d.name.length > maxLen ? d.name.slice(0, maxLen - 1) + "\u2026" : d.name;
     });
 
@@ -741,8 +720,8 @@ function buildCompositionChart() {
     .attr("rx", 2)
     .on("mousemove", function(event, d) {
       const desc = deptDescs[d.name] || "";
-      showTooltip(`<div class="tt-label">${d.name}</div>
-        <div class="tt-value">${fmtBnShort(d.value)} (${Math.round(d.value / totalDept * 100)}% of dept. spending)</div>
+      sobShowTooltip(`<div class="tt-label">${d.name}</div>
+        <div class="tt-value">${sobFmtBnShort(d.value)} (${Math.round(d.value / totalDept * 100)}% of dept. spending)</div>
         ${desc ? '<div class="tt-value" style="margin-top:4px;color:#555555;font-size:13px;">' + desc + '</div>' : ''}`, event);
     })
     .on("mouseleave", hideTooltip);
@@ -753,7 +732,7 @@ function buildCompositionChart() {
     .attr("x", d => xDept(d.value) + 6)
     .attr("y", d => yDept(d.name) + yDept.bandwidth() / 2 + 4.5)
     .attr("fill", d => top2Names.includes(d.name) ? C.ink : C.muted)
-    .text(d => `${fmtBnShort(d.value)} (${Math.round(d.value / totalDept * 100)}%)`);
+    .text(d => `${sobFmtBnShort(d.value)} (${Math.round(d.value / totalDept * 100)}%)`);
 
   // Name labels on left of bars
   deptGroup.selectAll(".dept-name").data(showDepts).enter()
@@ -763,7 +742,7 @@ function buildCompositionChart() {
     .attr("fill", d => top2Names.includes(d.name) ? C.ink : C.muted)
     .attr("font-weight", d => top2Names.includes(d.name) ? 600 : 400)
     .text(d => {
-      const maxLen = isMobile() ? 14 : 24;
+      const maxLen = sobIsMobile() ? 14 : 24;
       return d.name.length > maxLen ? d.name.slice(0, maxLen - 1) + "\u2026" : d.name;
     });
 }
@@ -784,7 +763,7 @@ function updateCompositionChart(step) {
    ========================================================= */
 function buildOutlookChart() {
   const container = document.getElementById("chart-outlook");
-  const dim = chartDims(container);
+  const dim = sobChartDims(container);
 
   // --- PROGRAMME CHANGE VIEW (step 0) ---
   // Calculate programme-level changes
@@ -861,8 +840,8 @@ function buildOutlookChart() {
     .attr("rx", 2)
     .on("mousemove", function(event, d) {
       const ctx = progContext[d.name] || "";
-      showTooltip(`<div class="tt-label">${d.name}</div>
-        <div class="tt-value">Change: ${d.change >= 0 ? "+" : "\u2212"}${fmtBnShort(Math.abs(d.change))}</div>
+      sobShowTooltip(`<div class="tt-label">${d.name}</div>
+        <div class="tt-value">Change: ${d.change >= 0 ? "+" : "\u2212"}${sobFmtBnShort(Math.abs(d.change))}</div>
         <div class="tt-value">From ${firstFy} to ${lastFy}</div>
         ${ctx ? '<div class="tt-value" style="margin-top:4px;color:#555555;font-size:13px;">' + ctx + '</div>' : ''}`, event);
     })
@@ -877,7 +856,7 @@ function buildOutlookChart() {
     .attr("fill", C.ink)
     .attr("font-weight", d => Math.abs(d.change) > 15 ? 600 : 400)
     .text(d => {
-      const maxLen = isMobile() ? 18 : 28;
+      const maxLen = sobIsMobile() ? 18 : 28;
       return d.name.length > maxLen ? d.name.slice(0, maxLen - 1) + "\u2026" : d.name;
     });
 
@@ -961,7 +940,7 @@ function buildOutlookChart() {
   // Axes
   outlookGroup.append("g").attr("class", "axis x-axis")
     .attr("transform", `translate(0,${innerH})`)
-    .call(d3.axisBottom(x).ticks(isMobile() ? 5 : 10).tickFormat(d3.format("d")).tickSize(0))
+    .call(d3.axisBottom(x).ticks(sobIsMobile() ? 5 : 10).tickFormat(d3.format("d")).tickSize(0))
     .call(g => g.select(".domain").remove());
   outlookGroup.append("g").attr("class", "axis y-axis")
     .call(d3.axisLeft(yDef).ticks(8).tickFormat(d => d === 0 ? "0" : d + "%").tickSize(0))
@@ -974,13 +953,13 @@ function buildOutlookChart() {
   const last = pctGDP[pctGDP.length - 1];
   outlookGroup.append("text").attr("class", "chart-annotation-bold")
     .attr("x", x(last.year) + 10).attr("y", yDef(last.borrowing) + 5)
-    .attr("fill", C.red).text(fmtPct(last.borrowing));
+    .attr("fill", C.red).text(sobFmtPct(last.borrowing));
 
   // Annotation for narrowing (offset into white space with leader line)
   outlookGroup.append("text").attr("class", "chart-annotation")
     .attr("x", x(2028)).attr("y", yDef(last.borrowing) - 48)
     .attr("text-anchor", "middle").attr("fill", C.red)
-    .text("Narrowing to " + fmtPct(last.borrowing));
+    .text("Narrowing to " + sobFmtPct(last.borrowing));
   outlookGroup.append("line")
     .attr("x1", x(2028)).attr("x2", x(2028))
     .attr("y1", yDef(last.borrowing) - 42).attr("y2", yDef(last.borrowing) - 4)
@@ -992,7 +971,7 @@ function buildOutlookChart() {
     outlookGroup.append("text").attr("class", "chart-annotation")
       .attr("x", x(2020)).attr("y", yDef(covid.borrowing) - 32)
       .attr("text-anchor", "middle").attr("fill", C.red)
-      .text("COVID: " + fmtPct(covid.borrowing));
+      .text("COVID: " + sobFmtPct(covid.borrowing));
     outlookGroup.append("line")
       .attr("x1", x(2020)).attr("x2", x(2020))
       .attr("y1", yDef(covid.borrowing) - 26).attr("y2", yDef(covid.borrowing) - 4)
@@ -1016,10 +995,10 @@ function buildOutlookChart() {
     if (!d) return;
     hoverLine.attr("x1", x(year)).attr("x2", x(year)).style("opacity", 1);
     hoverDot.attr("cx", x(year)).attr("cy", yDef(d.borrowing)).style("opacity", 1);
-    showTooltip(`<div class="tt-label">${d.fy}${d.forecast ? " (forecast)" : ""}</div>
-      <div class="tt-value">Deficit: ${fmtPct(d.borrowing)} of GDP</div>`, event);
+    sobShowTooltip(`<div class="tt-label">${d.fy}${d.forecast ? " (forecast)" : ""}</div>
+      <div class="tt-value">Deficit: ${sobFmtPct(d.borrowing)} of GDP</div>`, event);
   }).on("mouseleave", function() {
-    hoverLine.style("opacity", 0); hoverDot.style("opacity", 0); hideTooltip();
+    hoverLine.style("opacity", 0); hoverDot.style("opacity", 0); sobHideTooltip();
   });
 }
 

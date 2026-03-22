@@ -150,21 +150,15 @@ const C = SOB_COLORS;
 const DURATION = SOB_DURATION;
 const MOBILE = SOB_MOBILE;
 
-/* Tooltip: uses sobShowTooltip / sobHideTooltip from shared/utils.js */
-const showTooltip = sobShowTooltip;
-const hideTooltip = sobHideTooltip;
 
 /* =========================================================
    HELPERS
    ========================================================= */
-function isMobile() { return sobIsMobile(); }
 
-function chartDims(container) { return sobChartDims(container); };
-}
 
 function chartDimsBar(container) {
   const w = container.clientWidth;
-  const mobile = isMobile();
+  const mobile = sobIsMobile();
   const h = Math.max(mobile ? 400 : 560, Math.min(mobile ? 500 : 700, window.innerHeight * (mobile ? 0.6 : 0.75)));
   const m = { top: 24, right: mobile ? 40 : 80, bottom: 16, left: mobile ? 120 : 280 };
   return { width: w, height: h, margin: m, innerW: w - m.left - m.right, innerH: h - m.top - m.bottom };
@@ -193,10 +187,9 @@ function init() {
 
   buildAllCharts();
   setupScrollObserver();
-  window.addEventListener("resize", debounce(rebuildAll, 250));
+  window.addEventListener("resize", sobDebounce(rebuildAll, 250));
 }
 
-function debounce(fn, ms) { return sobDebounce(fn, ms); }
 function rebuildAll() {
   d3.selectAll("#chart-hook svg, #chart-international svg, #chart-sectors svg, #chart-matters svg").remove();
   buildAllCharts();
@@ -223,7 +216,7 @@ function buildAllCharts() {
    ========================================================= */
 function buildHookChart() {
   const container = document.getElementById("chart-hook");
-  const dim = chartDims(container);
+  const dim = sobChartDims(container);
   const svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
     .attr("viewBox", "0 0 " + dim.width + " " + dim.height);
@@ -310,9 +303,9 @@ function buildHookChart() {
     if (!d) return;
     hoverLine.attr("x1", x(year)).attr("x2", x(year)).style("opacity", 1);
     hoverDot.attr("cx", x(year)).attr("cy", y(d.index)).style("opacity", 1);
-    showTooltip('<div class="tt-label">' + d.year + '</div><div class="tt-value">Index: ' + d.index.toFixed(1) + '</div>', event);
+    sobShowTooltip('<div class="tt-label">' + d.year + '</div><div class="tt-value">Index: ' + d.index.toFixed(1) + '</div>', event);
   }).on("mouseleave", function() {
-    hoverLine.style("opacity", 0); hoverDot.style("opacity", 0); hideTooltip();
+    hoverLine.style("opacity", 0); hoverDot.style("opacity", 0); sobHideTooltip();
   });
 
   // ---- Step 1 view: counterfactual trend (hidden) ----
@@ -399,7 +392,7 @@ function updateHookChart(step) {
    ========================================================= */
 function buildInternationalChart() {
   var container = document.getElementById("chart-international");
-  var dim = chartDims(container);
+  var dim = sobChartDims(container);
   var dimBar = chartDimsBar(container);
   var svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
@@ -521,11 +514,11 @@ function buildInternationalChart() {
         ttHtml += '<div class="tt-value" style="color:' + c.color + '">' + (c.label === "United Kingdom" ? "UK" : c.label === "United States" ? "US" : c.key) + ': $' + d[c.key].toFixed(2) + '</div>';
       }
     });
-    showTooltip(ttHtml, event);
+    sobShowTooltip(ttHtml, event);
   }).on("mouseleave", function() {
     hoverLine.style("opacity", 0);
     countries.forEach(function(c) { hoverDots[c.key].style("opacity", 0); });
-    hideTooltip();
+    sobHideTooltip();
   });
 
   // ---- Step 1: Bar chart of 2023 levels (hidden) ----
@@ -567,7 +560,7 @@ function buildInternationalChart() {
     .attr("fill", function(d) { return d.countryCode === "GBR" ? C.indigo : d.countryCode === "OECD" ? C.oecd : "#A8B5CF"; })
     .attr("rx", 3)
     .on("mousemove", function(event, d) {
-      showTooltip('<div class="tt-label">' + d.country + '</div><div class="tt-value">$' + d.usdPPP.toFixed(1) + ' per hour (PPP)</div>', event);
+      sobShowTooltip('<div class="tt-label">' + d.country + '</div><div class="tt-value">$' + d.usdPPP.toFixed(1) + ' per hour (PPP)</div>', event);
     })
     .on("mouseleave", hideTooltip);
 
@@ -678,7 +671,7 @@ function buildSectorsChart() {
     .attr("fill", function(d) { return d.gbpPerHour >= avgVal ? C.indigo : "#A8B5CF"; })
     .attr("rx", 2)
     .on("mousemove", function(event, d) {
-      showTooltip('<div class="tt-label">' + d.sector + '</div><div class="tt-value">\u00a3' + d.gbpPerHour.toFixed(2) + ' per hour</div>', event);
+      sobShowTooltip('<div class="tt-label">' + d.sector + '</div><div class="tt-value">\u00a3' + d.gbpPerHour.toFixed(2) + ' per hour</div>', event);
     })
     .on("mouseleave", hideTooltip);
 
@@ -738,7 +731,7 @@ function buildSectorsChart() {
     .attr("opacity", function(d) { return d.gbpPerHour < median ? 1 : 0.4; })
     .attr("rx", 2)
     .on("mousemove", function(event, d) {
-      showTooltip('<div class="tt-label">' + d.sector + '</div><div class="tt-value">\u00a3' + d.gbpPerHour.toFixed(2) + ' per hour</div>', event);
+      sobShowTooltip('<div class="tt-label">' + d.sector + '</div><div class="tt-value">\u00a3' + d.gbpPerHour.toFixed(2) + ' per hour</div>', event);
     })
     .on("mouseleave", hideTooltip);
 
@@ -783,7 +776,7 @@ function updateSectorsChart(step) {
    ========================================================= */
 function buildMattersChart() {
   var container = document.getElementById("chart-matters");
-  var dim = chartDims(container);
+  var dim = sobChartDims(container);
   var svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
     .attr("viewBox", "0 0 " + dim.width + " " + dim.height);
@@ -881,9 +874,9 @@ function buildMattersChart() {
     if (!d) return;
     hoverLine.attr("x1", x(year)).attr("x2", x(year)).style("opacity", 1);
     hoverDot.attr("cx", x(year)).attr("cy", y(d.gbpPerHour)).style("opacity", 1);
-    showTooltip('<div class="tt-label">' + d.year + '</div><div class="tt-value">\u00a3' + d.gbpPerHour.toFixed(2) + ' per hour</div>', event);
+    sobShowTooltip('<div class="tt-label">' + d.year + '</div><div class="tt-value">\u00a3' + d.gbpPerHour.toFixed(2) + ' per hour</div>', event);
   }).on("mouseleave", function() {
-    hoverLine.style("opacity", 0); hoverDot.style("opacity", 0); hideTooltip();
+    hoverLine.style("opacity", 0); hoverDot.style("opacity", 0); sobHideTooltip();
   });
 
   // ---- Step 1: Same chart with "fiscal squeeze" annotation overlay ----

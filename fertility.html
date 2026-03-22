@@ -176,17 +176,11 @@ const DURATION = SOB_DURATION;
 const MOBILE = SOB_MOBILE;
 const REPLACEMENT = 2.1;
 
-/* Tooltip: uses sobShowTooltip / sobHideTooltip from shared/utils.js */
-const showTooltip = sobShowTooltip;
-const hideTooltip = sobHideTooltip;
 
 /* =========================================================
    HELPERS
    ========================================================= */
-function isMobile() { return sobIsMobile(); }
 
-function chartDims(container) { return sobChartDims(container); };
-}
 
 function fmtRate(v) { return d3.format(".2f")(v); }
 function fmtK(v) { return d3.format(",")(v) + "k"; }
@@ -212,10 +206,9 @@ function init() {
 
   buildAllCharts();
   setupScrollObserver();
-  window.addEventListener("resize", debounce(rebuildAll, 250));
+  window.addEventListener("resize", sobDebounce(rebuildAll, 250));
 }
 
-function debounce(fn, ms) { return sobDebounce(fn, ms); }
 function rebuildAll() {
   d3.selectAll("#chart-hook svg, #chart-order svg, #chart-births svg, #chart-families svg, #chart-why svg").remove();
   buildAllCharts();
@@ -243,7 +236,7 @@ function buildAllCharts() {
    ========================================================= */
 function buildHookChart() {
   const container = document.getElementById("chart-hook");
-  const dim = chartDims(container);
+  const dim = sobChartDims(container);
   const svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
     .attr("viewBox", "0 0 " + dim.width + " " + dim.height)
@@ -424,10 +417,10 @@ function buildHookChart() {
     if (!d) return;
     hoverLine2.attr("x1", xLine(d.year)).attr("x2", xLine(d.year)).style("opacity", 1);
     hoverDot.attr("cx", xLine(d.year)).attr("cy", yLine(d.tfrTotal)).style("opacity", 1);
-    showTooltip('<div class="tt-label">' + d.year + '</div><div class="tt-value">Total fertility rate: ' + d.tfrTotal.toFixed(2) + '</div>' +
+    sobShowTooltip('<div class="tt-label">' + d.year + '</div><div class="tt-value">Total fertility rate: ' + d.tfrTotal.toFixed(2) + '</div>' +
       (d.tfrTotal < REPLACEMENT ? '<div class="tt-value" style="color:' + C.rose + '">' + (REPLACEMENT - d.tfrTotal).toFixed(2) + ' below replacement</div>' : '<div class="tt-value" style="color:' + C.teal + '">' + (d.tfrTotal - REPLACEMENT).toFixed(2) + ' above replacement</div>'), event);
   }).on("mouseleave", function() {
-    hoverLine2.style("opacity", 0); hoverDot.style("opacity", 0); hideTooltip();
+    hoverLine2.style("opacity", 0); hoverDot.style("opacity", 0); sobHideTooltip();
   });
 }
 
@@ -447,7 +440,7 @@ function updateHookChart(step) {
    ========================================================= */
 function buildOrderChart() {
   var container = document.getElementById("chart-order");
-  var dim = chartDims(container);
+  var dim = sobChartDims(container);
   var svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
     .attr("viewBox", "0 0 " + dim.width + " " + dim.height)
@@ -542,13 +535,13 @@ function buildOrderChart() {
     var d = orderData.reduce(function(prev, curr) { return Math.abs(curr.year - year) < Math.abs(prev.year - year) ? curr : prev; });
     if (!d) return;
     hLine.attr("x1", xA(d.year)).attr("x2", xA(d.year)).style("opacity", 1);
-    showTooltip('<div class="tt-label">' + d.year + '</div>' +
+    sobShowTooltip('<div class="tt-label">' + d.year + '</div>' +
       '<div class="tt-value" style="color:' + C.order1 + '">1st child: ' + d.tfr1.toFixed(2) + '</div>' +
       '<div class="tt-value" style="color:' + C.order2 + '">2nd child: ' + d.tfr2.toFixed(2) + '</div>' +
       '<div class="tt-value" style="color:' + C.order3 + '">3rd child: ' + d.tfr3.toFixed(2) + '</div>' +
       '<div class="tt-value" style="color:' + C.order4 + '">4th+ child: ' + d.tfr4.toFixed(2) + '</div>' +
       '<div class="tt-value" style="font-weight:600">Total: ' + d.tfrTotal.toFixed(2) + '</div>', event);
-  }).on("mouseleave", function() { hLine.style("opacity", 0); hideTooltip(); });
+  }).on("mouseleave", function() { hLine.style("opacity", 0); sobHideTooltip(); });
 
   // --- MEAN AGE VIEW (step 1) ---
   var ageGroup = g.append("g").attr("class", "age-view").style("opacity", 0).style("pointer-events", "none");
@@ -634,12 +627,12 @@ function buildOrderChart() {
     var d = ageData.reduce(function(prev, curr) { return Math.abs(curr.year - year) < Math.abs(prev.year - year) ? curr : prev; });
     if (!d) return;
     hLine2.attr("x1", xAge(d.year)).attr("x2", xAge(d.year)).style("opacity", 1);
-    showTooltip('<div class="tt-label">' + d.year + '</div>' +
+    sobShowTooltip('<div class="tt-label">' + d.year + '</div>' +
       '<div class="tt-value">All births: ' + d.ageAll.toFixed(1) + ' years</div>' +
       '<div class="tt-value" style="color:' + C.order1 + '">1st child: ' + d.age1.toFixed(1) + ' years</div>' +
       '<div class="tt-value" style="color:' + C.order2 + '">2nd child: ' + d.age2.toFixed(1) + ' years</div>' +
       '<div class="tt-value" style="color:' + C.order3 + '">3rd child: ' + d.age3.toFixed(1) + ' years</div>', event);
-  }).on("mouseleave", function() { hLine2.style("opacity", 0); hideTooltip(); });
+  }).on("mouseleave", function() { hLine2.style("opacity", 0); sobHideTooltip(); });
 }
 
 function updateOrderChart(step) {
@@ -658,7 +651,7 @@ function updateOrderChart(step) {
    ========================================================= */
 function buildBirthsChart() {
   var container = document.getElementById("chart-births");
-  var dim = chartDims(container);
+  var dim = sobChartDims(container);
   var svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
     .attr("viewBox", "0 0 " + dim.width + " " + dim.height)
@@ -752,10 +745,10 @@ function buildBirthsChart() {
     if (!d) return;
     hLine.attr("x1", xB(d.year)).attr("x2", xB(d.year)).style("opacity", 1);
     hDot.attr("cx", xB(d.year)).attr("cy", yB(d.births)).style("opacity", 1);
-    showTooltip('<div class="tt-label">' + d.year + '</div>' +
+    sobShowTooltip('<div class="tt-label">' + d.year + '</div>' +
       '<div class="tt-value">' + d3.format(",")(d.births) + ',000 live births</div>' +
       '<div class="tt-value" style="color:' + C.rose + '">' + (d.births < peak.births ? (Math.round((1 - d.births / peak.births) * 100) + '% below ' + peak.year + ' peak') : 'Peak year') + '</div>', event);
-  }).on("mouseleave", function() { hLine.style("opacity", 0); hDot.style("opacity", 0); hideTooltip(); });
+  }).on("mouseleave", function() { hLine.style("opacity", 0); hDot.style("opacity", 0); sobHideTooltip(); });
 
   // --- FEEDBACK LOOP VIEW (step 1): same chart with annotation overlay ---
   var feedbackGroup = g.append("g").attr("class", "feedback-view").style("opacity", 0).style("pointer-events", "none");
@@ -830,7 +823,7 @@ function updateBirthsChart(step) {
    ========================================================= */
 function buildFamiliesChart() {
   var container = document.getElementById("chart-families");
-  var dim = chartDims(container);
+  var dim = sobChartDims(container);
   var svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
     .attr("viewBox", "0 0 " + dim.width + " " + dim.height)
@@ -920,11 +913,11 @@ function buildFamiliesChart() {
     if (!d) return;
     hLine.attr("x1", xF(d.year)).attr("x2", xF(d.year)).style("opacity", 1);
     var total = d.married + d.cohabiting + d.loneParent;
-    showTooltip('<div class="tt-label">' + d.year + '</div>' +
+    sobShowTooltip('<div class="tt-label">' + d.year + '</div>' +
       '<div class="tt-value" style="color:' + C.rose + '">Married: ' + d3.format(",")(d.married) + 'k (' + Math.round(d.married / total * 100) + '%)</div>' +
       '<div class="tt-value" style="color:' + C.warm + '">Cohabiting: ' + d3.format(",")(d.cohabiting) + 'k (' + Math.round(d.cohabiting / total * 100) + '%)</div>' +
       '<div class="tt-value" style="color:' + C.order4 + '">Lone parent: ' + d3.format(",")(d.loneParent) + 'k (' + Math.round(d.loneParent / total * 100) + '%)</div>', event);
-  }).on("mouseleave", function() { hLine.style("opacity", 0); hideTooltip(); });
+  }).on("mouseleave", function() { hLine.style("opacity", 0); sobHideTooltip(); });
 
   // --- HOUSEHOLD SIZE (step 1) ---
   var hhGroup = g.append("g").attr("class", "hh-view").style("opacity", 0).style("pointer-events", "none");
@@ -996,9 +989,9 @@ function buildFamiliesChart() {
     if (!d) return;
     hLine2.attr("x1", xH(d.year)).attr("x2", xH(d.year)).style("opacity", 1);
     hDot2.attr("cx", xH(d.year)).attr("cy", yH(d.size)).style("opacity", 1);
-    showTooltip('<div class="tt-label">' + d.year + '</div>' +
+    sobShowTooltip('<div class="tt-label">' + d.year + '</div>' +
       '<div class="tt-value">Average household size: ' + d.size.toFixed(2) + ' people</div>', event);
-  }).on("mouseleave", function() { hLine2.style("opacity", 0); hDot2.style("opacity", 0); hideTooltip(); });
+  }).on("mouseleave", function() { hLine2.style("opacity", 0); hDot2.style("opacity", 0); sobHideTooltip(); });
 }
 
 function updateFamiliesChart(step) {
@@ -1017,7 +1010,7 @@ function updateFamiliesChart(step) {
    ========================================================= */
 function buildWhyChart() {
   var container = document.getElementById("chart-why");
-  var dim = chartDims(container);
+  var dim = sobChartDims(container);
   var svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
     .attr("viewBox", "0 0 " + dim.width + " " + dim.height)
@@ -1134,7 +1127,7 @@ function buildWhyChart() {
       .attr("x", cx).attr("y", cy - 18)
       .attr("text-anchor", "middle")
       .attr("font-family", "'Source Serif 4', serif")
-      .attr("font-size", isMobile() ? "24px" : "32px")
+      .attr("font-size", sobIsMobile() ? "24px" : "32px")
       .attr("font-weight", 700)
       .attr("fill", m.color)
       .text(m.value);
@@ -1178,9 +1171,7 @@ function updateChart(section, step) {
 /* =========================================================
    SCROLLYTELLING — IntersectionObserver
    ========================================================= */
-function setupScrollObserver() { sobSetupScrollObserver("hook"); }
-
-})();
+function setupScrollObserver() { sobSetupScrollObserver("hook"); })();
 </script>
 </body>
 </html>

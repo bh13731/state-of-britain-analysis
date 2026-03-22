@@ -149,21 +149,12 @@ const C = SOB_COLORS;
 const DURATION = SOB_DURATION;
 const MOBILE = SOB_MOBILE;
 
-/* Tooltip: uses sobShowTooltip / sobHideTooltip from shared/utils.js */
-const showTooltip = sobShowTooltip;
-const hideTooltip = sobHideTooltip;
 
 /* =========================================================
    HELPERS
    ========================================================= */
 function fmtNum(v) { return d3.format(",")(Math.round(v)); }
 function fmtDec(v, d) { return d3.format("." + (d || 1) + "f")(v); }
-function fmtPct(v) { return d3.format(".0f")(v) + "%"; }
-function isMobile() { return sobIsMobile(); }
-
-function chartDims(container) { return sobChartDims(container); };
-  return { width: w, height: h, margin: m, innerW: w - m.left - m.right, innerH: h - m.top - m.bottom };
-}
 
 
 
@@ -185,10 +176,9 @@ function init() {
 
   buildAllCharts();
   setupScrollObserver();
-  window.addEventListener("resize", debounce(rebuildAll, 250));
+  window.addEventListener("resize", sobDebounce(rebuildAll, 250));
 }
 
-function debounce(fn, ms) { return sobDebounce(fn, ms); }
 function rebuildAll() {
   d3.selectAll("#chart-hook svg, #chart-pollution svg, #chart-leakage svg, #chart-system svg").remove();
   buildAllCharts();
@@ -215,7 +205,7 @@ function buildAllCharts() {
    ========================================================= */
 function buildHookChart() {
   const container = document.getElementById("chart-hook");
-  const dim = chartDims(container);
+  const dim = sobChartDims(container);
   const svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
     .attr("viewBox", `0 0 ${dim.width} ${dim.height}`)
@@ -253,7 +243,7 @@ function buildHookChart() {
     .attr("fill", (d, i) => i === 2 ? C.red : C.primary)
     .attr("rx", 3)
     .on("mousemove", function(event, d) {
-      showTooltip(`<div class="tt-label">${d.label}</div>
+      sobShowTooltip(`<div class="tt-label">${d.label}</div>
         <div class="tt-value">${fmtDec(d.value, 1)} avg spills per overflow</div>`, event);
     })
     .on("mouseleave", hideTooltip);
@@ -329,7 +319,7 @@ function buildHookChart() {
   // Axes
   lineGroup.append("g").attr("class", "axis x-axis")
     .attr("transform", `translate(0,${dim.innerH})`)
-    .call(d3.axisBottom(xLine).ticks(Math.min(pollData.length, isMobile() ? 5 : 9)).tickFormat(d3.format("d")).tickSize(0))
+    .call(d3.axisBottom(xLine).ticks(Math.min(pollData.length, sobIsMobile() ? 5 : 9)).tickFormat(d3.format("d")).tickSize(0))
     .call(g => g.select(".domain").remove());
   lineGroup.append("g").attr("class", "axis y-axis")
     .call(d3.axisLeft(yLine).ticks(6).tickFormat(d => fmtNum(d)).tickSize(0))
@@ -373,11 +363,11 @@ function buildHookChart() {
     if (!d) return;
     hoverLine.attr("x1", xLine(year)).attr("x2", xLine(year)).style("opacity", 1);
     hoverDot.attr("cx", xLine(year)).attr("cy", yLine(d.total)).style("opacity", 1);
-    showTooltip(`<div class="tt-label">${d.year}</div>
+    sobShowTooltip(`<div class="tt-label">${d.year}</div>
       <div class="tt-value">Total incidents: ${fmtNum(d.total)}</div>
       <div class="tt-value" style="color:${C.red}">Serious: ${d.serious}</div>`, event);
   }).on("mouseleave", function() {
-    hoverLine.style("opacity", 0); hoverDot.style("opacity", 0); hideTooltip();
+    hoverLine.style("opacity", 0); hoverDot.style("opacity", 0); sobHideTooltip();
   });
 }
 
@@ -397,7 +387,7 @@ function updateHookChart(step) {
    ========================================================= */
 function buildPollutionChart() {
   const container = document.getElementById("chart-pollution");
-  const dim = chartDims(container);
+  const dim = sobChartDims(container);
   const svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
     .attr("viewBox", `0 0 ${dim.width} ${dim.height}`)
@@ -436,7 +426,7 @@ function buildPollutionChart() {
     .attr("fill", (d, i) => i === pollData.length - 1 ? C.red : C.secondary)
     .attr("rx", 2)
     .on("mousemove", function(event, d) {
-      showTooltip(`<div class="tt-label">${d.year}</div>
+      sobShowTooltip(`<div class="tt-label">${d.year}</div>
         <div class="tt-value" style="color:${C.red}">Serious incidents: ${d.serious}</div>
         <div class="tt-value">Total incidents: ${fmtNum(d.total)}</div>`, event);
     })
@@ -503,7 +493,7 @@ function buildPollutionChart() {
     .attr("fill", (d, i) => i === 0 ? C.secondary : C.red)
     .attr("rx", 3)
     .on("mousemove", function(event, d) {
-      showTooltip(`<div class="tt-label">${d.label.replace('\n', ' ')}</div>
+      sobShowTooltip(`<div class="tt-label">${d.label.replace('\n', ' ')}</div>
         <div class="tt-value">${fmtDec(d.value, 1)} incidents per 10,000km of sewer</div>`, event);
     })
     .on("mouseleave", hideTooltip);
@@ -574,7 +564,7 @@ function updatePollutionChart(step) {
    ========================================================= */
 function buildLeakageChart() {
   const container = document.getElementById("chart-leakage");
-  const dim = chartDims(container);
+  const dim = sobChartDims(container);
   const svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
     .attr("viewBox", `0 0 ${dim.width} ${dim.height}`)
@@ -620,7 +610,7 @@ function buildLeakageChart() {
   // Axes
   trendGroup.append("g").attr("class", "axis x-axis")
     .attr("transform", `translate(0,${dim.innerH})`)
-    .call(d3.axisBottom(xLine).ticks(isMobile() ? 5 : 8).tickFormat(d3.format("d")).tickSize(0))
+    .call(d3.axisBottom(xLine).ticks(sobIsMobile() ? 5 : 8).tickFormat(d3.format("d")).tickSize(0))
     .call(g => g.select(".domain").remove());
   trendGroup.append("g").attr("class", "axis y-axis")
     .call(d3.axisLeft(yLine).ticks(6).tickFormat(d => fmtNum(d)).tickSize(0))
@@ -672,10 +662,10 @@ function buildLeakageChart() {
     if (!d) return;
     hoverLine.attr("x1", xLine(d.year)).attr("x2", xLine(d.year)).style("opacity", 1);
     hoverDot.attr("cx", xLine(d.year)).attr("cy", yLine(d.value)).style("opacity", 1);
-    showTooltip(`<div class="tt-label">${d.label}</div>
+    sobShowTooltip(`<div class="tt-label">${d.label}</div>
       <div class="tt-value">Leakage: ${fmtNum(d.value)} Ml/d</div>`, event);
   }).on("mouseleave", function() {
-    hoverLine.style("opacity", 0); hoverDot.style("opacity", 0); hideTooltip();
+    hoverLine.style("opacity", 0); hoverDot.style("opacity", 0); sobHideTooltip();
   });
 
   // === STEP 1: Company leakage performance ===
@@ -716,7 +706,7 @@ function buildLeakageChart() {
     .attr("fill", d => d.latest > 0 ? C.red : C.green)
     .attr("rx", 2)
     .on("mousemove", function(event, d) {
-      showTooltip(`<div class="tt-label">${d.company}</div>
+      sobShowTooltip(`<div class="tt-label">${d.company}</div>
         <div class="tt-value">Baseline: ${fmtNum(d.baseline)} Ml/d</div>
         <div class="tt-value" style="color:${d.latest > 0 ? C.red : C.green}">Change: ${d.latest > 0 ? '+' : ''}${fmtDec(d.latest, 1)}%</div>
         <div class="tt-value">Commitment: ${fmtDec(d.commitment, 1)}%</div>`, event);
@@ -733,7 +723,7 @@ function buildLeakageChart() {
     .attr("font-weight", d => d.latest > 0 ? 600 : 400)
     .attr("font-size", "13px")
     .text(d => {
-      const maxLen = isMobile() ? 14 : 22;
+      const maxLen = sobIsMobile() ? 14 : 22;
       return d.company.length > maxLen ? d.company.slice(0, maxLen - 1) + "\u2026" : d.company;
     });
 
@@ -779,7 +769,7 @@ function updateLeakageChart(step) {
    ========================================================= */
 function buildSystemChart() {
   const container = document.getElementById("chart-system");
-  const dim = chartDims(container);
+  const dim = sobChartDims(container);
   const h = Math.max(580, dim.height);
   const m = { top: 30, right: 80, bottom: 30, left: 10 };
   const innerW = dim.width - m.left - m.right;
@@ -827,7 +817,7 @@ function buildSystemChart() {
     .attr("fill", d => isWorsening(d) ? C.red : C.green)
     .attr("rx", 2)
     .on("mousemove", function(event, d) {
-      showTooltip(`<div class="tt-label">${d.metric}</div>
+      sobShowTooltip(`<div class="tt-label">${d.metric}</div>
         <div class="tt-value">Baseline (2019-20): ${d.baseline} ${d.unit}</div>
         <div class="tt-value">Latest (2024-25): ${d.latest} ${d.unit}</div>
         <div class="tt-value" style="color:${isWorsening(d) ? C.red : C.green}">Change: ${d.change > 0 ? '+' : ''}${d.change}%</div>`, event);
@@ -844,7 +834,7 @@ function buildSystemChart() {
     .attr("font-weight", d => isWorsening(d) ? 600 : 400)
     .attr("font-size", "13px")
     .text(d => {
-      const maxLen = isMobile() ? 18 : 30;
+      const maxLen = sobIsMobile() ? 18 : 30;
       return d.metric.length > maxLen ? d.metric.slice(0, maxLen - 1) + "\u2026" : d.metric;
     });
 

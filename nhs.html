@@ -194,9 +194,6 @@ const C = SOB_COLORS;
 const DURATION = SOB_DURATION;
 const MOBILE = SOB_MOBILE;
 
-/* Tooltip: uses sobShowTooltip / sobHideTooltip from shared/utils.js */
-const showTooltip = sobShowTooltip;
-const hideTooltip = sobHideTooltip;
 
 /* =========================================================
    HELPERS
@@ -208,7 +205,6 @@ function fmtNum(v) {
   return d3.format(",")(Math.round(v));
 }
 function fmtNumFull(v) { return d3.format(",")(Math.round(v)); }
-function fmtPct(v) { return d3.format(".1f")(v) + "%"; }
 function fmtWeeks(v) { return d3.format(".1f")(v) + " wks"; }
 
 function parseDate(period) {
@@ -218,11 +214,6 @@ function parseDate(period) {
 function formatPeriod(period) {
   const d = parseDate(period);
   return d3.timeFormat("%b %Y")(d);
-}
-
-function isMobile() { return sobIsMobile(); }
-
-function chartDims(container) { return sobChartDims(container); };
 }
 
 
@@ -246,11 +237,11 @@ function init() {
 
   // Set big numbers
   document.getElementById("bn-waiting").textContent = fmtNum(s.totalWaiting);
-  document.getElementById("bn-18week").textContent = fmtPct(s.pctWithin18Weeks);
+  document.getElementById("bn-18week").textContent = sobFmtPct(s.pctWithin18Weeks);
   document.getElementById("bn-52week").textContent = fmtNumFull(s.over52Weeks);
   document.getElementById("bn-median").textContent = d3.format(".1f")(s.medianWait);
-  document.getElementById("bn-ae").textContent = fmtPct(s.aePctWithin4Hours);
-  document.getElementById("ae-type1").textContent = fmtPct(DATA.ae[DATA.ae.length - 1].pctWithin4HoursType1);
+  document.getElementById("bn-ae").textContent = sobFmtPct(s.aePctWithin4Hours);
+  document.getElementById("ae-type1").textContent = sobFmtPct(DATA.ae[DATA.ae.length - 1].pctWithin4HoursType1);
 
   // Find when 92% target was last met
   let lastMet = null;
@@ -261,10 +252,9 @@ function init() {
 
   buildAllCharts();
   setupScrollObserver();
-  window.addEventListener("resize", debounce(rebuildAll, 250));
+  window.addEventListener("resize", sobDebounce(rebuildAll, 250));
 }
 
-function debounce(fn, ms) { return sobDebounce(fn, ms); }
 function rebuildAll() {
   d3.selectAll("#chart-hook svg, #chart-18week svg, #chart-longwait svg, #chart-median svg, #chart-ae svg, #chart-outlook svg").remove();
   buildAllCharts();
@@ -313,7 +303,7 @@ function addHoverBehavior(group, dim, xScale, rttData, tooltipFn) {
     tooltipFn(closest, event, cx);
   }).on("mouseleave", function() {
     hoverLine.style("opacity", 0);
-    hideTooltip();
+    sobHideTooltip();
     group.selectAll(".hover-dot").style("opacity", 0);
   });
 
@@ -325,7 +315,7 @@ function addHoverBehavior(group, dim, xScale, rttData, tooltipFn) {
    ========================================================= */
 function buildHookChart() {
   const container = document.getElementById("chart-hook");
-  const dim = chartDims(container);
+  const dim = sobChartDims(container);
   const svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
     .attr("viewBox", `0 0 ${dim.width} ${dim.height}`)
@@ -426,7 +416,7 @@ function buildHookChart() {
       const sign = pctChg >= 0 ? "+" : "";
       yoyStr = `<div class="tt-value" style="font-size:12px;color:${C.muted}">${sign}${d3.format(".1f")(pctChg)}% vs year ago</div>`;
     }
-    showTooltip(`<div class="tt-label">${formatPeriod(d.period)}</div>
+    sobShowTooltip(`<div class="tt-label">${formatPeriod(d.period)}</div>
       <div class="tt-value">${fmtNumFull(d.totalWaiting)} waiting</div>${yoyStr}`, event);
   });
 }
@@ -447,7 +437,7 @@ function updateHookChart(step) {
    ========================================================= */
 function build18WeekChart() {
   const container = document.getElementById("chart-18week");
-  const dim = chartDims(container);
+  const dim = sobChartDims(container);
   const svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
     .attr("viewBox", `0 0 ${dim.width} ${dim.height}`)
@@ -534,14 +524,14 @@ function build18WeekChart() {
   earlyGroup.append("text").attr("class", "chart-annotation-bold")
     .attr("x", x(parseDate(latest.period)) + 6)
     .attr("y", y(latest.pctWithin18) + 30)
-    .attr("fill", C.red).text(fmtPct(latest.pctWithin18));
+    .attr("fill", C.red).text(sobFmtPct(latest.pctWithin18));
 
   // Start label — offset above with enough clearance
   earlyGroup.append("text").attr("class", "chart-annotation")
     .attr("x", x(parseDate(rtt[0].period)) + 6)
     .attr("y", y(rtt[0].pctWithin18) - 12)
     .attr("text-anchor", "start").attr("fill", C.teal)
-    .text(fmtPct(rtt[0].pctWithin18));
+    .text(sobFmtPct(rtt[0].pctWithin18));
 
   // --- Step 1 additions: red danger zone below target ---
   const dangerGroup = g.append("g").attr("class", "danger-view").style("opacity", 0);
@@ -612,7 +602,7 @@ function build18WeekChart() {
     .attr("stroke", C.red).attr("stroke-width", 1);
   dangerGroup.append("text").attr("class", "chart-annotation-bold")
     .attr("x", x(parseDate(lowest.period)) + 14).attr("y", y(lowest.pctWithin18) + 34)
-    .attr("fill", C.red).text("Low: " + fmtPct(lowest.pctWithin18));
+    .attr("fill", C.red).text("Low: " + sobFmtPct(lowest.pctWithin18));
 
   // Hover
   const hoverGroup = g.append("g").attr("class", "w18-hover");
@@ -621,8 +611,8 @@ function build18WeekChart() {
   addHoverBehavior(hoverGroup, dim, x, rtt, function(d, event, cx) {
     hoverDot.attr("cx", cx).attr("cy", y(d.pctWithin18)).style("opacity", 1);
     const metTarget = d.pctWithin18 >= 92;
-    showTooltip(`<div class="tt-label">${formatPeriod(d.period)}</div>
-      <div class="tt-value" style="color:${metTarget ? C.teal : C.red}">${fmtPct(d.pctWithin18)} within 18 weeks</div>
+    sobShowTooltip(`<div class="tt-label">${formatPeriod(d.period)}</div>
+      <div class="tt-value" style="color:${metTarget ? C.teal : C.red}">${sobFmtPct(d.pctWithin18)} within 18 weeks</div>
       <div class="tt-value" style="font-size:13px;color:${C.muted}">${metTarget ? "Target met" : "Target missed (" + d3.format(".1f")(92 - d.pctWithin18) + "pp gap)"}</div>`, event);
   });
 }
@@ -641,7 +631,7 @@ function update18WeekChart(step) {
    ========================================================= */
 function buildLongWaitChart() {
   const container = document.getElementById("chart-longwait");
-  const dim = chartDims(container);
+  const dim = sobChartDims(container);
   const svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
     .attr("viewBox", `0 0 ${dim.width} ${dim.height}`)
@@ -756,7 +746,7 @@ function buildLongWaitChart() {
 
   addHoverBehavior(hoverGroup, dim, x, rtt, function(d, event, cx) {
     hoverDot.attr("cx", cx).attr("cy", y(d.over52weeks)).style("opacity", 1);
-    showTooltip(`<div class="tt-label">${formatPeriod(d.period)}</div>
+    sobShowTooltip(`<div class="tt-label">${formatPeriod(d.period)}</div>
       <div class="tt-value" style="color:${C.red}">${fmtNumFull(d.over52weeks)} waiting 52+ weeks</div>`, event);
   });
 }
@@ -775,7 +765,7 @@ function updateLongWaitChart(step) {
    ========================================================= */
 function buildMedianChart() {
   const container = document.getElementById("chart-median");
-  const dim = chartDims(container);
+  const dim = sobChartDims(container);
   const svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
     .attr("viewBox", `0 0 ${dim.width} ${dim.height}`)
@@ -897,7 +887,7 @@ function buildMedianChart() {
 
   addHoverBehavior(hoverGroup, dim, x, rtt, function(d, event, cx) {
     hoverDot.attr("cx", cx).attr("cy", y(d.medianWait)).style("opacity", 1);
-    showTooltip(`<div class="tt-label">${formatPeriod(d.period)}</div>
+    sobShowTooltip(`<div class="tt-label">${formatPeriod(d.period)}</div>
       <div class="tt-value">${d3.format(".1f")(d.medianWait)} weeks median wait</div>`, event);
   });
 }
@@ -916,7 +906,7 @@ function updateMedianChart(step) {
    ========================================================= */
 function buildAEChart() {
   const container = document.getElementById("chart-ae");
-  const dim = chartDims(container);
+  const dim = sobChartDims(container);
   const svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
     .attr("viewBox", `0 0 ${dim.width} ${dim.height}`)
@@ -963,9 +953,9 @@ function buildAEChart() {
     .attr("height", d => dim.innerH - y(d.pctWithin4Hours))
     .attr("fill", C.teal).attr("rx", 2)
     .on("mousemove", function(event, d) {
-      showTooltip(`<div class="tt-label">${formatPeriod(d.period)}</div>
-        <div class="tt-value" style="color:${C.teal}">All types: ${fmtPct(d.pctWithin4Hours)}</div>
-        <div class="tt-value" style="color:${C.red}">Type 1 (major): ${fmtPct(d.pctWithin4HoursType1)}</div>
+      sobShowTooltip(`<div class="tt-label">${formatPeriod(d.period)}</div>
+        <div class="tt-value" style="color:${C.teal}">All types: ${sobFmtPct(d.pctWithin4Hours)}</div>
+        <div class="tt-value" style="color:${C.red}">Type 1 (major): ${sobFmtPct(d.pctWithin4HoursType1)}</div>
         <div class="tt-value">${fmtNumFull(d.totalAttendances)} attendances</div>`, event);
     })
     .on("mouseleave", hideTooltip);
@@ -979,8 +969,8 @@ function buildAEChart() {
     .attr("height", d => dim.innerH - y(d.pctWithin4HoursType1))
     .attr("fill", C.red).attr("rx", 2)
     .on("mousemove", function(event, d) {
-      showTooltip(`<div class="tt-label">${formatPeriod(d.period)} &mdash; Type 1 (Major A&amp;E)</div>
-        <div class="tt-value" style="color:${C.red}">${fmtPct(d.pctWithin4HoursType1)} within 4 hours</div>
+      sobShowTooltip(`<div class="tt-label">${formatPeriod(d.period)} &mdash; Type 1 (Major A&amp;E)</div>
+        <div class="tt-value" style="color:${C.red}">${sobFmtPct(d.pctWithin4HoursType1)} within 4 hours</div>
         <div class="tt-value">${fmtNumFull(d.over4Hours)} waited over 4 hours</div>`, event);
     })
     .on("mouseleave", hideTooltip);
@@ -1076,7 +1066,7 @@ function updateAEChart(step) {
    ========================================================= */
 function buildOutlookChart() {
   const container = document.getElementById("chart-outlook");
-  const dim = chartDims(container);
+  const dim = sobChartDims(container);
   const svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
     .attr("viewBox", `0 0 ${dim.width} ${dim.height}`)
@@ -1176,7 +1166,7 @@ function buildOutlookChart() {
   overviewGroup.append("text").attr("class", "chart-annotation-bold")
     .attr("x", x(parseDate(latest.period)) + 6)
     .attr("y", yPct(latest.pctWithin18) - 22)
-    .attr("fill", C.teal).text(fmtPct(latest.pctWithin18) + " in 18wks");
+    .attr("fill", C.teal).text(sobFmtPct(latest.pctWithin18) + " in 18wks");
 
   overviewGroup.append("line")
     .attr("x1", x(parseDate(latest.period))).attr("x2", x(parseDate(latest.period)))
@@ -1203,8 +1193,8 @@ function buildOutlookChart() {
   addHoverBehavior(overviewGroup, dim, x, rtt, function(d, event, cx) {
     hoverDotPct.attr("cx", cx).attr("cy", yPct(d.pctWithin18)).style("opacity", 1);
     hoverDotWait.attr("cx", cx).attr("cy", yCount(d.totalWaiting)).style("opacity", 1);
-    showTooltip(`<div class="tt-label">${formatPeriod(d.period)}</div>
-      <div class="tt-value" style="color:${C.teal};font-weight:600">${fmtPct(d.pctWithin18)} within 18 weeks</div>
+    sobShowTooltip(`<div class="tt-label">${formatPeriod(d.period)}</div>
+      <div class="tt-value" style="color:${C.teal};font-weight:600">${sobFmtPct(d.pctWithin18)} within 18 weeks</div>
       <div class="tt-value" style="color:${C.amber};font-weight:600">${fmtNumFull(d.totalWaiting)} on waiting list</div>
       <hr style="border:none;border-top:1px solid #E0E0DB;margin:4px 0">
       <div class="tt-value" style="font-size:12px;color:${C.muted}">Median wait: ${d3.format(".1f")(d.medianWait)} wks</div>
@@ -1216,11 +1206,11 @@ function buildOutlookChart() {
 
   const metrics = [
     { label: "Waiting list", value: fmtNum(latest.totalWaiting), sub: "Total patients waiting", color: C.teal, target: null, status: "high" },
-    { label: "18-week standard", value: fmtPct(latest.pctWithin18), sub: "Target: 92%", color: C.red, target: 92, status: "fail" },
+    { label: "18-week standard", value: sobFmtPct(latest.pctWithin18), sub: "Target: 92%", color: C.red, target: 92, status: "fail" },
     { label: "Median wait", value: d3.format(".1f")(latest.medianWait) + " wks", sub: "Was ~6 weeks in 2012", color: C.teal, target: null, status: "worse" },
     { label: "52+ week waiters", value: fmtNum(latest.over52weeks), sub: "Was near zero pre-COVID", color: C.red, target: 0, status: "fail" },
-    { label: "A&E 4-hour target", value: fmtPct(DATA.summary.aePctWithin4Hours), sub: "Target: 95%", color: C.red, target: 95, status: "fail" },
-    { label: "A&E Type 1", value: fmtPct(DATA.ae[DATA.ae.length - 1].pctWithin4HoursType1), sub: "Major departments only", color: C.red, target: 95, status: "fail" }
+    { label: "A&E 4-hour target", value: sobFmtPct(DATA.summary.aePctWithin4Hours), sub: "Target: 95%", color: C.red, target: 95, status: "fail" },
+    { label: "A&E Type 1", value: sobFmtPct(DATA.ae[DATA.ae.length - 1].pctWithin4HoursType1), sub: "Major departments only", color: C.red, target: 95, status: "fail" }
   ];
 
   const cardH = dim.innerH / metrics.length - 8;

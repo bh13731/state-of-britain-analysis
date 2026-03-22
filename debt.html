@@ -163,25 +163,11 @@ const C = SOB_COLORS;
 const DURATION = 350;
 const MOBILE = SOB_MOBILE;
 
-/* Tooltip: uses sobShowTooltip / sobHideTooltip from shared/utils.js */
-const showTooltip = sobShowTooltip;
-const hideTooltip = sobHideTooltip;
 
 /* =========================================================
    HELPERS
    ========================================================= */
-function fmt(v) {
-  return (v < 0 ? "-" : "") + "\u00a3" + d3.format(",")(Math.round(Math.abs(v))) + "bn";
-}
-function fmtBnShort(v) { return "\u00a3" + d3.format(",")(Math.round(v)) + "bn"; }
-function fmtPct(v) { return d3.format(".1f")(v) + "%"; }
-function isMobile() { return sobIsMobile(); }
 function truncLabel(s, max) { return s.length > max ? s.slice(0, max - 1) + "\u2026" : s; }
-
-function chartDims(container) { return sobChartDims(container); };
-}
-
-
 
 /* =========================================================
    DATA LOAD & INIT
@@ -202,10 +188,9 @@ function init() {
 
   buildAllCharts();
   setupScrollObserver();
-  window.addEventListener("resize", debounce(rebuildAll, 250));
+  window.addEventListener("resize", sobDebounce(rebuildAll, 250));
 }
 
-function debounce(fn, ms) { return sobDebounce(fn, ms); }
 function rebuildAll() {
   d3.selectAll("#chart-scale svg, #chart-cause svg, #chart-qe svg, #chart-outlook svg").remove();
   buildAllCharts();
@@ -232,7 +217,7 @@ function buildAllCharts() {
    ========================================================= */
 function buildScaleChart() {
   const container = document.getElementById("chart-scale");
-  const dim = chartDims(container);
+  const dim = sobChartDims(container);
   const svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
     .attr("viewBox", `0 0 ${dim.width} ${dim.height}`)
@@ -268,11 +253,11 @@ function buildScaleChart() {
     .attr("width", d => xBar(d.value)).attr("height", yBar.bandwidth())
     .attr("fill", d => d.color).attr("rx", 1)
     .on("mousemove", function(event, d) {
-      showTooltip(`<div class="tt-label">${d.label}</div><div class="tt-value">${fmtBnShort(d.value)} per year</div>`, event);
+      sobShowTooltip(`<div class="tt-label">${d.label}</div><div class="tt-value">${sobFmtBnShort(d.value)} per year</div>`, event);
     })
     .on("mouseleave", hideTooltip);
 
-  const mobile = isMobile();
+  const mobile = sobIsMobile();
   barGroup.selectAll(".comp-label")
     .data(comparisons).enter().append("text")
     .attr("class", "chart-annotation-bold")
@@ -288,7 +273,7 @@ function buildScaleChart() {
     .attr("x", d => xBar(d.value) + 10).attr("y", d => yBar(d.label) + yBar.bandwidth() / 2 + 5)
     .attr("fill", d => d.color === C.crimson ? C.crimson : C.muted)
     .attr("font-weight", d => d.color === C.crimson ? 700 : 400)
-    .text(d => fmtBnShort(d.value));
+    .text(d => sobFmtBnShort(d.value));
 
   // Combined total annotation
   const combinedTotal = 30.5 + 22.5 + 13.6;
@@ -296,7 +281,7 @@ function buildScaleChart() {
     .attr("x", dim.innerW).attr("y", dim.innerH + 30)
     .attr("text-anchor", "end")
     .attr("fill", C.muted)
-    .text("Transport + Home Office + Justice = " + fmtBnShort(combinedTotal));
+    .text("Transport + Home Office + Justice = " + sobFmtBnShort(combinedTotal));
 
   // --- STEP 1: Debt interest line chart over time ---
   const lineGroup = g.append("g").attr("class", "line-view").style("opacity", 0);
@@ -372,7 +357,7 @@ function buildScaleChart() {
   const lastForecast = forecast[forecast.length - 1];
   lineGroup.append("text").attr("class", "chart-annotation-bold")
     .attr("x", xLine(lastForecast.year) + 10).attr("y", yLine(lastForecast.debtInterest) + 4)
-    .attr("fill", C.crimson).text(fmtBnShort(lastForecast.debtInterest));
+    .attr("fill", C.crimson).text(sobFmtBnShort(lastForecast.debtInterest));
 
   // Forecast label
   lineGroup.append("text").attr("class", "chart-annotation")
@@ -408,12 +393,12 @@ function buildScaleChart() {
     hoverLine.attr("x1", xLine(year)).attr("x2", xLine(year)).style("opacity", 1);
     hoverDot.attr("cx", xLine(year)).attr("cy", yLine(d.debtInterest)).style("opacity", 1);
     const spendShare = d.tme ? d3.format(".1f")(d.debtInterest / d.tme * 100) + "% of total spending" : "";
-    showTooltip(`<div class="tt-label">${d.fy}${d.forecast ? " (forecast)" : ""}</div>
-      <div class="tt-value" style="color:${C.crimson}">Debt interest: ${fmtBnShort(d.debtInterest)}</div>
+    sobShowTooltip(`<div class="tt-label">${d.fy}${d.forecast ? " (forecast)" : ""}</div>
+      <div class="tt-value" style="color:${C.crimson}">Debt interest: ${sobFmtBnShort(d.debtInterest)}</div>
       ${spendShare ? '<div class="tt-value">' + spendShare + '</div>' : ""}`, event);
   }).on("mouseleave", function() {
     hoverLine.style("opacity", 0); hoverDot.style("opacity", 0);
-    hideTooltip();
+    sobHideTooltip();
   });
 }
 
@@ -435,7 +420,7 @@ function updateScaleChart(step) {
    ========================================================= */
 function buildCauseChart() {
   const container = document.getElementById("chart-cause");
-  const dim = chartDims(container);
+  const dim = sobChartDims(container);
   const svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
     .attr("viewBox", `0 0 ${dim.width} ${dim.height}`)
@@ -525,7 +510,7 @@ function buildCauseChart() {
   const lastPctF = forecastPct[forecastPct.length - 1];
   debtView.append("text").attr("class", "chart-annotation-bold")
     .attr("x", xLine(lastPctF.year) + 10).attr("y", yDebt(lastPctF.debt) + 4)
-    .attr("fill", C.amber).text(fmtPct(lastPctF.debt));
+    .attr("fill", C.amber).text(sobFmtPct(lastPctF.debt));
 
   debtView.append("text").attr("class", "chart-annotation")
     .attr("x", xLine(2027)).attr("y", 12)
@@ -547,10 +532,10 @@ function buildCauseChart() {
     if (!d) return;
     hoverLine0.attr("x1", xLine(year)).attr("x2", xLine(year)).style("opacity", 1);
     hoverDot0.attr("cx", xLine(year)).attr("cy", yDebt(d.debt)).style("opacity", 1);
-    showTooltip(`<div class="tt-label">${d.fy}${d.forecast ? " (forecast)" : ""}</div>
-      <div class="tt-value" style="color:${C.amber}">Debt: ${fmtPct(d.debt)} of GDP</div>`, event);
+    sobShowTooltip(`<div class="tt-label">${d.fy}${d.forecast ? " (forecast)" : ""}</div>
+      <div class="tt-value" style="color:${C.amber}">Debt: ${sobFmtPct(d.debt)} of GDP</div>`, event);
   }).on("mouseleave", function() {
-    hoverLine0.style("opacity", 0); hoverDot0.style("opacity", 0); hideTooltip();
+    hoverLine0.style("opacity", 0); hoverDot0.style("opacity", 0); sobHideTooltip();
   });
 
   // --- STEP 1: Dual axis — debt stock (left, amber) vs debt interest (right, crimson) ---
@@ -664,13 +649,13 @@ function buildCauseChart() {
     hoverLine1.attr("x1", xLine(year)).attr("x2", xLine(year)).style("opacity", 1);
     hoverDotD.attr("cx", xLine(year)).attr("cy", yDebtStock(d.debt)).style("opacity", 1);
     hoverDotI.attr("cx", xLine(year)).attr("cy", yInterest(d.debtInterest)).style("opacity", 1);
-    showTooltip(`<div class="tt-label">${d.fy}${d.forecast ? " (forecast)" : ""}</div>
-      <div class="tt-value" style="color:${C.amber}">Debt: ${fmtBnShort(d.debt)}</div>
-      <div class="tt-value" style="color:${C.crimson}">Interest: ${fmtBnShort(d.debtInterest)}</div>
+    sobShowTooltip(`<div class="tt-label">${d.fy}${d.forecast ? " (forecast)" : ""}</div>
+      <div class="tt-value" style="color:${C.amber}">Debt: ${sobFmtBnShort(d.debt)}</div>
+      <div class="tt-value" style="color:${C.crimson}">Interest: ${sobFmtBnShort(d.debtInterest)}</div>
       <div class="tt-value">Effective rate: ${d3.format(".2f")(d.debtInterest / d.debt * 100)}%</div>`, event);
   }).on("mouseleave", function() {
     hoverLine1.style("opacity", 0); hoverDotD.style("opacity", 0); hoverDotI.style("opacity", 0);
-    hideTooltip();
+    sobHideTooltip();
   });
 }
 
@@ -692,7 +677,7 @@ function updateCauseChart(step) {
    ========================================================= */
 function buildQEChart() {
   const container = document.getElementById("chart-qe");
-  const dim = chartDims(container);
+  const dim = sobChartDims(container);
   const svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
     .attr("viewBox", `0 0 ${dim.width} ${dim.height}`)
@@ -734,8 +719,8 @@ function buildQEChart() {
     .attr("width", xAPF.bandwidth()).attr("height", d => dim.innerH - yAPF(d.value))
     .attr("fill", C.blue).attr("rx", 1)
     .on("mousemove", function(event, d) {
-      showTooltip(`<div class="tt-label">${d.fy}</div>
-        <div class="tt-value" style="color:${C.blue}">APF indemnity: ${fmtBnShort(d.value)}</div>
+      sobShowTooltip(`<div class="tt-label">${d.fy}</div>
+        <div class="tt-value" style="color:${C.blue}">APF indemnity: ${sobFmtBnShort(d.value)}</div>
         <div class="tt-value">Taxpayer cost of QE losses</div>`, event);
     })
     .on("mouseleave", hideTooltip);
@@ -747,7 +732,7 @@ function buildQEChart() {
     .attr("x", d => xAPF(d.fy) + xAPF.bandwidth() / 2)
     .attr("y", d => yAPF(d.value) - 8)
     .attr("text-anchor", "middle").attr("fill", C.blue)
-    .text(d => fmtBnShort(d.value));
+    .text(d => sobFmtBnShort(d.value));
 
   // Peak annotation — offset into white space with leader line (Cleveland/Knaflic)
   const peakBarX = xAPF("2022-23") + xAPF.bandwidth() / 2;
@@ -768,7 +753,7 @@ function buildQEChart() {
   apfView.append("text").attr("class", "chart-annotation-bold")
     .attr("x", dim.innerW).attr("y", dim.innerH + 32)
     .attr("text-anchor", "end").attr("fill", C.blue)
-    .text("Cumulative total: " + fmtBnShort(totalAPF));
+    .text("Cumulative total: " + sobFmtBnShort(totalAPF));
 
   // Title
   apfView.append("text").attr("class", "chart-annotation-bold")
@@ -805,12 +790,12 @@ function buildQEChart() {
     .attr("fill", d => d.color).attr("rx", 1)
     .attr("opacity", d => d.bold ? 1 : 0.7)
     .on("mousemove", function(event, d) {
-      showTooltip(`<div class="tt-label">${d.label}</div>
-        <div class="tt-value">${fmtBnShort(d.value)}${d.bold ? " (2020-2025)" : " (2024-25 annual)"}</div>`, event);
+      sobShowTooltip(`<div class="tt-label">${d.label}</div>
+        <div class="tt-value">${sobFmtBnShort(d.value)}${d.bold ? " (2020-2025)" : " (2024-25 annual)"}</div>`, event);
     })
     .on("mouseleave", hideTooltip);
 
-  const mobileQE = isMobile();
+  const mobileQE = sobIsMobile();
   compView.selectAll(".dept-label")
     .data(deptComparisons).enter().append("text")
     .attr("class", d => d.bold ? "chart-annotation-bold" : "chart-annotation")
@@ -827,7 +812,7 @@ function buildQEChart() {
     .attr("y", d => yComp(d.label) + yComp.bandwidth() / 2 + 5)
     .attr("fill", d => d.bold ? C.blue : C.muted)
     .attr("font-weight", d => d.bold ? 700 : 400)
-    .text(d => fmtBnShort(d.value));
+    .text(d => sobFmtBnShort(d.value));
 
   // Methodological caveat -- prominent, not buried (Tufte: honest scales)
   compView.append("text").attr("class", "chart-annotation-bold")
@@ -859,7 +844,7 @@ function updateQEChart(step) {
    ========================================================= */
 function buildOutlookChart() {
   const container = document.getElementById("chart-outlook");
-  const dim = chartDims(container);
+  const dim = sobChartDims(container);
   const svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
     .attr("viewBox", `0 0 ${dim.width} ${dim.height}`)
@@ -919,7 +904,7 @@ function buildOutlookChart() {
   const yr2030 = forecast[forecast.length - 1];
   forecastView.append("text").attr("class", "chart-annotation-bold")
     .attr("x", xLine(yr2030.year) + 10).attr("y", yInterest(yr2030.debtInterest) + 4)
-    .attr("fill", C.crimson).text(fmtBnShort(yr2030.debtInterest));
+    .attr("fill", C.crimson).text(sobFmtBnShort(yr2030.debtInterest));
 
   // "Doesn't come down" annotation
   forecastView.append("text").attr("class", "chart-annotation")
@@ -957,11 +942,11 @@ function buildOutlookChart() {
     hoverLine2.attr("x1", xLine(year)).attr("x2", xLine(year)).style("opacity", 1);
     hoverDot2.attr("cx", xLine(year)).attr("cy", yInterest(d.debtInterest)).style("opacity", 1);
     const borrowingShare = d.debtInterest / d.tme * 100;
-    showTooltip(`<div class="tt-label">${d.fy}${d.forecast ? " (forecast)" : ""}</div>
-      <div class="tt-value" style="color:${C.crimson}">Debt interest: ${fmtBnShort(d.debtInterest)}</div>
+    sobShowTooltip(`<div class="tt-label">${d.fy}${d.forecast ? " (forecast)" : ""}</div>
+      <div class="tt-value" style="color:${C.crimson}">Debt interest: ${sobFmtBnShort(d.debtInterest)}</div>
       <div class="tt-value">${d3.format(".1f")(borrowingShare)}% of total spending</div>`, event);
   }).on("mouseleave", function() {
-    hoverLine2.style("opacity", 0); hoverDot2.style("opacity", 0); hideTooltip();
+    hoverLine2.style("opacity", 0); hoverDot2.style("opacity", 0); sobHideTooltip();
   });
 
   // --- STEP 1: Debt interest as % of receipts ---
@@ -1084,12 +1069,12 @@ function buildOutlookChart() {
     hoverLine3.attr("x1", xLine(year)).attr("x2", xLine(year)).style("opacity", 1);
     hoverDot3.attr("cx", xLine(year)).attr("cy", yPct(d.pctReceipts)).style("opacity", 1);
     hoverDot3b.attr("cx", xLine(year)).attr("cy", yPct(d.pctSpending)).style("opacity", 1);
-    showTooltip(`<div class="tt-label">${d.fy}${d.forecast ? " (forecast)" : ""}</div>
+    sobShowTooltip(`<div class="tt-label">${d.fy}${d.forecast ? " (forecast)" : ""}</div>
       <div class="tt-value" style="color:${C.crimson}">${d3.format(".1f")(d.pctReceipts)}% of tax revenue</div>
       <div class="tt-value" style="color:${C.crimsonDark}">${d3.format(".1f")(d.pctSpending)}% of spending</div>`, event);
   }).on("mouseleave", function() {
     hoverLine3.style("opacity", 0); hoverDot3.style("opacity", 0); hoverDot3b.style("opacity", 0);
-    hideTooltip();
+    sobHideTooltip();
   });
 }
 

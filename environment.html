@@ -205,21 +205,13 @@ const SECTORS = [
   { key: "lulucf", label: "Land use", color: C.lulucf }
 ];
 
-/* Tooltip: uses sobShowTooltip / sobHideTooltip from shared/utils.js */
-const showTooltip = sobShowTooltip;
-const hideTooltip = sobHideTooltip;
 
 /* =========================================================
    HELPERS
    ========================================================= */
 function fmtMt(v) { return d3.format(",.0f")(v) + " Mt"; }
-function fmtPct(v) { return d3.format("+.0f")(v) + "%"; }
 function fmtK(v) { return v >= 1000 ? d3.format(",.0f")(v / 1000) + "k" : d3.format(",.0f")(v); }
 function fmtConc(v) { return d3.format(".1f")(v) + " \u00b5g/m\u00b3"; }
-function isMobile() { return sobIsMobile(); }
-
-function chartDims(container) { return sobChartDims(container); };
-}
 
 
 
@@ -244,10 +236,9 @@ function init() {
 
   buildAllCharts();
   setupScrollObserver();
-  window.addEventListener("resize", debounce(rebuildAll, 250));
+  window.addEventListener("resize", sobDebounce(rebuildAll, 250));
 }
 
-function debounce(fn, ms) { return sobDebounce(fn, ms); }
 function rebuildAll() {
   document.querySelectorAll(".chart-container svg").forEach(el => el.remove());
   buildAllCharts();
@@ -274,7 +265,7 @@ function buildAllCharts() {
    ========================================================= */
 function buildHookChart() {
   const container = document.getElementById("chart-hook");
-  const dim = chartDims(container);
+  const dim = sobChartDims(container);
   const svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
     .attr("viewBox", `0 0 ${dim.width} ${dim.height}`)
@@ -349,7 +340,7 @@ function buildHookChart() {
     .call(g => g.select(".domain").remove());
   lineGroup.append("g").attr("class", "axis x-axis")
     .attr("transform", `translate(0,${dim.innerH})`)
-    .call(d3.axisBottom(x).ticks(isMobile() ? 5 : 8).tickFormat(d3.format("d")).tickSize(0))
+    .call(d3.axisBottom(x).ticks(sobIsMobile() ? 5 : 8).tickFormat(d3.format("d")).tickSize(0))
     .call(g => g.select(".domain").remove());
 
   /* Shaded area */
@@ -409,11 +400,11 @@ function buildHookChart() {
     hoverLine.attr("x1", x(year)).attr("x2", x(year)).style("opacity", 1);
     hoverDot.attr("cx", x(year)).attr("cy", y(d.total)).style("opacity", 1);
     const change = ((d.total - first.total) / first.total * 100);
-    showTooltip(`<div class="tt-label">${year}</div>
+    sobShowTooltip(`<div class="tt-label">${year}</div>
       <div class="tt-value">Total: ${d3.format(",.1f")(d.total)} Mt CO\u2082e</div>
       <div class="tt-value" style="color:${C.teal}">Change from 1990: ${d3.format("+.1f")(change)}%</div>`, event);
   }).on("mouseleave", function() {
-    hoverLine.style("opacity", 0); hoverDot.style("opacity", 0); hideTooltip();
+    hoverLine.style("opacity", 0); hoverDot.style("opacity", 0); sobHideTooltip();
   });
 }
 
@@ -435,7 +426,7 @@ function updateHookChart(step) {
    ========================================================= */
 function buildSectorsChart() {
   const container = document.getElementById("chart-sectors");
-  const dim = chartDims(container);
+  const dim = sobChartDims(container);
   const svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
     .attr("viewBox", `0 0 ${dim.width} ${dim.height}`)
@@ -467,7 +458,7 @@ function buildSectorsChart() {
     .call(gg => gg.select(".domain").remove());
   g.append("g").attr("class", "axis x-axis")
     .attr("transform", `translate(0,${dim.innerH})`)
-    .call(d3.axisBottom(x).ticks(isMobile() ? 5 : 8).tickFormat(d3.format("d")).tickSize(0))
+    .call(d3.axisBottom(x).ticks(sobIsMobile() ? 5 : 8).tickFormat(d3.format("d")).tickSize(0))
     .call(gg => gg.select(".domain").remove());
 
   const area = d3.area()
@@ -527,9 +518,9 @@ function buildSectorsChart() {
       html += `<div class="tt-value" style="color:${stackColors[k]}">${stackLabels[k]}: ${d3.format(",.1f")(d[k])} Mt</div>`;
     });
     html += `<div class="tt-value" style="font-weight:600;margin-top:4px">Total: ${d3.format(",.1f")(d.total)} Mt</div>`;
-    showTooltip(html, event);
+    sobShowTooltip(html, event);
   }).on("mouseleave", function() {
-    hoverLine.style("opacity", 0); hideTooltip();
+    hoverLine.style("opacity", 0); sobHideTooltip();
   });
 
   /* Highlight function for step transitions */
@@ -556,7 +547,7 @@ function updateSectorsChart(step) {
    ========================================================= */
 function buildAirChart() {
   const container = document.getElementById("chart-air");
-  const dim = chartDims(container);
+  const dim = sobChartDims(container);
   const svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
     .attr("viewBox", `0 0 ${dim.width} ${dim.height}`)
@@ -579,7 +570,7 @@ function buildAirChart() {
     .call(gg => gg.select(".domain").remove());
   no2Group.append("g").attr("class", "axis x-axis")
     .attr("transform", `translate(0,${dim.innerH})`)
-    .call(d3.axisBottom(xNo2).ticks(isMobile() ? 5 : 8).tickFormat(d3.format("d")).tickSize(0))
+    .call(d3.axisBottom(xNo2).ticks(sobIsMobile() ? 5 : 8).tickFormat(d3.format("d")).tickSize(0))
     .call(gg => gg.select(".domain").remove());
 
   /* Area */
@@ -639,10 +630,10 @@ function buildAirChart() {
     if (!d) return;
     no2HLine.attr("x1", xNo2(year)).attr("x2", xNo2(year)).style("opacity", 1);
     no2HDot.attr("cx", xNo2(year)).attr("cy", yNo2(d.mean)).style("opacity", 1);
-    showTooltip(`<div class="tt-label">${year}</div>
+    sobShowTooltip(`<div class="tt-label">${year}</div>
       <div class="tt-value" style="color:${C.teal}">NO\u2082: ${d3.format(".1f")(d.mean)} \u00b5g/m\u00b3</div>`, event);
   }).on("mouseleave", function() {
-    no2HLine.style("opacity", 0); no2HDot.style("opacity", 0); hideTooltip();
+    no2HLine.style("opacity", 0); no2HDot.style("opacity", 0); sobHideTooltip();
   });
 
   /* --- STEP 1: PM2.5 (hidden initially) --- */
@@ -658,7 +649,7 @@ function buildAirChart() {
     .call(gg => gg.select(".domain").remove());
   pmGroup.append("g").attr("class", "axis x-axis")
     .attr("transform", `translate(0,${dim.innerH})`)
-    .call(d3.axisBottom(xPm).ticks(isMobile() ? 5 : 8).tickFormat(d3.format("d")).tickSize(0))
+    .call(d3.axisBottom(xPm).ticks(sobIsMobile() ? 5 : 8).tickFormat(d3.format("d")).tickSize(0))
     .call(gg => gg.select(".domain").remove());
 
   /* Area */
@@ -718,10 +709,10 @@ function buildAirChart() {
     if (!d) return;
     pmHLine.attr("x1", xPm(year)).attr("x2", xPm(year)).style("opacity", 1);
     pmHDot.attr("cx", xPm(year)).attr("cy", yPm(d.mean)).style("opacity", 1);
-    showTooltip(`<div class="tt-label">${year}</div>
+    sobShowTooltip(`<div class="tt-label">${year}</div>
       <div class="tt-value" style="color:${C.teal}">PM2.5: ${d3.format(".1f")(d.mean)} \u00b5g/m\u00b3</div>`, event);
   }).on("mouseleave", function() {
-    pmHLine.style("opacity", 0); pmHDot.style("opacity", 0); hideTooltip();
+    pmHLine.style("opacity", 0); pmHDot.style("opacity", 0); sobHideTooltip();
   });
 }
 
@@ -742,7 +733,7 @@ function updateAirChart(step) {
    ========================================================= */
 function buildEvChart() {
   const container = document.getElementById("chart-ev");
-  const dim = chartDims(container);
+  const dim = sobChartDims(container);
   const svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
     .attr("viewBox", `0 0 ${dim.width} ${dim.height}`)
@@ -800,7 +791,7 @@ function buildEvChart() {
     .attr("height", dim.innerH)
     .attr("fill", "transparent").style("cursor", "pointer")
     .on("mousemove", function(event, d) {
-      showTooltip(`<div class="tt-label">${d.year}</div>
+      sobShowTooltip(`<div class="tt-label">${d.year}</div>
         <div class="tt-value">Total ULEV: ${d3.format(",")(d.total)}</div>
         <div class="tt-value" style="color:${C.teal}">BEV: ${d3.format(",")(d.bev)}</div>
         <div class="tt-value" style="color:${C.amber}">PHEV: ${d3.format(",")(d.phev)}</div>
@@ -874,7 +865,7 @@ function buildEvChart() {
     .attr("fill", "transparent").style("cursor", "pointer")
     .on("mousemove", function(event, d) {
       const bevPct = Math.round(d.bev / d.total * 100);
-      showTooltip(`<div class="tt-label">${d.year}</div>
+      sobShowTooltip(`<div class="tt-label">${d.year}</div>
         <div class="tt-value" style="color:${C.teal}">BEV: ${d3.format(",")(d.bev)} (${bevPct}%)</div>
         <div class="tt-value" style="color:${C.amber}">PHEV: ${d3.format(",")(d.phev)}</div>
         <div class="tt-value">Total: ${d3.format(",")(d.total)}</div>`, event);
@@ -898,7 +889,7 @@ function updateEvChart(step) {
    ========================================================= */
 function buildHonestChart() {
   const container = document.getElementById("chart-honest");
-  const dim = chartDims(container);
+  const dim = sobChartDims(container);
   const svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
     .attr("viewBox", `0 0 ${dim.width} ${dim.height}`)
@@ -1003,7 +994,7 @@ function updateHonestChart(step) {
    ========================================================= */
 function buildGapChart() {
   const container = document.getElementById("chart-gap");
-  const dim = chartDims(container);
+  const dim = sobChartDims(container);
   const svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
     .attr("viewBox", `0 0 ${dim.width} ${dim.height}`)
@@ -1122,7 +1113,7 @@ function buildGapChart() {
     .call(gg => gg.select(".domain").remove());
   projGroup.append("g").attr("class", "axis x-axis")
     .attr("transform", `translate(0,${dim.innerH})`)
-    .call(d3.axisBottom(xProj).ticks(isMobile() ? 5 : 8).tickFormat(d3.format("d")).tickSize(0))
+    .call(d3.axisBottom(xProj).ticks(sobIsMobile() ? 5 : 8).tickFormat(d3.format("d")).tickSize(0))
     .call(gg => gg.select(".domain").remove());
 
   projGroup.append("text").attr("class", "chart-annotation-bold")
@@ -1232,11 +1223,11 @@ function buildGapChart() {
     hoverLine.attr("x1", xProj(year)).attr("x2", xProj(year)).style("opacity", 1);
     hoverDot.attr("cx", xProj(year)).attr("cy", yProj(d.total)).style("opacity", 1);
     const change = ((d.total - emissions[0].total) / emissions[0].total * 100);
-    showTooltip(`<div class="tt-label">${year}</div>
+    sobShowTooltip(`<div class="tt-label">${year}</div>
       <div class="tt-value">Total: ${d3.format(",.1f")(d.total)} Mt CO\u2082e</div>
       <div class="tt-value" style="color:${C.teal}">Change from 1990: ${d3.format("+.1f")(change)}%</div>`, event);
   }).on("mouseleave", function() {
-    hoverLine.style("opacity", 0); hoverDot.style("opacity", 0); hideTooltip();
+    hoverLine.style("opacity", 0); hoverDot.style("opacity", 0); sobHideTooltip();
   });
 }
 
@@ -1269,9 +1260,7 @@ function updateChart(section, step) {
 /* =========================================================
    SCROLLYTELLING — IntersectionObserver
    ========================================================= */
-function setupScrollObserver() { sobSetupScrollObserver("hook"); }
-
-})();
+function setupScrollObserver() { sobSetupScrollObserver("hook"); })();
 </script>
 </body>
 </html>

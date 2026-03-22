@@ -82,6 +82,59 @@ function sobChartDims(container) {
 }
 
 /* =========================================================
+   FORMATTERS (require D3)
+   ========================================================= */
+
+/**
+ * Format a percentage value.
+ * @param {number} v - the value
+ * @param {string} [spec=".1f"] - d3-format specifier
+ * @returns {string}
+ */
+function sobFmtPct(v, spec) {
+  if (spec === undefined) spec = ".1f";
+  if (typeof d3 !== "undefined") return d3.format(spec)(v) + "%";
+  return v.toFixed(1) + "%";
+}
+
+/**
+ * Format a value in billions with pound sign (e.g. "£153bn").
+ * @param {number} v - the value in billions
+ * @returns {string}
+ */
+function sobFmtBnShort(v) {
+  if (typeof d3 !== "undefined") return "\u00a3" + d3.format(",")(Math.round(v)) + "bn";
+  return "\u00a3" + Math.round(v) + "bn";
+}
+
+/**
+ * Format a large monetary value with optional decimals.
+ * @param {number} v - the value
+ * @param {number} [decimals=0] - decimal places
+ * @returns {string}
+ */
+function sobFmt(v, decimals) {
+  if (decimals === undefined) decimals = 0;
+  var abs = Math.abs(v);
+  var sign = v < 0 ? "-" : "";
+  if (typeof d3 !== "undefined") {
+    if (abs >= 1000) return sign + "\u00a3" + d3.format(",")(Math.round(abs)) + "bn";
+    return sign + "\u00a3" + d3.format(decimals > 0 ? "." + decimals + "f" : ",")(abs) + "bn";
+  }
+  return sign + "\u00a3" + Math.round(abs) + "bn";
+}
+
+/**
+ * Format a number with commas.
+ * @param {number} v - the value
+ * @returns {string}
+ */
+function sobFmtComma(v) {
+  if (typeof d3 !== "undefined") return d3.format(",")(Math.round(v));
+  return Math.round(v).toLocaleString();
+}
+
+/* =========================================================
    DEBOUNCE
    ========================================================= */
 

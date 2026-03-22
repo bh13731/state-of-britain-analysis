@@ -150,18 +150,11 @@ const C = SOB_COLORS;
 const DURATION = SOB_DURATION;
 const MOBILE = SOB_MOBILE;
 
-/* Tooltip: uses sobShowTooltip / sobHideTooltip from shared/utils.js */
-const showTooltip = sobShowTooltip;
-const hideTooltip = sobHideTooltip;
 
 /* =========================================================
    HELPERS
    ========================================================= */
-function fmtPct(v) { return d3.format(".1f")(v) + "%"; }
-function isMobile() { return sobIsMobile(); }
 
-function chartDims(container) { return sobChartDims(container); };
-}
 
 function parseTime(t) {
   const [y, m] = t.split("-").map(Number);
@@ -213,7 +206,7 @@ function init() {
 
   // Find peak CPIH rate
   const peakEntry = RATES.reduce((max, d) => d.CP00 > max.CP00 ? d : max, RATES[0]);
-  document.getElementById("bn-peak").textContent = fmtPct(peakEntry.CP00);
+  document.getElementById("bn-peak").textContent = sobFmtPct(peakEntry.CP00);
 
   // Cumulative price rise since Jan 2020
   const jan2020 = SERIES.find(d => d.time === "2020-01");
@@ -244,10 +237,9 @@ function init() {
 
   buildAllCharts();
   setupScrollObserver();
-  window.addEventListener("resize", debounce(rebuildAll, 250));
+  window.addEventListener("resize", sobDebounce(rebuildAll, 250));
 }
 
-function debounce(fn, ms) { return sobDebounce(fn, ms); }
 function rebuildAll() {
   d3.selectAll("#chart-hook svg, #chart-sectors svg, #chart-cumulative svg, #chart-now svg").remove();
   buildAllCharts();
@@ -272,7 +264,7 @@ function buildAllCharts() {
    ========================================================= */
 function buildHookChart() {
   const container = document.getElementById("chart-hook");
-  const dim = chartDims(container);
+  const dim = sobChartDims(container);
   const svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
     .attr("viewBox", "0 0 " + dim.width + " " + dim.height)
@@ -307,7 +299,7 @@ function buildHookChart() {
   bigGroup.append("text").attr("class", "chart-annotation-bold")
     .attr("x", xSpark(peakEntry.date) - 8).attr("y", ySpark(peakEntry.CP00) - 16)
     .attr("text-anchor", "end").attr("fill", C.red)
-    .text(fmtPct(peakEntry.CP00) + " — " + monthLabel(peakEntry.time));
+    .text(sobFmtPct(peakEntry.CP00) + " — " + monthLabel(peakEntry.time));
 
   // 2% target line
   bigGroup.append("line")
@@ -322,7 +314,7 @@ function buildHookChart() {
   // Minimal x axis
   bigGroup.append("g").attr("class", "axis x-axis")
     .attr("transform", "translate(0," + dim.innerH + ")")
-    .call(d3.axisBottom(xSpark).ticks(isMobile() ? 5 : 8).tickFormat(d3.timeFormat("%Y")).tickSize(0))
+    .call(d3.axisBottom(xSpark).ticks(sobIsMobile() ? 5 : 8).tickFormat(d3.timeFormat("%Y")).tickSize(0))
     .call(function(g) { g.select(".domain").remove(); });
 
   // Y axis
@@ -385,12 +377,12 @@ function buildHookChart() {
   lineGroup.append("text").attr("class", "chart-annotation-bold")
     .attr("x", xSpark(peakEntry.date) - 8).attr("y", ySpark(peakEntry.CP00) - 14)
     .attr("text-anchor", "end").attr("fill", C.red)
-    .text("Peak " + fmtPct(peakEntry.CP00));
+    .text("Peak " + sobFmtPct(peakEntry.CP00));
 
   // Axes
   lineGroup.append("g").attr("class", "axis x-axis")
     .attr("transform", "translate(0," + dim.innerH + ")")
-    .call(d3.axisBottom(xSpark).ticks(isMobile() ? 5 : 8).tickFormat(d3.timeFormat("%Y")).tickSize(0))
+    .call(d3.axisBottom(xSpark).ticks(sobIsMobile() ? 5 : 8).tickFormat(d3.timeFormat("%Y")).tickSize(0))
     .call(function(g) { g.select(".domain").remove(); });
   lineGroup.append("g").attr("class", "axis y-axis")
     .call(d3.axisLeft(ySpark).ticks(6).tickFormat(function(d) { return d + "%"; }).tickSize(0))
@@ -420,9 +412,9 @@ function buildHookChart() {
     var d = (!d1 || dateAtMouse - d0.date < d1.date - dateAtMouse) ? d0 : d1;
     hoverLine.attr("x1", xSpark(d.date)).attr("x2", xSpark(d.date)).style("opacity", 1);
     hoverDot.attr("cx", xSpark(d.date)).attr("cy", ySpark(d.CP00)).style("opacity", 1);
-    showTooltip('<div class="tt-label">' + monthLabel(d.time) + '</div><div class="tt-value" style="color:' + C.red + '">CPIH: ' + fmtPct(d.CP00) + '</div>', event);
+    sobShowTooltip('<div class="tt-label">' + monthLabel(d.time) + '</div><div class="tt-value" style="color:' + C.red + '">CPIH: ' + sobFmtPct(d.CP00) + '</div>', event);
   }).on("mouseleave", function() {
-    hoverLine.style("opacity", 0); hoverDot.style("opacity", 0); hideTooltip();
+    hoverLine.style("opacity", 0); hoverDot.style("opacity", 0); sobHideTooltip();
   });
 
   // Also add hover to big view
@@ -445,9 +437,9 @@ function buildHookChart() {
     var d = (!d1 || dateAtMouse - d0.date < d1.date - dateAtMouse) ? d0 : d1;
     hoverLine2.attr("x1", xSpark(d.date)).attr("x2", xSpark(d.date)).style("opacity", 1);
     hoverDot2.attr("cx", xSpark(d.date)).attr("cy", ySpark(d.CP00)).style("opacity", 1);
-    showTooltip('<div class="tt-label">' + monthLabel(d.time) + '</div><div class="tt-value" style="color:' + C.red + '">CPIH: ' + fmtPct(d.CP00) + '</div>', event);
+    sobShowTooltip('<div class="tt-label">' + monthLabel(d.time) + '</div><div class="tt-value" style="color:' + C.red + '">CPIH: ' + sobFmtPct(d.CP00) + '</div>', event);
   }).on("mouseleave", function() {
-    hoverLine2.style("opacity", 0); hoverDot2.style("opacity", 0); hideTooltip();
+    hoverLine2.style("opacity", 0); hoverDot2.style("opacity", 0); sobHideTooltip();
   });
 }
 
@@ -467,7 +459,7 @@ function updateHookChart(step) {
    ========================================================= */
 function buildSectorsChart() {
   var container = document.getElementById("chart-sectors");
-  var dim = chartDims(container);
+  var dim = sobChartDims(container);
   var svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
     .attr("viewBox", "0 0 " + dim.width + " " + dim.height)
@@ -570,12 +562,12 @@ function buildSectorsChart() {
     .attr("r", 5).attr("fill", C.food).attr("stroke", "#fff").attr("stroke-width", 2);
   foodGroup.append("text").attr("class", "chart-annotation-bold")
     .attr("x", x(peakFood.date) + 8).attr("y", y(peakFood.CP01) + 4)
-    .attr("fill", C.food).text(fmtPct(peakFood.CP01));
+    .attr("fill", C.food).text(sobFmtPct(peakFood.CP01));
 
   // Axes
   foodGroup.append("g").attr("class", "axis x-axis")
     .attr("transform", "translate(0," + dim.innerH + ")")
-    .call(d3.axisBottom(x).ticks(isMobile() ? 5 : 8).tickFormat(d3.timeFormat("%Y")).tickSize(0))
+    .call(d3.axisBottom(x).ticks(sobIsMobile() ? 5 : 8).tickFormat(d3.timeFormat("%Y")).tickSize(0))
     .call(function(g) { g.select(".domain").remove(); });
   foodGroup.append("g").attr("class", "axis y-axis")
     .call(d3.axisLeft(y).ticks(8).tickFormat(function(d) { return d + "%"; }).tickSize(0))
@@ -599,12 +591,12 @@ function buildSectorsChart() {
     if (!d0) return;
     var d = (!d1 || dateAtMouse - d0.date < d1.date - dateAtMouse) ? d0 : d1;
     hoverLine.attr("x1", x(d.date)).attr("x2", x(d.date)).style("opacity", 1);
-    showTooltip('<div class="tt-label">' + monthLabel(d.time) + '</div>' +
-      '<div class="tt-value" style="color:' + C.food + '">Food: ' + fmtPct(d.CP01) + '</div>' +
-      '<div class="tt-value" style="color:' + C.recreation + '">Recreation: ' + fmtPct(d.CP09) + '</div>' +
-      '<div class="tt-value" style="color:' + C.overall + '">Overall: ' + fmtPct(d.CP00) + '</div>', event);
+    sobShowTooltip('<div class="tt-label">' + monthLabel(d.time) + '</div>' +
+      '<div class="tt-value" style="color:' + C.food + '">Food: ' + sobFmtPct(d.CP01) + '</div>' +
+      '<div class="tt-value" style="color:' + C.recreation + '">Recreation: ' + sobFmtPct(d.CP09) + '</div>' +
+      '<div class="tt-value" style="color:' + C.overall + '">Overall: ' + sobFmtPct(d.CP00) + '</div>', event);
   }).on("mouseleave", function() {
-    hoverLine.style("opacity", 0); hideTooltip();
+    hoverLine.style("opacity", 0); sobHideTooltip();
   });
 
   // --- ENERGY VIEW (step 1) ---
@@ -678,7 +670,7 @@ function buildSectorsChart() {
     .attr("r", 5).attr("fill", C.housing).attr("stroke", "#fff").attr("stroke-width", 2);
   energyGroup.append("text").attr("class", "chart-annotation-bold")
     .attr("x", x(peakHousing.date) + 8).attr("y", y(peakHousing.CP04) + 4)
-    .attr("fill", C.housing).text(fmtPct(peakHousing.CP04));
+    .attr("fill", C.housing).text(sobFmtPct(peakHousing.CP04));
 
   // Peak transport annotation
   var peakTransport = RATES.reduce(function(max, d) { return d.CP07 > max.CP07 ? d : max; }, RATES[0]);
@@ -687,7 +679,7 @@ function buildSectorsChart() {
     .attr("r", 5).attr("fill", C.transport).attr("stroke", "#fff").attr("stroke-width", 2);
   energyGroup.append("text").attr("class", "chart-annotation-bold")
     .attr("x", x(peakTransport.date) - 8).attr("y", y(peakTransport.CP07) - 14)
-    .attr("text-anchor", "end").attr("fill", C.transport).text(fmtPct(peakTransport.CP07));
+    .attr("text-anchor", "end").attr("fill", C.transport).text(sobFmtPct(peakTransport.CP07));
 
   // Apr 2022 price cap annotation
   var capEntry = RATES.find(function(d) { return d.time === "2022-04"; });
@@ -701,7 +693,7 @@ function buildSectorsChart() {
   // Axes
   energyGroup.append("g").attr("class", "axis x-axis")
     .attr("transform", "translate(0," + dim.innerH + ")")
-    .call(d3.axisBottom(x).ticks(isMobile() ? 5 : 8).tickFormat(d3.timeFormat("%Y")).tickSize(0))
+    .call(d3.axisBottom(x).ticks(sobIsMobile() ? 5 : 8).tickFormat(d3.timeFormat("%Y")).tickSize(0))
     .call(function(g) { g.select(".domain").remove(); });
   energyGroup.append("g").attr("class", "axis y-axis")
     .call(d3.axisLeft(y).ticks(8).tickFormat(function(d) { return d + "%"; }).tickSize(0))
@@ -725,12 +717,12 @@ function buildSectorsChart() {
     if (!d0) return;
     var d = (!d1 || dateAtMouse - d0.date < d1.date - dateAtMouse) ? d0 : d1;
     hoverLine2.attr("x1", x(d.date)).attr("x2", x(d.date)).style("opacity", 1);
-    showTooltip('<div class="tt-label">' + monthLabel(d.time) + '</div>' +
-      '<div class="tt-value" style="color:' + C.housing + '">Housing & energy: ' + fmtPct(d.CP04) + '</div>' +
-      '<div class="tt-value" style="color:' + C.transport + '">Transport: ' + fmtPct(d.CP07) + '</div>' +
-      '<div class="tt-value" style="color:' + C.overall + '">Overall: ' + fmtPct(d.CP00) + '</div>', event);
+    sobShowTooltip('<div class="tt-label">' + monthLabel(d.time) + '</div>' +
+      '<div class="tt-value" style="color:' + C.housing + '">Housing & energy: ' + sobFmtPct(d.CP04) + '</div>' +
+      '<div class="tt-value" style="color:' + C.transport + '">Transport: ' + sobFmtPct(d.CP07) + '</div>' +
+      '<div class="tt-value" style="color:' + C.overall + '">Overall: ' + sobFmtPct(d.CP00) + '</div>', event);
   }).on("mouseleave", function() {
-    hoverLine2.style("opacity", 0); hideTooltip();
+    hoverLine2.style("opacity", 0); sobHideTooltip();
   });
 }
 
@@ -750,7 +742,7 @@ function updateSectorsChart(step) {
    ========================================================= */
 function buildCumulativeChart() {
   var container = document.getElementById("chart-cumulative");
-  var dim = chartDims(container);
+  var dim = sobChartDims(container);
   var svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
     .attr("viewBox", "0 0 " + dim.width + " " + dim.height)
@@ -826,7 +818,7 @@ function buildCumulativeChart() {
   // Axes
   overallGroup.append("g").attr("class", "axis x-axis")
     .attr("transform", "translate(0," + dim.innerH + ")")
-    .call(d3.axisBottom(x).ticks(isMobile() ? 4 : 6).tickFormat(d3.timeFormat("%b '%y")).tickSize(0))
+    .call(d3.axisBottom(x).ticks(sobIsMobile() ? 4 : 6).tickFormat(d3.timeFormat("%b '%y")).tickSize(0))
     .call(function(g) { g.select(".domain").remove(); });
   overallGroup.append("g").attr("class", "axis y-axis")
     .call(d3.axisLeft(y).ticks(8).tickFormat(function(d) { return d; }).tickSize(0))
@@ -852,10 +844,10 @@ function buildCumulativeChart() {
     var d = (!d1 || dateAtMouse - d0.date < d1.date - dateAtMouse) ? d0 : d1;
     hoverLine.attr("x1", x(d.date)).attr("x2", x(d.date)).style("opacity", 1);
     hoverDot.attr("cx", x(d.date)).attr("cy", y(d.CP00)).style("opacity", 1);
-    showTooltip('<div class="tt-label">' + monthLabel(d.time) + '</div>' +
+    sobShowTooltip('<div class="tt-label">' + monthLabel(d.time) + '</div>' +
       '<div class="tt-value" style="color:' + C.red + '">Index: ' + d3.format(".1f")(d.CP00) + ' (+' + d3.format(".1f")(d.CP00 - 100) + '%)</div>', event);
   }).on("mouseleave", function() {
-    hoverLine.style("opacity", 0); hoverDot.style("opacity", 0); hideTooltip();
+    hoverLine.style("opacity", 0); hoverDot.style("opacity", 0); sobHideTooltip();
   });
 
   // --- BREAKDOWN VIEW (step 1) ---
@@ -930,7 +922,7 @@ function buildCumulativeChart() {
   // Axes
   breakGroup.append("g").attr("class", "axis x-axis")
     .attr("transform", "translate(0," + dim.innerH + ")")
-    .call(d3.axisBottom(x).ticks(isMobile() ? 4 : 6).tickFormat(d3.timeFormat("%b '%y")).tickSize(0))
+    .call(d3.axisBottom(x).ticks(sobIsMobile() ? 4 : 6).tickFormat(d3.timeFormat("%b '%y")).tickSize(0))
     .call(function(g) { g.select(".domain").remove(); });
   breakGroup.append("g").attr("class", "axis y-axis")
     .call(d3.axisLeft(y).ticks(8).tickFormat(function(d) { return d; }).tickSize(0))
@@ -954,14 +946,14 @@ function buildCumulativeChart() {
     if (!d0) return;
     var d = (!d1 || dateAtMouse - d0.date < d1.date - dateAtMouse) ? d0 : d1;
     hoverLine2.attr("x1", x(d.date)).attr("x2", x(d.date)).style("opacity", 1);
-    showTooltip('<div class="tt-label">' + monthLabel(d.time) + '</div>' +
+    sobShowTooltip('<div class="tt-label">' + monthLabel(d.time) + '</div>' +
       '<div class="tt-value" style="color:' + C.food + '">Food: +' + d3.format(".1f")(d.CP01 - 100) + '%</div>' +
       '<div class="tt-value" style="color:' + C.housing + '">Housing: +' + d3.format(".1f")(d.CP04 - 100) + '%</div>' +
       '<div class="tt-value" style="color:' + C.transport + '">Transport: +' + d3.format(".1f")(d.CP07 - 100) + '%</div>' +
       '<div class="tt-value" style="color:' + C.overall + '">Overall: +' + d3.format(".1f")(d.CP00 - 100) + '%</div>' +
       '<div class="tt-value" style="color:' + C.recreation + '">Recreation: +' + d3.format(".1f")(d.CP09 - 100) + '%</div>', event);
   }).on("mouseleave", function() {
-    hoverLine2.style("opacity", 0); hideTooltip();
+    hoverLine2.style("opacity", 0); sobHideTooltip();
   });
 }
 
@@ -981,7 +973,7 @@ function updateCumulativeChart(step) {
    ========================================================= */
 function buildNowChart() {
   var container = document.getElementById("chart-now");
-  var dim = chartDims(container);
+  var dim = sobChartDims(container);
   var h = Math.max(520, dim.height);
   var m = { top: 30, right: 80, bottom: 40, left: 54 };
   var innerW = dim.width - m.left - m.right;
@@ -1050,7 +1042,7 @@ function buildNowChart() {
     .attr("x", function(d) { return xBar(Math.max(0, d.value)) + 8; })
     .attr("y", function(d) { return yBand(d.label) + yBand.bandwidth() / 2 + 12; })
     .attr("fill", function(d) { return d.color; })
-    .text(function(d) { return fmtPct(d.value); });
+    .text(function(d) { return sobFmtPct(d.value); });
 
   // Title
   ratesGroup.append("text")
@@ -1065,8 +1057,8 @@ function buildNowChart() {
   ratesGroup.selectAll(".rate-bar")
     .on("mousemove", function(event, d) {
       var aboveTarget = d.value > 2;
-      showTooltip('<div class="tt-label">' + d.label + '</div>' +
-        '<div class="tt-value" style="color:' + d.color + '">' + fmtPct(d.value) + ' year-on-year</div>' +
+      sobShowTooltip('<div class="tt-label">' + d.label + '</div>' +
+        '<div class="tt-value" style="color:' + d.color + '">' + sobFmtPct(d.value) + ' year-on-year</div>' +
         '<div class="tt-value">' + (aboveTarget ? "Above" : "At or below") + ' the 2% target</div>', event);
     })
     .on("mouseleave", hideTooltip);
@@ -1135,7 +1127,7 @@ function buildNowChart() {
   summaryGroup.selectAll(".cum-bar")
     .on("mousemove", function(event, d) {
       var equiv = 100 + d.pct;
-      showTooltip('<div class="tt-label">' + d.label + '</div>' +
+      sobShowTooltip('<div class="tt-label">' + d.label + '</div>' +
         '<div class="tt-value" style="color:' + d.color + '">+' + d3.format(".1f")(d.pct) + '% since Jan 2020</div>' +
         '<div class="tt-value">\u00a3100 then = \u00a3' + d3.format(".0f")(equiv) + ' now</div>', event);
     })
@@ -1168,9 +1160,7 @@ function updateChart(section, step) {
 /* =========================================================
    SCROLLYTELLING — IntersectionObserver
    ========================================================= */
-function setupScrollObserver() { sobSetupScrollObserver("hook"); }
-
-})();
+function setupScrollObserver() { sobSetupScrollObserver("hook"); })();
 </script>
 </body>
 </html>

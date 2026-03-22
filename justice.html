@@ -181,22 +181,13 @@ const C = SOB_COLORS;
 const DURATION = SOB_DURATION;
 const MOBILE = SOB_MOBILE;
 
-/* Tooltip: uses sobShowTooltip / sobHideTooltip from shared/utils.js */
-const showTooltip = sobShowTooltip;
-const hideTooltip = sobHideTooltip;
 
 /* =========================================================
    HELPERS
    ========================================================= */
 function fmtK(v) { return d3.format(",.1f")(v) + "k"; }
 function fmtM(v) { return d3.format(",.2f")(v) + "m"; }
-function fmtPct(v) { return d3.format(".1f")(v) + "%"; }
 
-function isMobile() { return sobIsMobile(); }
-
-function chartDims(container) { return sobChartDims(container); };
-  return { width: w, height: h, margin: m, innerW: w - m.left - m.right, innerH: h - m.top - m.bottom };
-}
 
 function parseFinYear(fy) {
   return +fy.split("-")[0];
@@ -223,10 +214,9 @@ function init() {
 
   buildAllCharts();
   setupScrollObserver();
-  window.addEventListener("resize", debounce(rebuildAll, 250));
+  window.addEventListener("resize", sobDebounce(rebuildAll, 250));
 }
 
-function debounce(fn, ms) { return sobDebounce(fn, ms); }
 function rebuildAll() {
   d3.selectAll("#chart-hook svg, #chart-police svg, #chart-crime svg, #chart-courts svg, #chart-prison svg").remove();
   buildAllCharts();
@@ -254,7 +244,7 @@ function buildAllCharts() {
    ========================================================= */
 function buildHookChart() {
   const container = document.getElementById("chart-hook");
-  const dim = chartDims(container);
+  const dim = sobChartDims(container);
   const svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
     .attr("viewBox", "0 0 " + dim.width + " " + dim.height)
@@ -346,11 +336,11 @@ function buildHookChart() {
   lineGroup.append("text").attr("class", "chart-annotation-bold")
     .attr("x", xScale(parseFinYear(first.year))).attr("y", yScale(first.rate) - 14)
     .attr("text-anchor", "middle").attr("fill", C.slate)
-    .text(fmtPct(first.rate));
+    .text(sobFmtPct(first.rate));
   lineGroup.append("text").attr("class", "chart-annotation-bold")
     .attr("x", xScale(parseFinYear(last.year))).attr("y", yScale(last.rate) + 24)
     .attr("text-anchor", "middle").attr("fill", C.red)
-    .text(fmtPct(last.rate));
+    .text(sobFmtPct(last.rate));
 
   // Axes
   lineGroup.append("g").attr("class", "axis x-axis")
@@ -386,9 +376,9 @@ function buildHookChart() {
     var px = xScale(parseFinYear(d.year));
     hoverLine.attr("x1", px).attr("x2", px).style("opacity", 1);
     hoverDot.attr("cx", px).attr("cy", yScale(d.rate)).style("opacity", 1);
-    showTooltip('<div class="tt-label">' + d.year + '</div><div class="tt-value">Charge rate: ' + fmtPct(d.rate) + '</div>', event);
+    sobShowTooltip('<div class="tt-label">' + d.year + '</div><div class="tt-value">Charge rate: ' + sobFmtPct(d.rate) + '</div>', event);
   }).on("mouseleave", function() {
-    hoverLine.style("opacity", 0); hoverDot.style("opacity", 0); hideTooltip();
+    hoverLine.style("opacity", 0); hoverDot.style("opacity", 0); sobHideTooltip();
   });
 }
 
@@ -417,7 +407,7 @@ function updateHookChart(step) {
    ========================================================= */
 function buildPoliceChart() {
   var container = document.getElementById("chart-police");
-  var dim = chartDims(container);
+  var dim = sobChartDims(container);
   var svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
     .attr("viewBox", "0 0 " + dim.width + " " + dim.height)
@@ -607,9 +597,9 @@ function buildPoliceChart() {
     if (!d) return;
     hLine.attr("x1", xScale(year)).attr("x2", xScale(year)).style("opacity", 1);
     hDot.attr("cx", xScale(year)).attr("cy", yScale(d.officers)).style("opacity", 1);
-    showTooltip('<div class="tt-label">' + d.year + '</div><div class="tt-value">Officers: ' + fmtK(d.officers) + '</div><div class="tt-value">Staff: ' + fmtK(d.staff) + '</div><div class="tt-value">PCSOs: ' + fmtK(d.pcsos) + '</div>', event);
+    sobShowTooltip('<div class="tt-label">' + d.year + '</div><div class="tt-value">Officers: ' + fmtK(d.officers) + '</div><div class="tt-value">Staff: ' + fmtK(d.staff) + '</div><div class="tt-value">PCSOs: ' + fmtK(d.pcsos) + '</div>', event);
   }).on("mouseleave", function() {
-    hLine.style("opacity", 0); hDot.style("opacity", 0); hideTooltip();
+    hLine.style("opacity", 0); hDot.style("opacity", 0); sobHideTooltip();
   });
 
   // Hover on stack view
@@ -622,7 +612,7 @@ function buildPoliceChart() {
     var d = policeData.find(function(a) { return a.year === year; });
     if (!d) return;
     var total = d.officers + d.staff + d.pcsos;
-    showTooltip('<div class="tt-label">' + d.year + '</div><div class="tt-value">Officers: ' + fmtK(d.officers) + '</div><div class="tt-value">Staff: ' + fmtK(d.staff) + '</div><div class="tt-value">PCSOs: ' + fmtK(d.pcsos) + '</div><div class="tt-value" style="font-weight:600;">Total: ' + fmtK(total) + '</div>', event);
+    sobShowTooltip('<div class="tt-label">' + d.year + '</div><div class="tt-value">Officers: ' + fmtK(d.officers) + '</div><div class="tt-value">Staff: ' + fmtK(d.staff) + '</div><div class="tt-value">PCSOs: ' + fmtK(d.pcsos) + '</div><div class="tt-value" style="font-weight:600;">Total: ' + fmtK(total) + '</div>', event);
   }).on("mouseleave", hideTooltip);
 }
 
@@ -640,7 +630,7 @@ function updatePoliceChart(step) {
    ========================================================= */
 function buildCrimeChart() {
   var container = document.getElementById("chart-crime");
-  var dim = chartDims(container);
+  var dim = sobChartDims(container);
   var svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
     .attr("viewBox", "0 0 " + dim.width + " " + dim.height)
@@ -740,9 +730,9 @@ function buildCrimeChart() {
     hLine.attr("x1", px).attr("x2", px).style("opacity", 1);
     hDotC.attr("cx", px).attr("cy", yScale(d.csew)).style("opacity", 1);
     hDotR.attr("cx", px).attr("cy", yScale(d.recorded)).style("opacity", 1);
-    showTooltip('<div class="tt-label">' + d.year + '</div><div class="tt-value" style="color:' + C.green + '">CSEW: ' + d3.format(".1f")(d.csew) + 'm</div><div class="tt-value" style="color:' + C.red + '">Recorded: ' + d3.format(".1f")(d.recorded) + 'm</div>', event);
+    sobShowTooltip('<div class="tt-label">' + d.year + '</div><div class="tt-value" style="color:' + C.green + '">CSEW: ' + d3.format(".1f")(d.csew) + 'm</div><div class="tt-value" style="color:' + C.red + '">Recorded: ' + d3.format(".1f")(d.recorded) + 'm</div>', event);
   }).on("mouseleave", function() {
-    hLine.style("opacity", 0); hDotC.style("opacity", 0); hDotR.style("opacity", 0); hideTooltip();
+    hLine.style("opacity", 0); hDotC.style("opacity", 0); hDotR.style("opacity", 0); sobHideTooltip();
   });
 
   // --- BREAKDOWN BAR VIEW (step 1, hidden) ---
@@ -751,7 +741,7 @@ function buildCrimeChart() {
   var sortedBreakdown = breakdown.slice().sort(function(a, b) { return b.value - a.value; });
   var totalCrime = d3.sum(sortedBreakdown, function(d) { return d.value; });
 
-  var mBar = { left: isMobile() ? 100 : 160 };
+  var mBar = { left: sobIsMobile() ? 100 : 160 };
   var barInnerW = dim.innerW - mBar.left + dim.margin.left;
 
   var yBar = d3.scaleBand()
@@ -772,7 +762,7 @@ function buildCrimeChart() {
     .attr("rx", 2)
     .on("mousemove", function(event, d) {
       var valStr = d.value >= 1000 ? d3.format(".1f")(d.value / 1000) + "m" : d3.format(",")(d.value) + "k";
-      showTooltip('<div class="tt-label">' + d.category + '</div><div class="tt-value">' + valStr + ' offences (' + Math.round(d.value / totalCrime * 100) + '% of total)</div>', event);
+      sobShowTooltip('<div class="tt-label">' + d.category + '</div><div class="tt-value">' + valStr + ' offences (' + Math.round(d.value / totalCrime * 100) + '% of total)</div>', event);
     })
     .on("mouseleave", hideTooltip);
 
@@ -793,7 +783,7 @@ function buildCrimeChart() {
     .attr("fill", function(d, i) { return i === 0 ? C.ink : C.muted; })
     .attr("font-weight", function(d, i) { return i === 0 ? 600 : 400; })
     .text(function(d) {
-      var maxLen = isMobile() ? 18 : 28;
+      var maxLen = sobIsMobile() ? 18 : 28;
       return d.category.length > maxLen ? d.category.slice(0, maxLen - 1) + "\u2026" : d.category;
     });
 
@@ -817,7 +807,7 @@ function updateCrimeChart(step) {
    ========================================================= */
 function buildCourtsChart() {
   var container = document.getElementById("chart-courts");
-  var dim = chartDims(container);
+  var dim = sobChartDims(container);
   var svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
     .attr("viewBox", "0 0 " + dim.width + " " + dim.height)
@@ -849,7 +839,7 @@ function buildCourtsChart() {
     .attr("fill", function(d) { return d.year >= 2020 ? C.red : C.slate; })
     .attr("rx", 3)
     .on("mousemove", function(event, d) {
-      showTooltip('<div class="tt-label">' + d.year + '</div><div class="tt-value">Outstanding cases: ' + d3.format(",.0f")(d.outstanding) + 'k</div>', event);
+      sobShowTooltip('<div class="tt-label">' + d.year + '</div><div class="tt-value">Outstanding cases: ' + d3.format(",.0f")(d.outstanding) + 'k</div>', event);
     })
     .on("mouseleave", hideTooltip);
 
@@ -974,7 +964,7 @@ function updateCourtsChart(step) {
    ========================================================= */
 function buildPrisonChart() {
   var container = document.getElementById("chart-prison");
-  var dim = chartDims(container);
+  var dim = sobChartDims(container);
   var svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
     .attr("viewBox", "0 0 " + dim.width + " " + dim.height)
@@ -1090,9 +1080,9 @@ function buildPrisonChart() {
     hDotPop.attr("cx", px).attr("cy", yScale(d.population)).style("opacity", 1);
     hDotCap.attr("cx", px).attr("cy", yScale(d.capacity)).style("opacity", 1);
     var utilisation = d3.format(".0f")(d.population / d.capacity * 100);
-    showTooltip('<div class="tt-label">' + d.year + '</div><div class="tt-value" style="color:' + C.red + '">Population: ' + d3.format(".1f")(d.population) + 'k</div><div class="tt-value">Capacity: ' + d3.format(".1f")(d.capacity) + 'k</div><div class="tt-value">Utilisation: ' + utilisation + '%</div>', event);
+    sobShowTooltip('<div class="tt-label">' + d.year + '</div><div class="tt-value" style="color:' + C.red + '">Population: ' + d3.format(".1f")(d.population) + 'k</div><div class="tt-value">Capacity: ' + d3.format(".1f")(d.capacity) + 'k</div><div class="tt-value">Utilisation: ' + utilisation + '%</div>', event);
   }).on("mouseleave", function() {
-    hLine.style("opacity", 0); hDotPop.style("opacity", 0); hDotCap.style("opacity", 0); hideTooltip();
+    hLine.style("opacity", 0); hDotPop.style("opacity", 0); hDotCap.style("opacity", 0); sobHideTooltip();
   });
 
   // --- GAP VIEW (step 1, hidden) ---

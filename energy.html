@@ -192,29 +192,21 @@ const C = SOB_COLORS;
 const DURATION = SOB_DURATION;
 const MOBILE = SOB_MOBILE;
 
-/* Tooltip: uses sobShowTooltip / sobHideTooltip from shared/utils.js */
-const showTooltip = sobShowTooltip;
-const hideTooltip = sobHideTooltip;
 
 /* Bind touch events the same as mouse for all hover rects */
 function bindTouchTooltip(sel, moveFn, leaveFn) {
   sel.on("touchstart", function(event) { event.preventDefault(); moveFn.call(this, event); }, { passive: false })
      .on("touchmove", function(event) { event.preventDefault(); moveFn.call(this, event); }, { passive: false })
-     .on("touchend", function() { if (leaveFn) leaveFn.call(this); hideTooltip(); });
+     .on("touchend", function() { if (leaveFn) leaveFn.call(this); sobHideTooltip(); });
 }
 
 /* =========================================================
    HELPERS
    ========================================================= */
-function fmtPct(v) { return d3.format(".1f")(v) + "%"; }
 function fmtTWh(v) { return d3.format(",")(Math.round(v / 1000)) + " TWh"; }
 function fmtGWh(v) { return d3.format(",")(Math.round(v)) + " GWh"; }
 function fmtBn(v) { return "\u00a3" + d3.format(",")(Math.round(v / 1000)) + "bn"; }
 function fmtMtoe(v) { return d3.format(".1f")(v) + " Mtoe"; }
-function isMobile() { return sobIsMobile(); }
-
-function chartDims(container) { return sobChartDims(container); };
-}
 
 
 
@@ -241,10 +233,9 @@ function init() {
 
   buildAllCharts();
   setupScrollObserver();
-  window.addEventListener("resize", debounce(rebuildAll, 250));
+  window.addEventListener("resize", sobDebounce(rebuildAll, 250));
 }
 
-function debounce(fn, ms) { return sobDebounce(fn, ms); }
 function rebuildAll() {
   document.querySelectorAll(".chart-container svg").forEach(s => s.remove());
   buildAllCharts();
@@ -271,7 +262,7 @@ function buildAllCharts() {
    ========================================================= */
 function buildHookChart() {
   const container = document.getElementById("chart-hook");
-  const dim = chartDims(container);
+  const dim = sobChartDims(container);
   const svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
     .attr("viewBox", "0 0 " + dim.width + " " + dim.height)
@@ -367,9 +358,9 @@ function buildHookChart() {
   var legendItems = sources.map(function(s) { return { key: s, label: labels[s], color: colors[s] }; });
   var lgG = svg.append("g").attr("transform", "translate(" + legendX + "," + legendY + ")");
   var lx = 0;
-  var lgFontSize = isMobile() ? "11px" : "13px";
-  var lgSpacing = isMobile() ? 20 : 32;
-  var lgBoxSize = isMobile() ? 10 : 12;
+  var lgFontSize = sobIsMobile() ? "11px" : "13px";
+  var lgSpacing = sobIsMobile() ? 20 : 32;
+  var lgBoxSize = sobIsMobile() ? 10 : 12;
   legendItems.forEach(function(item) {
     lgG.append("rect").attr("x", lx).attr("y", -6).attr("width", lgBoxSize).attr("height", lgBoxSize).attr("rx", 2).attr("fill", item.color);
     var txt = lgG.append("text").attr("x", lx + lgBoxSize + 4).attr("y", 4).attr("font-size", lgFontSize).attr("fill", C.muted).attr("font-family", "Inter, sans-serif").text(item.label);
@@ -393,7 +384,7 @@ function updateHookChart(step) {
    ========================================================= */
 function buildCoalChart() {
   var container = document.getElementById("chart-coal");
-  var dim = chartDims(container);
+  var dim = sobChartDims(container);
   var svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
     .attr("viewBox", "0 0 " + dim.width + " " + dim.height)
@@ -420,7 +411,7 @@ function buildCoalChart() {
   // Axes
   g.append("g").attr("class", "axis x-axis")
     .attr("transform", "translate(0," + dim.innerH + ")")
-    .call(d3.axisBottom(x).ticks(isMobile() ? 5 : 8).tickFormat(d3.format("d")).tickSize(0))
+    .call(d3.axisBottom(x).ticks(sobIsMobile() ? 5 : 8).tickFormat(d3.format("d")).tickSize(0))
     .call(function(s) { s.select(".domain").remove(); });
   g.append("g").attr("class", "axis y-axis")
     .call(d3.axisLeft(y).ticks(7).tickFormat(function(d, i) { return i === 0 ? d + "% of primary energy" : d + "%"; }).tickSize(0))
@@ -431,14 +422,14 @@ function buildCoalChart() {
   g.append("circle").attr("cx", x(1990)).attr("cy", y(d1990.coal)).attr("r", 4).attr("fill", C.coal).attr("stroke", "#fff").attr("stroke-width", 2);
   g.append("text").attr("class", "chart-annotation-bold")
     .attr("x", x(1990) + 10).attr("y", y(d1990.coal) + 4).attr("fill", C.coal)
-    .text(fmtPct(d1990.coal));
+    .text(sobFmtPct(d1990.coal));
 
   // End annotation
   var d2024 = mix[mix.length - 1];
   g.append("circle").attr("cx", x(2024)).attr("cy", y(d2024.coal)).attr("r", 4).attr("fill", C.coal).attr("stroke", "#fff").attr("stroke-width", 2);
   g.append("text").attr("class", "chart-annotation-bold")
     .attr("x", x(2024) + 10).attr("y", y(d2024.coal) + 4).attr("fill", C.coal)
-    .text(fmtPct(d2024.coal));
+    .text(sobFmtPct(d2024.coal));
 
   // Carbon price annotation (step 1 reveals)
   var annotGroup = g.append("g").attr("class", "coal-annot").style("opacity", 0);
@@ -479,9 +470,9 @@ function buildCoalChart() {
     if (!d) return;
     hoverLine.attr("x1", x(year)).attr("x2", x(year)).style("opacity", 1);
     hoverDot.attr("cx", x(year)).attr("cy", y(d.coal)).style("opacity", 1);
-    showTooltip('<div class="tt-label">' + d.year + '</div><div class="tt-value">Coal: ' + fmtPct(d.coal) + ' of primary energy</div>', event);
+    sobShowTooltip('<div class="tt-label">' + d.year + '</div><div class="tt-value">Coal: ' + sobFmtPct(d.coal) + ' of primary energy</div>', event);
   }).on("mouseleave", function() {
-    hoverLine.style("opacity", 0); hoverDot.style("opacity", 0); hideTooltip();
+    hoverLine.style("opacity", 0); hoverDot.style("opacity", 0); sobHideTooltip();
   });
 }
 
@@ -499,7 +490,7 @@ function updateCoalChart(step) {
    ========================================================= */
 function buildRenewablesChart() {
   var container = document.getElementById("chart-renewables");
-  var dim = chartDims(container);
+  var dim = sobChartDims(container);
   var svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
     .attr("viewBox", "0 0 " + dim.width + " " + dim.height)
@@ -518,7 +509,7 @@ function buildRenewablesChart() {
   // Axes
   g.append("g").attr("class", "axis x-axis")
     .attr("transform", "translate(0," + dim.innerH + ")")
-    .call(d3.axisBottom(x).ticks(isMobile() ? 5 : 8).tickFormat(d3.format("d")).tickSize(0))
+    .call(d3.axisBottom(x).ticks(sobIsMobile() ? 5 : 8).tickFormat(d3.format("d")).tickSize(0))
     .call(function(s) { s.select(".domain").remove(); });
   g.append("g").attr("class", "axis y-axis")
     .call(d3.axisLeft(y).ticks(6).tickFormat(function(d, i) { return i === 0 ? d + " TWh" : d; }).tickSize(0))
@@ -607,13 +598,13 @@ function buildRenewablesChart() {
     dotF.attr("cx", x(year)).attr("cy", y((d.convThermal + d.ccgt) / 1000)).style("opacity", 1);
     dotN.attr("cx", x(year)).attr("cy", y(d.nuclear / 1000)).style("opacity", 1);
     var total = d.totalNet / 1000;
-    showTooltip('<div class="tt-label">' + d.year + '</div>' +
+    sobShowTooltip('<div class="tt-label">' + d.year + '</div>' +
       '<div class="tt-value" style="color:' + C.green + '">Renewables: ' + Math.round(d.renewables / 1000) + ' TWh (' + Math.round(d.renewables / d.totalNet * 100) + '%)</div>' +
       '<div class="tt-value" style="color:' + C.grey + '">Fossil: ' + Math.round((d.convThermal + d.ccgt) / 1000) + ' TWh (' + Math.round((d.convThermal + d.ccgt) / d.totalNet * 100) + '%)</div>' +
       '<div class="tt-value" style="color:' + C.nuclear + '">Nuclear: ' + Math.round(d.nuclear / 1000) + ' TWh (' + Math.round(d.nuclear / d.totalNet * 100) + '%)</div>', event);
   }).on("mouseleave", function() {
     hoverLineEl.style("opacity", 0); dotR.style("opacity", 0); dotF.style("opacity", 0); dotN.style("opacity", 0);
-    hideTooltip();
+    sobHideTooltip();
   });
 }
 
@@ -631,7 +622,7 @@ function updateRenewablesChart(step) {
    ========================================================= */
 function buildMixChart() {
   var container = document.getElementById("chart-mix");
-  var dim = chartDims(container);
+  var dim = sobChartDims(container);
   var svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
     .attr("viewBox", "0 0 " + dim.width + " " + dim.height)
@@ -664,7 +655,7 @@ function buildMixChart() {
   // Axes
   g.append("g").attr("class", "axis x-axis")
     .attr("transform", "translate(0," + dim.innerH + ")")
-    .call(d3.axisBottom(x).ticks(isMobile() ? 5 : 8).tickFormat(d3.format("d")).tickSize(0))
+    .call(d3.axisBottom(x).ticks(sobIsMobile() ? 5 : 8).tickFormat(d3.format("d")).tickSize(0))
     .call(function(s) { s.select(".domain").remove(); });
   g.append("g").attr("class", "axis y-axis")
     .call(d3.axisLeft(y).ticks(5).tickFormat(function(d) { return d + "%"; }).tickSize(0))
@@ -682,7 +673,7 @@ function buildMixChart() {
         .attr("x", x(2024) + 8).attr("y", y(mid) + 4)
         .attr("fill", colors[key])
         .style("font-size", val > 8 ? "13px" : "11px")
-        .text(labels[key] + " " + fmtPct(val));
+        .text(labels[key] + " " + sobFmtPct(val));
     }
   });
 
@@ -701,7 +692,7 @@ function buildMixChart() {
     .text("Fossil fuels");
   view1.append("text").attr("class", "chart-annotation-bold")
     .attr("x", bracketX + 10).attr("y", fossilMid + 12).attr("fill", C.grey)
-    .text(fmtPct(fossilPct));
+    .text(sobFmtPct(fossilPct));
 
   // Clean bracket
   var cleanPct = latest.renewables + latest.bioenergy;
@@ -715,7 +706,7 @@ function buildMixChart() {
     .text("Renewables + bio");
   view1.append("text").attr("class", "chart-annotation-bold")
     .attr("x", bracketX + 10).attr("y", cleanMidY + 12).attr("fill", C.green)
-    .text(fmtPct(cleanPct));
+    .text(sobFmtPct(cleanPct));
 
   // Hover
   var hoverRect = g.append("rect").attr("width", dim.innerW).attr("height", dim.innerH).attr("fill", "transparent").style("cursor", "crosshair");
@@ -727,15 +718,15 @@ function buildMixChart() {
     var d = mix.find(function(a) { return a.year === year; });
     if (!d) return;
     hoverLineEl.attr("x1", x(year)).attr("x2", x(year)).style("opacity", 1);
-    showTooltip('<div class="tt-label">' + d.year + '</div>' +
-      '<div class="tt-value" style="color:' + colors.petroleum + '">Petroleum: ' + fmtPct(d.petroleum) + '</div>' +
-      '<div class="tt-value" style="color:' + colors.gas + '">Gas: ' + fmtPct(d.gas) + '</div>' +
-      '<div class="tt-value" style="color:#334155">Coal: ' + fmtPct(d.coal) + '</div>' +
-      '<div class="tt-value" style="color:' + colors.nuclear + '">Nuclear: ' + fmtPct(d.nuclear) + '</div>' +
-      '<div class="tt-value" style="color:' + colors.bioenergy + '">Bioenergy: ' + fmtPct(d.bioenergy) + '</div>' +
-      '<div class="tt-value" style="color:' + colors.renewables + '">Renewables: ' + fmtPct(d.renewables) + '</div>', event);
+    sobShowTooltip('<div class="tt-label">' + d.year + '</div>' +
+      '<div class="tt-value" style="color:' + colors.petroleum + '">Petroleum: ' + sobFmtPct(d.petroleum) + '</div>' +
+      '<div class="tt-value" style="color:' + colors.gas + '">Gas: ' + sobFmtPct(d.gas) + '</div>' +
+      '<div class="tt-value" style="color:#334155">Coal: ' + sobFmtPct(d.coal) + '</div>' +
+      '<div class="tt-value" style="color:' + colors.nuclear + '">Nuclear: ' + sobFmtPct(d.nuclear) + '</div>' +
+      '<div class="tt-value" style="color:' + colors.bioenergy + '">Bioenergy: ' + sobFmtPct(d.bioenergy) + '</div>' +
+      '<div class="tt-value" style="color:' + colors.renewables + '">Renewables: ' + sobFmtPct(d.renewables) + '</div>', event);
   }).on("mouseleave", function() {
-    hoverLineEl.style("opacity", 0); hideTooltip();
+    hoverLineEl.style("opacity", 0); sobHideTooltip();
   });
 }
 
@@ -753,7 +744,7 @@ function updateMixChart(step) {
    ========================================================= */
 function buildImportsChart() {
   var container = document.getElementById("chart-imports");
-  var dim = chartDims(container);
+  var dim = sobChartDims(container);
   var svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
     .attr("viewBox", "0 0 " + dim.width + " " + dim.height)
@@ -794,7 +785,7 @@ function buildImportsChart() {
   // Axes
   g.append("g").attr("class", "axis x-axis")
     .attr("transform", "translate(0," + dim.innerH + ")")
-    .call(d3.axisBottom(x).ticks(isMobile() ? 5 : 8).tickFormat(d3.format("d")).tickSize(0))
+    .call(d3.axisBottom(x).ticks(sobIsMobile() ? 5 : 8).tickFormat(d3.format("d")).tickSize(0))
     .call(function(s) { s.select(".domain").remove(); });
   g.append("g").attr("class", "axis y-axis")
     .call(d3.axisLeft(y).ticks(8).tickFormat(function(d) { return d + "%"; }).tickSize(0))
@@ -820,7 +811,7 @@ function buildImportsChart() {
   g.append("circle").attr("cx", x(2024)).attr("cy", y(d2024.importDependency)).attr("r", 4).attr("fill", C.amber).attr("stroke", "#fff").attr("stroke-width", 2);
   g.append("text").attr("class", "chart-annotation-bold")
     .attr("x", x(2024) + 10).attr("y", y(d2024.importDependency) + 4).attr("fill", C.amber)
-    .text(fmtPct(d2024.importDependency));
+    .text(sobFmtPct(d2024.importDependency));
 
   // Step 1: Gas storage comparison (bar chart overlay)
   var view1 = g.append("g").attr("class", "imports-view-1").style("opacity", 0);
@@ -881,12 +872,12 @@ function buildImportsChart() {
     hoverLineEl.attr("x1", x(year)).attr("x2", x(year)).style("opacity", 1);
     hoverDot.attr("cx", x(year)).attr("cy", y(d.importDependency)).style("opacity", 1);
     var status = d.importDependency < 0 ? "Net exporter" : "Net importer";
-    showTooltip('<div class="tt-label">' + d.year + '</div>' +
-      '<div class="tt-value">' + status + ': ' + fmtPct(Math.abs(d.importDependency)) + '</div>' +
+    sobShowTooltip('<div class="tt-label">' + d.year + '</div>' +
+      '<div class="tt-value">' + status + ': ' + sobFmtPct(Math.abs(d.importDependency)) + '</div>' +
       '<div class="tt-value" style="color:' + C.muted + '">Production: ' + d3.format(",")(d.production) + ' ktoe (thousand tonnes of oil equivalent)</div>' +
       '<div class="tt-value" style="color:' + C.muted + '">Consumption: ' + d3.format(",")(d.consumption) + ' ktoe</div>', event);
   }).on("mouseleave", function() {
-    hoverLineEl.style("opacity", 0); hoverDot.style("opacity", 0); hideTooltip();
+    hoverLineEl.style("opacity", 0); hoverDot.style("opacity", 0); sobHideTooltip();
   });
 }
 
@@ -904,7 +895,7 @@ function updateImportsChart(step) {
    ========================================================= */
 function buildHonestChart() {
   var container = document.getElementById("chart-honest");
-  var dim = chartDims(container);
+  var dim = sobChartDims(container);
   var svg = d3.select(container).append("svg")
     .attr("width", dim.width).attr("height", dim.height)
     .attr("viewBox", "0 0 " + dim.width + " " + dim.height)
@@ -923,7 +914,7 @@ function buildHonestChart() {
   // Axes
   g.append("g").attr("class", "axis x-axis")
     .attr("transform", "translate(0," + dim.innerH + ")")
-    .call(d3.axisBottom(x).ticks(isMobile() ? 5 : 8).tickFormat(d3.format("d")).tickSize(0))
+    .call(d3.axisBottom(x).ticks(sobIsMobile() ? 5 : 8).tickFormat(d3.format("d")).tickSize(0))
     .call(function(s) { s.select(".domain").remove(); });
   g.append("g").attr("class", "axis y-axis")
     .call(d3.axisLeft(y).ticks(6).tickFormat(function(d, i) { return i === 0 ? "\u00a3" + d + "bn (nominal)" : "\u00a3" + d; }).tickSize(0))
@@ -1049,12 +1040,12 @@ function buildHonestChart() {
     var d = exp.find(function(a) { return a.year === year; });
     if (!d) return;
     hoverLineEl.attr("x1", x(year)).attr("x2", x(year)).style("opacity", 1);
-    showTooltip('<div class="tt-label">' + d.year + '</div>' +
+    sobShowTooltip('<div class="tt-label">' + d.year + '</div>' +
       '<div class="tt-value" style="color:' + C.red + '">Household total: \u00a3' + d3.format(",")(d.domesticTotal) + 'm</div>' +
       '<div class="tt-value" style="color:' + C.amber + '">Electricity: \u00a3' + d3.format(",")(d.domesticElectricity) + 'm</div>' +
       '<div class="tt-value" style="color:' + C.gas + '">Gas: \u00a3' + d3.format(",")(d.domesticGas) + 'm</div>', event);
   }).on("mouseleave", function() {
-    hoverLineEl.style("opacity", 0); hideTooltip();
+    hoverLineEl.style("opacity", 0); sobHideTooltip();
   });
 }
 

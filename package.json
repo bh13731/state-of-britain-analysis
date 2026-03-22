@@ -15,9 +15,10 @@
     "lint": "npm run lint:js && npm run lint:css",
     "lint:js": "npx eslint shared/ tests/ pages/js/",
     "lint:css": "npx stylelint \"shared/**/*.css\" \"pages/**/*.css\"",
-    "test": "node tests/utils.test.cjs",
+    "test": "node tests/utils.test.cjs && node tests/security.test.cjs",
+    "test:build": "node tests/build.test.cjs",
     "test:mobile": "node tests/mobile-responsiveness.test.cjs",
-    "test:all": "npm run test && npm run test:mobile",
+    "test:all": "npm run test && npm run test:build && npm run test:mobile",
     "validate": "npm run lint && npm run test",
     "precommit": "npm run lint && npm run test",
     "clean": "rm -rf dist"

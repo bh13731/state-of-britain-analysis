@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  push:
+    branches: [main, improve/*]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18, 20, 22]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm install --include=dev
+
+      - name: Lint JavaScript
+        run: npm run lint:js
+
+      - name: Lint CSS
+        run: npm run lint:css
+
+      - name: Run unit tests
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+      - name: Run build verification tests
+        run: npm run test:build

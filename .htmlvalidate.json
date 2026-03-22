@@ -1,0 +1,11 @@
+{
+  "extends": ["html-validate:recommended"],
+  "rules": {
+    "no-inline-style": "off",
+    "no-raw-characters": "off",
+    "require-sri": "off",
+    "element-permitted-content": "off",
+    "wcag/h32": "off",
+    "wcag/h63": "off"
+  }
+}

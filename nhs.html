@@ -14,14 +14,14 @@
 <body>
 <a class="skip-link" href="#main-content">Skip to content</a>
 
-<nav class="story-nav"><a href="index.html" style="color:#2563A0;text-decoration:none;font-weight:500;">&larr; All stories</a><span style="margin:0 12px;color:#8A8A82;">|</span><span style="color:#555555;font-weight:600;">NHS</span></nav>
+<nav class="story-nav" aria-label="Story navigation"><a href="index.html" style="color:#2563A0;text-decoration:none;font-weight:500;">&larr; All stories</a><span style="margin:0 12px;color:#8A8A82;">|</span><span style="color:#555555;font-weight:600;">NHS</span></nav>
 
 <div id="loading-screen" role="status" aria-live="polite">
   <div class="spinner"></div>
   <p>Loading NHS data&hellip;</p>
 </div>
 
-<div id="error-screen">
+<div id="error-screen" role="alert">
   <h2>Something went wrong</h2>
   <p id="error-msg">Could not load NHS data. Please refresh or try again later.</p>
 </div>
@@ -54,7 +54,7 @@
     </div>
   </div>
   <div class="scroll-graphic">
-    <div class="chart-container" id="chart-hook" role="img" aria-label="Hook chart"></div>
+    <div class="chart-container" id="chart-hook" role="img" tabindex="0" aria-label="Hook chart"></div>
   </div>
 </section>
 
@@ -76,7 +76,7 @@
     </div>
   </div>
   <div class="scroll-graphic">
-    <div class="chart-container" id="chart-18week" role="img" aria-label="18Week chart"></div>
+    <div class="chart-container" id="chart-18week" role="img" tabindex="0" aria-label="18Week chart"></div>
   </div>
 </section>
 
@@ -98,7 +98,7 @@
     </div>
   </div>
   <div class="scroll-graphic">
-    <div class="chart-container" id="chart-longwait" role="img" aria-label="Longwait chart"></div>
+    <div class="chart-container" id="chart-longwait" role="img" tabindex="0" aria-label="Longwait chart"></div>
   </div>
 </section>
 
@@ -120,7 +120,7 @@
     </div>
   </div>
   <div class="scroll-graphic">
-    <div class="chart-container" id="chart-median" role="img" aria-label="Median chart"></div>
+    <div class="chart-container" id="chart-median" role="img" tabindex="0" aria-label="Median chart"></div>
   </div>
 </section>
 
@@ -142,7 +142,7 @@
     </div>
   </div>
   <div class="scroll-graphic">
-    <div class="chart-container" id="chart-ae" role="img" aria-label="Ae chart"></div>
+    <div class="chart-container" id="chart-ae" role="img" tabindex="0" aria-label="Ae chart"></div>
   </div>
 </section>
 
@@ -163,7 +163,7 @@
     </div>
   </div>
   <div class="scroll-graphic">
-    <div class="chart-container" id="chart-outlook" role="img" aria-label="Outlook chart"></div>
+    <div class="chart-container" id="chart-outlook" role="img" tabindex="0" aria-label="Outlook chart"></div>
   </div>
 </section>
 

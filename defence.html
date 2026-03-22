@@ -14,14 +14,14 @@
 <body>
 <a class="skip-link" href="#main-content">Skip to content</a>
 
-<nav class="story-nav"><a href="index.html" style="color:#2563A0;text-decoration:none;font-weight:500;">&larr; All stories</a><span style="margin:0 12px;color:#8A8A82;">|</span><span style="color:#555555;font-weight:600;">Defence</span></nav>
+<nav class="story-nav" aria-label="Story navigation"><a href="index.html" style="color:#2563A0;text-decoration:none;font-weight:500;">&larr; All stories</a><span style="margin:0 12px;color:#8A8A82;">|</span><span style="color:#555555;font-weight:600;">Defence</span></nav>
 
 <div id="loading-screen" role="status" aria-live="polite">
   <div class="spinner"></div>
   <p>Loading defence data&hellip;</p>
 </div>
 
-<div id="error-screen">
+<div id="error-screen" role="alert">
   <h2>Something went wrong</h2>
   <p id="error-msg">Could not load defence data. Please refresh or try again later.</p>
 </div>
@@ -55,7 +55,7 @@
     </div>
   </div>
   <div class="scroll-graphic">
-    <div class="chart-container" id="chart-hook" role="img" aria-label="Hook chart"></div>
+    <div class="chart-container" id="chart-hook" role="img" tabindex="0" aria-label="Hook chart"></div>
   </div>
 </section>
 
@@ -76,7 +76,7 @@
     </div>
   </div>
   <div class="scroll-graphic">
-    <div class="chart-container" id="chart-spending" role="img" aria-label="Spending chart"></div>
+    <div class="chart-container" id="chart-spending" role="img" tabindex="0" aria-label="Spending chart"></div>
   </div>
 </section>
 
@@ -97,7 +97,7 @@
     </div>
   </div>
   <div class="scroll-graphic">
-    <div class="chart-container" id="chart-personnel" role="img" aria-label="Personnel chart"></div>
+    <div class="chart-container" id="chart-personnel" role="img" tabindex="0" aria-label="Personnel chart"></div>
   </div>
 </section>
 
@@ -118,7 +118,7 @@
     </div>
   </div>
   <div class="scroll-graphic">
-    <div class="chart-container" id="chart-equipment" role="img" aria-label="Equipment chart"></div>
+    <div class="chart-container" id="chart-equipment" role="img" tabindex="0" aria-label="Equipment chart"></div>
   </div>
 </section>
 
@@ -139,7 +139,7 @@
     </div>
   </div>
   <div class="scroll-graphic">
-    <div class="chart-container" id="chart-reserves" role="img" aria-label="Reserves chart"></div>
+    <div class="chart-container" id="chart-reserves" role="img" tabindex="0" aria-label="Reserves chart"></div>
   </div>
 </section>
 
@@ -160,7 +160,7 @@
     </div>
   </div>
   <div class="scroll-graphic">
-    <div class="chart-container" id="chart-ambition" role="img" aria-label="Ambition chart"></div>
+    <div class="chart-container" id="chart-ambition" role="img" tabindex="0" aria-label="Ambition chart"></div>
   </div>
 </section>
 

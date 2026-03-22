@@ -19,12 +19,12 @@
   <p>Loading inflation data&hellip;</p>
 </div>
 
-<div id="error-screen">
+<div id="error-screen" role="alert">
   <h2>Something went wrong</h2>
   <p id="error-msg">Could not load inflation data. Please refresh or try again later.</p>
 </div>
 
-<nav class="story-nav"><a href="index.html" style="color:#2563A0;text-decoration:none;font-weight:500;">&larr; All stories</a><span style="margin:0 12px;color:#8A8A82;">|</span><span style="color:#555555;font-weight:600;">Inflation</span></nav>
+<nav class="story-nav" aria-label="Story navigation"><a href="index.html" style="color:#2563A0;text-decoration:none;font-weight:500;">&larr; All stories</a><span style="margin:0 12px;color:#8A8A82;">|</span><span style="color:#555555;font-weight:600;">Inflation</span></nav>
 
 <div class="chart-tooltip" id="tooltip"></div>
 
@@ -54,7 +54,7 @@
     </div>
   </div>
   <div class="scroll-graphic">
-    <div class="chart-container" id="chart-hook" role="img" aria-label="Hook chart"></div>
+    <div class="chart-container" id="chart-hook" role="img" tabindex="0" aria-label="Hook chart"></div>
   </div>
 </section>
 
@@ -75,7 +75,7 @@
     </div>
   </div>
   <div class="scroll-graphic">
-    <div class="chart-container" id="chart-sectors" role="img" aria-label="Sectors chart"></div>
+    <div class="chart-container" id="chart-sectors" role="img" tabindex="0" aria-label="Sectors chart"></div>
   </div>
 </section>
 
@@ -97,7 +97,7 @@
     </div>
   </div>
   <div class="scroll-graphic">
-    <div class="chart-container" id="chart-cumulative" role="img" aria-label="Cumulative chart"></div>
+    <div class="chart-container" id="chart-cumulative" role="img" tabindex="0" aria-label="Cumulative chart"></div>
   </div>
 </section>
 
@@ -118,7 +118,7 @@
     </div>
   </div>
   <div class="scroll-graphic">
-    <div class="chart-container" id="chart-now" role="img" aria-label="Now chart"></div>
+    <div class="chart-container" id="chart-now" role="img" tabindex="0" aria-label="Now chart"></div>
   </div>
 </section>
 

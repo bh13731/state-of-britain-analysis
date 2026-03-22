@@ -14,14 +14,14 @@
 <body>
 <a class="skip-link" href="#main-content">Skip to content</a>
 
-<nav class="story-nav"><a href="index.html" style="color:#2563A0;text-decoration:none;font-weight:500;">&larr; All stories</a><span style="margin:0 12px;color:#8A8A82;">|</span><span style="color:#555555;font-weight:600;">Immigration</span></nav>
+<nav class="story-nav" aria-label="Story navigation"><a href="index.html" style="color:#2563A0;text-decoration:none;font-weight:500;">&larr; All stories</a><span style="margin:0 12px;color:#8A8A82;">|</span><span style="color:#555555;font-weight:600;">Immigration</span></nav>
 
 <div id="loading-screen" role="status" aria-live="polite">
   <div class="spinner"></div>
   <p>Loading migration data&hellip;</p>
 </div>
 
-<div id="error-screen">
+<div id="error-screen" role="alert">
   <h2>Something went wrong</h2>
   <p id="error-msg">Could not load immigration data. Please refresh or try again later.</p>
 </div>
@@ -55,7 +55,7 @@
     </div>
   </div>
   <div class="scroll-graphic">
-    <div class="chart-container" id="chart-hook" role="img" aria-label="Hook chart"></div>
+    <div class="chart-container" id="chart-hook" role="img" tabindex="0" aria-label="Hook chart"></div>
   </div>
 </section>
 
@@ -76,7 +76,7 @@
     </div>
   </div>
   <div class="scroll-graphic">
-    <div class="chart-container" id="chart-brexit" role="img" aria-label="Brexit chart"></div>
+    <div class="chart-container" id="chart-brexit" role="img" tabindex="0" aria-label="Brexit chart"></div>
   </div>
 </section>
 
@@ -97,7 +97,7 @@
     </div>
   </div>
   <div class="scroll-graphic">
-    <div class="chart-container" id="chart-asylum" role="img" aria-label="Asylum chart"></div>
+    <div class="chart-container" id="chart-asylum" role="img" tabindex="0" aria-label="Asylum chart"></div>
   </div>
 </section>
 
@@ -118,7 +118,7 @@
     </div>
   </div>
   <div class="scroll-graphic">
-    <div class="chart-container" id="chart-demographics" role="img" aria-label="Demographics chart"></div>
+    <div class="chart-container" id="chart-demographics" role="img" tabindex="0" aria-label="Demographics chart"></div>
   </div>
 </section>
 

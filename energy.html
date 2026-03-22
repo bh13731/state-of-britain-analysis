@@ -19,12 +19,12 @@
   <p>Loading energy data&hellip;</p>
 </div>
 
-<div id="error-screen">
+<div id="error-screen" role="alert">
   <h2>Something went wrong</h2>
   <p id="error-msg">Could not load energy data. Please refresh or try again later.</p>
 </div>
 
-<nav class="story-nav"><a href="index.html" style="color:#2563A0;text-decoration:none;font-weight:500;">&larr; All stories</a><span style="margin:0 12px;color:#8A8A82;">|</span><span style="color:#555555;font-weight:600;">Energy</span></nav>
+<nav class="story-nav" aria-label="Story navigation"><a href="index.html" style="color:#2563A0;text-decoration:none;font-weight:500;">&larr; All stories</a><span style="margin:0 12px;color:#8A8A82;">|</span><span style="color:#555555;font-weight:600;">Energy</span></nav>
 
 <div class="chart-tooltip" id="tooltip"></div>
 
@@ -55,7 +55,7 @@
     </div>
   </div>
   <div class="scroll-graphic">
-    <div class="chart-container" id="chart-hook" role="img" aria-label="Hook chart"></div>
+    <div class="chart-container" id="chart-hook" role="img" tabindex="0" aria-label="Hook chart"></div>
   </div>
 </section>
 
@@ -76,7 +76,7 @@
     </div>
   </div>
   <div class="scroll-graphic">
-    <div class="chart-container" id="chart-coal" role="img" aria-label="Coal chart"></div>
+    <div class="chart-container" id="chart-coal" role="img" tabindex="0" aria-label="Coal chart"></div>
   </div>
 </section>
 
@@ -97,7 +97,7 @@
     </div>
   </div>
   <div class="scroll-graphic">
-    <div class="chart-container" id="chart-renewables" role="img" aria-label="Renewables chart"></div>
+    <div class="chart-container" id="chart-renewables" role="img" tabindex="0" aria-label="Renewables chart"></div>
   </div>
 </section>
 
@@ -118,7 +118,7 @@
     </div>
   </div>
   <div class="scroll-graphic">
-    <div class="chart-container" id="chart-mix" role="img" aria-label="Mix chart"></div>
+    <div class="chart-container" id="chart-mix" role="img" tabindex="0" aria-label="Mix chart"></div>
   </div>
 </section>
 
@@ -139,7 +139,7 @@
     </div>
   </div>
   <div class="scroll-graphic">
-    <div class="chart-container" id="chart-imports" role="img" aria-label="Imports chart"></div>
+    <div class="chart-container" id="chart-imports" role="img" tabindex="0" aria-label="Imports chart"></div>
   </div>
 </section>
 
@@ -160,7 +160,7 @@
     </div>
   </div>
   <div class="scroll-graphic">
-    <div class="chart-container" id="chart-honest" role="img" aria-label="Honest chart"></div>
+    <div class="chart-container" id="chart-honest" role="img" tabindex="0" aria-label="Honest chart"></div>
   </div>
 </section>
 

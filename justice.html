@@ -19,12 +19,12 @@
   <p>Loading justice data&hellip;</p>
 </div>
 
-<div id="error-screen">
+<div id="error-screen" role="alert">
   <h2>Something went wrong</h2>
   <p id="error-msg">Could not load justice data. Please refresh or try again later.</p>
 </div>
 
-<nav class="story-nav"><a href="index.html" style="color:#2563A0;text-decoration:none;font-weight:500;">&larr; All stories</a><span style="margin:0 12px;color:#8A8A82;">|</span><span style="color:#555555;font-weight:600;">Justice</span></nav>
+<nav class="story-nav" aria-label="Story navigation"><a href="index.html" style="color:#2563A0;text-decoration:none;font-weight:500;">&larr; All stories</a><span style="margin:0 12px;color:#8A8A82;">|</span><span style="color:#555555;font-weight:600;">Justice</span></nav>
 
 <div class="chart-tooltip" id="tooltip"></div>
 
@@ -54,7 +54,7 @@
     </div>
   </div>
   <div class="scroll-graphic">
-    <div class="chart-container" id="chart-hook" role="img" aria-label="Hook chart"></div>
+    <div class="chart-container" id="chart-hook" role="img" tabindex="0" aria-label="Hook chart"></div>
   </div>
 </section>
 
@@ -75,7 +75,7 @@
     </div>
   </div>
   <div class="scroll-graphic">
-    <div class="chart-container" id="chart-police" role="img" aria-label="Police chart"></div>
+    <div class="chart-container" id="chart-police" role="img" tabindex="0" aria-label="Police chart"></div>
   </div>
 </section>
 
@@ -96,7 +96,7 @@
     </div>
   </div>
   <div class="scroll-graphic">
-    <div class="chart-container" id="chart-crime" role="img" aria-label="Crime chart"></div>
+    <div class="chart-container" id="chart-crime" role="img" tabindex="0" aria-label="Crime chart"></div>
   </div>
 </section>
 
@@ -118,7 +118,7 @@
     </div>
   </div>
   <div class="scroll-graphic">
-    <div class="chart-container" id="chart-courts" role="img" aria-label="Courts chart"></div>
+    <div class="chart-container" id="chart-courts" role="img" tabindex="0" aria-label="Courts chart"></div>
   </div>
 </section>
 
@@ -139,7 +139,7 @@
     </div>
   </div>
   <div class="scroll-graphic">
-    <div class="chart-container" id="chart-prison" role="img" aria-label="Prison chart"></div>
+    <div class="chart-container" id="chart-prison" role="img" tabindex="0" aria-label="Prison chart"></div>
   </div>
 </section>
 

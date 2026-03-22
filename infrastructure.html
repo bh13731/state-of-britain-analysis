@@ -14,14 +14,14 @@
 <body>
 <a class="skip-link" href="#main-content">Skip to content</a>
 
-<nav class="story-nav"><a href="index.html" style="color:#2563A0;text-decoration:none;font-weight:500;">&larr; All stories</a><span style="margin:0 12px;color:#8A8A82;">|</span><span style="color:#555555;font-weight:600;">Infrastructure</span></nav>
+<nav class="story-nav" aria-label="Story navigation"><a href="index.html" style="color:#2563A0;text-decoration:none;font-weight:500;">&larr; All stories</a><span style="margin:0 12px;color:#8A8A82;">|</span><span style="color:#555555;font-weight:600;">Infrastructure</span></nav>
 
 <div id="loading-screen" role="status" aria-live="polite">
   <div class="spinner"></div>
   <p>Loading infrastructure data&hellip;</p>
 </div>
 
-<div id="error-screen">
+<div id="error-screen" role="alert">
   <h2>Something went wrong</h2>
   <p id="error-msg">Could not load infrastructure data. Please refresh or try again later.</p>
 </div>
@@ -55,7 +55,7 @@
     </div>
   </div>
   <div class="scroll-graphic">
-    <div class="chart-container" id="chart-hook" role="img" aria-label="Hook chart"></div>
+    <div class="chart-container" id="chart-hook" role="img" tabindex="0" aria-label="Hook chart"></div>
   </div>
 </section>
 
@@ -76,7 +76,7 @@
     </div>
   </div>
   <div class="scroll-graphic">
-    <div class="chart-container" id="chart-roads" role="img" aria-label="Roads chart"></div>
+    <div class="chart-container" id="chart-roads" role="img" tabindex="0" aria-label="Roads chart"></div>
   </div>
 </section>
 
@@ -97,7 +97,7 @@
     </div>
   </div>
   <div class="scroll-graphic">
-    <div class="chart-container" id="chart-rail" role="img" aria-label="Rail chart"></div>
+    <div class="chart-container" id="chart-rail" role="img" tabindex="0" aria-label="Rail chart"></div>
   </div>
 </section>
 
@@ -118,7 +118,7 @@
     </div>
   </div>
   <div class="scroll-graphic">
-    <div class="chart-container" id="chart-broadband" role="img" aria-label="Broadband chart"></div>
+    <div class="chart-container" id="chart-broadband" role="img" tabindex="0" aria-label="Broadband chart"></div>
   </div>
 </section>
 
@@ -139,7 +139,7 @@
     </div>
   </div>
   <div class="scroll-graphic">
-    <div class="chart-container" id="chart-traffic" role="img" aria-label="Traffic chart"></div>
+    <div class="chart-container" id="chart-traffic" role="img" tabindex="0" aria-label="Traffic chart"></div>
   </div>
 </section>
 
@@ -160,7 +160,7 @@
     </div>
   </div>
   <div class="scroll-graphic">
-    <div class="chart-container" id="chart-investment" role="img" aria-label="Investment chart"></div>
+    <div class="chart-container" id="chart-investment" role="img" tabindex="0" aria-label="Investment chart"></div>
   </div>
 </section>
 

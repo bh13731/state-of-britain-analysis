@@ -19,12 +19,12 @@
   <p>Loading education data&hellip;</p>
 </div>
 
-<div id="error-screen">
+<div id="error-screen" role="alert">
   <h2>Something went wrong</h2>
   <p id="error-msg">Could not load education data. Please refresh or try again later.</p>
 </div>
 
-<nav class="story-nav"><a href="index.html" style="color:#2563A0;text-decoration:none;font-weight:500;">&larr; All stories</a><span style="margin:0 12px;color:#8A8A82;">|</span><span style="color:#555555;font-weight:600;">Education</span></nav>
+<nav class="story-nav" aria-label="Story navigation"><a href="index.html" style="color:#2563A0;text-decoration:none;font-weight:500;">&larr; All stories</a><span style="margin:0 12px;color:#8A8A82;">|</span><span style="color:#555555;font-weight:600;">Education</span></nav>
 
 <div class="chart-tooltip" id="tooltip"></div>
 
@@ -54,7 +54,7 @@
     </div>
   </div>
   <div class="scroll-graphic">
-    <div class="chart-container" id="chart-spending" role="img" aria-label="Spending chart"></div>
+    <div class="chart-container" id="chart-spending" role="img" tabindex="0" aria-label="Spending chart"></div>
   </div>
 </section>
 
@@ -75,7 +75,7 @@
     </div>
   </div>
   <div class="scroll-graphic">
-    <div class="chart-container" id="chart-intl" role="img" aria-label="Intl chart"></div>
+    <div class="chart-container" id="chart-intl" role="img" tabindex="0" aria-label="Intl chart"></div>
   </div>
 </section>
 
@@ -96,7 +96,7 @@
     </div>
   </div>
   <div class="scroll-graphic">
-    <div class="chart-container" id="chart-gcse" role="img" aria-label="Gcse chart"></div>
+    <div class="chart-container" id="chart-gcse" role="img" tabindex="0" aria-label="Gcse chart"></div>
   </div>
 </section>
 
@@ -117,7 +117,7 @@
     </div>
   </div>
   <div class="scroll-graphic">
-    <div class="chart-container" id="chart-teachers" role="img" aria-label="Teachers chart"></div>
+    <div class="chart-container" id="chart-teachers" role="img" tabindex="0" aria-label="Teachers chart"></div>
   </div>
 </section>
 
@@ -138,7 +138,7 @@
     </div>
   </div>
   <div class="scroll-graphic">
-    <div class="chart-container" id="chart-he" role="img" aria-label="He chart"></div>
+    <div class="chart-container" id="chart-he" role="img" tabindex="0" aria-label="He chart"></div>
   </div>
 </section>
 

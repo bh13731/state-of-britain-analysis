@@ -19,12 +19,12 @@
   <p>Loading demographic data&hellip;</p>
 </div>
 
-<div id="error-screen">
+<div id="error-screen" role="alert">
   <h2>Something went wrong</h2>
   <p id="error-msg">Could not load fertility data. Please refresh or try again later.</p>
 </div>
 
-<nav class="story-nav"><a href="index.html" style="color:#2563A0;text-decoration:none;font-weight:500;">&larr; All stories</a><span style="margin:0 12px;color:#8A8A82;">|</span><span style="color:#555555;font-weight:600;">Fertility</span></nav>
+<nav class="story-nav" aria-label="Story navigation"><a href="index.html" style="color:#2563A0;text-decoration:none;font-weight:500;">&larr; All stories</a><span style="margin:0 12px;color:#8A8A82;">|</span><span style="color:#555555;font-weight:600;">Fertility</span></nav>
 
 <div class="chart-tooltip" id="tooltip"></div>
 
@@ -55,7 +55,7 @@
     </div>
   </div>
   <div class="scroll-graphic">
-    <div class="chart-container" id="chart-hook" role="img" aria-label="Hook chart"></div>
+    <div class="chart-container" id="chart-hook" role="img" tabindex="0" aria-label="Hook chart"></div>
   </div>
 </section>
 
@@ -78,7 +78,7 @@
     </div>
   </div>
   <div class="scroll-graphic">
-    <div class="chart-container" id="chart-order" role="img" aria-label="Order chart"></div>
+    <div class="chart-container" id="chart-order" role="img" tabindex="0" aria-label="Order chart"></div>
   </div>
 </section>
 
@@ -100,7 +100,7 @@
     </div>
   </div>
   <div class="scroll-graphic">
-    <div class="chart-container" id="chart-births" role="img" aria-label="Births chart"></div>
+    <div class="chart-container" id="chart-births" role="img" tabindex="0" aria-label="Births chart"></div>
   </div>
 </section>
 
@@ -121,7 +121,7 @@
     </div>
   </div>
   <div class="scroll-graphic">
-    <div class="chart-container" id="chart-families" role="img" aria-label="Families chart"></div>
+    <div class="chart-container" id="chart-families" role="img" tabindex="0" aria-label="Families chart"></div>
   </div>
 </section>
 
@@ -144,7 +144,7 @@
     </div>
   </div>
   <div class="scroll-graphic">
-    <div class="chart-container" id="chart-why" role="img" aria-label="Why chart"></div>
+    <div class="chart-container" id="chart-why" role="img" tabindex="0" aria-label="Why chart"></div>
   </div>
 </section>
 

@@ -28,17 +28,17 @@
   <p id="error-msg">Could not load justice data. Please refresh or try again later.</p>
 </div>
 
-<nav class="story-nav" aria-label="Story navigation"><a href="index.html" style="color:#2563A0;text-decoration:none;font-weight:500;">&larr; All stories</a><span style="margin:0 12px;color:#8A8A82;">|</span><span style="color:#555555;font-weight:600;">Justice</span></nav>
+<nav class="story-nav" aria-label="Story navigation"><a href="index.html">&larr; All stories</a><span class="nav-separator">|</span><span class="nav-title">Justice</span></nav>
 
 <div class="chart-tooltip" id="tooltip"></div>
 
-<header class="site-header" id="site-header" style="display:none;padding-top:72px;">
+<header class="site-header hidden-until-loaded" id="site-header">
   <div class="kicker">State of Britain</div>
   <h1>Justice Delayed</h1>
   <p class="deck">Britain&rsquo;s broken courts and overstuffed prisons &mdash; a system where only 5.5% of crimes lead to a charge, 73,000 cases wait for trial, and prisons are at 98% capacity.</p>
 </header>
 
-<main id="main-content" style="display:none;">
+<main id="main-content" class="hidden-until-loaded">
 
 <!-- ====== SECTION 1: Hook — Charge Rate Collapse ====== -->
 <section class="scroll-section" id="section-hook">
@@ -149,7 +149,7 @@
 
 </main>
 
-<footer class="site-footer" id="site-footer" style="display:none;">
+<footer class="site-footer hidden-until-loaded" id="site-footer">
   <p><strong>Sources:</strong> ONS Crime in England and Wales; Home Office Police Workforce Statistics; MoJ Prison Population Statistics; MoJ Criminal Court Statistics; Home Office Crime Outcomes.<br>
   Data via <a href="https://stateofbritain.uk" target="_blank" rel="noopener">stateofbritain.uk</a>.<br>
   Contains public sector information licensed under the <a href="https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/" target="_blank" rel="noopener">Open Government Licence v3.0</a>.</p>

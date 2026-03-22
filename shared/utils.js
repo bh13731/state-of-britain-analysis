@@ -371,12 +371,13 @@ function sobRevealContent() {
     ls.classList.add("hidden");
     setTimeout(function() { ls.style.display = "none"; }, 600);
   }
+  // Remove hidden-until-loaded class (preferred) or clear inline display
   var header = document.getElementById("site-header");
-  if (header) header.style.display = "";
+  if (header) { header.classList.remove("hidden-until-loaded"); header.style.display = ""; }
   var main = document.getElementById("main-content");
-  if (main) main.style.display = "";
+  if (main) { main.classList.remove("hidden-until-loaded"); main.style.display = ""; }
   var footer = document.getElementById("site-footer");
-  if (footer) footer.style.display = "";
+  if (footer) { footer.classList.remove("hidden-until-loaded"); footer.style.display = ""; }
 }
 
 /**

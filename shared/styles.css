@@ -232,6 +232,20 @@ body {
   text-decoration: none;
   font-weight: 500;
 }
+.story-nav .nav-separator {
+  margin: 0 12px;
+  color: #8A8A82;
+}
+.story-nav .nav-title {
+  color: #555555;
+  font-weight: 600;
+}
+
+/* ---------- Hidden until loaded ---------- */
+.hidden-until-loaded {
+  display: none;
+}
+.site-header.hidden-until-loaded { padding-top: 72px; }
 
 /* ---------- Skip link (a11y) ---------- */
 .skip-link {

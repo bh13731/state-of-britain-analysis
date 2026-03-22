@@ -18,7 +18,7 @@
 <body>
 <a class="skip-link" href="#main-content">Skip to content</a>
 
-<nav class="story-nav" aria-label="Story navigation"><a href="index.html" style="color:#2563A0;text-decoration:none;font-weight:500;">&larr; All stories</a><span style="margin:0 12px;color:#8A8A82;">|</span><span style="color:#555555;font-weight:600;">Defence</span></nav>
+<nav class="story-nav" aria-label="Story navigation"><a href="index.html">&larr; All stories</a><span class="nav-separator">|</span><span class="nav-title">Defence</span></nav>
 
 <div id="loading-screen" role="status" aria-live="polite">
   <div class="spinner"></div>
@@ -32,13 +32,13 @@
 
 <div class="chart-tooltip" id="tooltip"></div>
 
-<header class="site-header" id="site-header" style="display:none;padding-top:72px;">
+<header class="site-header hidden-until-loaded" id="site-header">
   <div class="kicker">State of Britain</div>
   <h1>The Defence Gap</h1>
   <p class="deck">Britain&rsquo;s shrinking military in a dangerous world &mdash; how decades of cuts have left the armed forces at their smallest since the Napoleonic era.</p>
 </header>
 
-<main id="main-content" style="display:none;">
+<main id="main-content" class="hidden-until-loaded">
 
 <!-- ====== SECTION 1: Hook — Personnel collapse ====== -->
 <section class="scroll-section" id="section-hook">
@@ -170,7 +170,7 @@
 
 </main>
 
-<footer class="site-footer" id="site-footer" style="display:none;">
+<footer class="site-footer hidden-until-loaded" id="site-footer">
   <p><strong>Sources:</strong> MoD Annual Report &amp; Accounts; MoD Armed Forces Personnel Statistics; MoD Equipment Plan; SIPRI Military Expenditure Database.<br>
   Data via <a href="https://stateofbritain.uk" target="_blank" rel="noopener">stateofbritain.uk</a>.<br>
   Contains public sector information licensed under the <a href="https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/" target="_blank" rel="noopener">Open Government Licence v3.0</a>.</p>

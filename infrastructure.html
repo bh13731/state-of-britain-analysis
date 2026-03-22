@@ -18,7 +18,7 @@
 <body>
 <a class="skip-link" href="#main-content">Skip to content</a>
 
-<nav class="story-nav" aria-label="Story navigation"><a href="index.html" style="color:#2563A0;text-decoration:none;font-weight:500;">&larr; All stories</a><span style="margin:0 12px;color:#8A8A82;">|</span><span style="color:#555555;font-weight:600;">Infrastructure</span></nav>
+<nav class="story-nav" aria-label="Story navigation"><a href="index.html">&larr; All stories</a><span class="nav-separator">|</span><span class="nav-title">Infrastructure</span></nav>
 
 <div id="loading-screen" role="status" aria-live="polite">
   <div class="spinner"></div>
@@ -32,13 +32,13 @@
 
 <div class="chart-tooltip" id="tooltip" role="status" aria-live="polite"></div>
 
-<header class="site-header" id="site-header" style="display:none;padding-top:72px;">
+<header class="site-header hidden-until-loaded" id="site-header">
   <div class="kicker">State of Britain</div>
   <h1>Crumbling &mdash; Britain&rsquo;s roads, rails, and broadband</h1>
   <p class="deck">A visual guide to the state of Britain&rsquo;s physical infrastructure &mdash; potholes multiplying, trains running late, and a broadband rollout racing to catch up.</p>
 </header>
 
-<main id="main-content" style="display:none;">
+<main id="main-content" class="hidden-until-loaded">
 
 <!-- ====== SECTION 1: The Hook ====== -->
 <section class="scroll-section" id="section-hook">
@@ -170,7 +170,7 @@
 
 </main>
 
-<footer class="site-footer" id="site-footer" style="display:none;">
+<footer class="site-footer hidden-until-loaded" id="site-footer">
   <p><strong>Sources:</strong> Ofcom Connected Nations 2018&ndash;2025; ORR Data Portal (Tables 3103, 1220, 6320); DfT Road Traffic (TRA0101), Road Length (RDL0203) &amp; Road Conditions (RDC0120).<br>
   Data via <a href="https://stateofbritain.uk" target="_blank" rel="noopener">stateofbritain.uk</a>.<br>
   Contains public sector information licensed under the <a href="https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/" target="_blank" rel="noopener">Open Government Licence v3.0</a>.</p>

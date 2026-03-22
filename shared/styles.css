@@ -1,7 +1,16 @@
 /* ============================================================
    State of Britain — Shared Styles
    Common CSS used across all story pages.
-   Page-specific accent colors and unique rules remain inline.
+   Page-specific accent colors and unique rules live in pages/css/.
+
+   NAMING CONVENTIONS:
+   - CSS classes: kebab-case (e.g. .scroll-section, .step-inner)
+   - BEM-like: .chart-tooltip, .chart-annotation, .chart-annotation-bold
+   - Layout: .scroll-section > .scroll-steps + .scroll-graphic
+   - Big numbers: .big-number.[color] (red, green, amber, blue + page-specific)
+   - IDs: kebab-case with prefix (bn- for big numbers, chart- for containers)
+   - JS functions: sobCamelCase prefix for shared utils
+   - Page JS functions: camelCase (buildGapChart, updateChart, init)
    ============================================================ */
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }

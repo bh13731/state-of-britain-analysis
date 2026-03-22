@@ -1,0 +1,6 @@
+/* immigration.html — page-specific styles */
+/* Page-specific styles */
+#loading-screen .spinner { border-top-color: #B45309; }
+.site-header .kicker { color: #B45309; }
+.site-footer a { color: #B45309; }
+.big-number.orange { color: #B45309; }

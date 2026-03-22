@@ -1,0 +1,7 @@
+/* inflation.html — page-specific styles */
+/* Page-specific styles */
+#loading-screen .spinner { border-top-color: #DC2626; }
+.site-header .kicker { color: #DC2626; }
+.site-footer a { color: #DC2626; }
+.big-number.red { color: #DC2626; }
+.big-number.orange { color: #EA580C; }

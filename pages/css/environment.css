@@ -1,0 +1,7 @@
+/* environment.html — page-specific styles */
+/* Page-specific styles */
+#loading-screen .spinner { border-top-color: #0891B2; }
+.site-header .kicker { color: #0891B2; }
+.site-footer a { color: #0891B2; }
+.big-number.teal { color: #0891B2; }
+.big-number.amber { color: #D97706; }

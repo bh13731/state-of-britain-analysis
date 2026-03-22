@@ -1,0 +1,1078 @@
+(function() {
+"use strict";
+
+/* =========================================================
+   COLOURS & CONSTANTS
+   ========================================================= */
+const C = SOB_COLORS;
+const DURATION = SOB_DURATION;
+const MOBILE = SOB_MOBILE;
+
+/* sector display config */
+const SECTORS = [
+  { key: "electricity", label: "Electricity", color: C.electricity },
+  { key: "transport", label: "Transport", color: C.transport },
+  { key: "industry", label: "Industry", color: "#5B21B6" },
+  { key: "buildings", label: "Buildings", color: "#C53030" },
+  { key: "fuel", label: "Fuel supply", color: C.fuel },
+  { key: "agriculture", label: "Agriculture", color: C.agriculture },
+  { key: "waste", label: "Waste", color: C.waste },
+  { key: "lulucf", label: "Land use", color: C.lulucf }
+];
+
+
+/* =========================================================
+   HELPERS
+   ========================================================= */
+function fmtMt(v) { return d3.format(",.0f")(v) + " Mt"; }
+function fmtK(v) { return v >= 1000 ? d3.format(",.0f")(v / 1000) + "k" : d3.format(",.0f")(v); }
+function fmtConc(v) { return d3.format(".1f")(v) + " \u00b5g/m\u00b3"; }
+
+
+
+/* =========================================================
+   DATA LOAD & INIT
+   ========================================================= */
+let DATA;
+
+fetch("https://stateofbritain.uk/api/data/environment.json")
+  .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
+  .then(d => { DATA = d; init(); })
+  .catch(sobShowError);
+
+function init() {
+  sobRevealContent();
+
+  /* Set big numbers */
+  const first = DATA.ghgEmissions[0];
+  const last = DATA.ghgEmissions[DATA.ghgEmissions.length - 1];
+  const pctChange = ((last.total - first.total) / first.total * 100);
+  document.getElementById("bn-cut").textContent = d3.format("+.0f")(pctChange) + "%";
+
+  buildAllCharts();
+  setupScrollObserver();
+  window.addEventListener("resize", sobDebounce(rebuildAll, 250));
+}
+
+function rebuildAll() {
+  document.querySelectorAll(".chart-container svg").forEach(el => el.remove());
+  buildAllCharts();
+  document.querySelectorAll(".step-inner.active").forEach(el => {
+    const step = el.closest(".step");
+    updateChart(step.dataset.section, +step.dataset.step);
+  });
+}
+
+/* =========================================================
+   BUILD ALL CHARTS
+   ========================================================= */
+function buildAllCharts() {
+  buildHookChart();
+  buildSectorsChart();
+  buildAirChart();
+  buildEvChart();
+  buildHonestChart();
+  buildGapChart();
+}
+
+/* =========================================================
+   CHART 1: THE HOOK — Total Emissions
+   ========================================================= */
+function buildHookChart() {
+  const container = document.getElementById("chart-hook");
+  const dim = sobChartDims(container);
+  const svg = d3.select(container).append("svg")
+    .attr("width", dim.width).attr("height", dim.height)
+    .attr("viewBox", `0 0 ${dim.width} ${dim.height}`)
+    .attr("role", "img").attr("aria-label", "UK greenhouse gas emissions from 1990 to 2024, showing a 54% decline from 811 to 371 megatonnes");
+  const g = svg.append("g").attr("transform", `translate(${dim.margin.left},${dim.margin.top})`);
+
+  const emissions = DATA.ghgEmissions;
+  const x = d3.scaleLinear().domain([1990, 2024]).range([0, dim.innerW]);
+  const yMax = d3.max(emissions, d => d.total) * 1.08;
+  const y = d3.scaleLinear().domain([0, yMax]).range([dim.innerH, 0]);
+
+  container._scales = { x, y };
+  container._dim = dim;
+
+  /* --- STEP 0: Big bar comparison --- */
+  const barGroup = g.append("g").attr("class", "bar-view");
+  const first = emissions[0];
+  const last = emissions[emissions.length - 1];
+  const xBar = d3.scaleBand().domain(["1990", "2024"]).range([0, dim.innerW]).padding(0.35);
+  const yBar = d3.scaleLinear().domain([0, 900]).range([dim.innerH, 0]);
+
+  barGroup.append("g").attr("class", "grid")
+    .call(d3.axisLeft(yBar).ticks(5).tickSize(-dim.innerW).tickFormat(""))
+    .call(g => g.select(".domain").remove());
+  barGroup.append("g").attr("class", "axis y-axis")
+    .call(d3.axisLeft(yBar).ticks(5).tickFormat((d, i) => i === 0 ? d + " Mt CO\u2082e" : d).tickSize(0))
+    .call(g => g.select(".domain").remove());
+
+  barGroup.append("rect")
+    .attr("x", xBar("1990")).attr("y", yBar(first.total))
+    .attr("width", xBar.bandwidth()).attr("height", dim.innerH - yBar(first.total))
+    .attr("fill", "#94A3B8").attr("rx", 3);
+  barGroup.append("rect")
+    .attr("x", xBar("2024")).attr("y", yBar(last.total))
+    .attr("width", xBar.bandwidth()).attr("height", dim.innerH - yBar(last.total))
+    .attr("fill", C.teal).attr("rx", 3);
+
+  barGroup.append("text").attr("class", "chart-annotation-bold")
+    .attr("x", xBar("1990") + xBar.bandwidth() / 2).attr("y", yBar(first.total) - 12)
+    .attr("text-anchor", "middle").text(d3.format(",.0f")(first.total) + " Mt");
+  barGroup.append("text").attr("class", "chart-annotation")
+    .attr("x", xBar("1990") + xBar.bandwidth() / 2).attr("y", dim.innerH + 28)
+    .attr("text-anchor", "middle").attr("fill", "#94A3B8").attr("font-weight", 600).text("1990");
+
+  barGroup.append("text").attr("class", "chart-annotation-bold")
+    .attr("x", xBar("2024") + xBar.bandwidth() / 2).attr("y", yBar(last.total) - 12)
+    .attr("text-anchor", "middle").attr("fill", C.tealDark).text(d3.format(",.0f")(last.total) + " Mt");
+  barGroup.append("text").attr("class", "chart-annotation")
+    .attr("x", xBar("2024") + xBar.bandwidth() / 2).attr("y", dim.innerH + 28)
+    .attr("text-anchor", "middle").attr("fill", C.teal).attr("font-weight", 600).text("2024");
+
+  /* Arrow + percentage label between bars */
+  const arrowX = (xBar("1990") + xBar.bandwidth() + xBar("2024")) / 2;
+  const arrowY1 = yBar(first.total) + 30;
+  const arrowY2 = yBar(last.total) + 30;
+  barGroup.append("line")
+    .attr("x1", arrowX).attr("x2", arrowX).attr("y1", arrowY1).attr("y2", arrowY2)
+    .attr("stroke", C.teal).attr("stroke-width", 2).attr("marker-end", "none");
+  barGroup.append("text").attr("class", "chart-annotation-bold")
+    .attr("x", arrowX).attr("y", (arrowY1 + arrowY2) / 2 + 5)
+    .attr("text-anchor", "middle").attr("fill", C.teal).attr("font-size", "18px")
+    .text("\u221254%");
+
+  /* --- STEP 1: Line view --- */
+  const lineGroup = g.append("g").attr("class", "line-view").style("opacity", 0).style("pointer-events", "none");
+
+  lineGroup.append("g").attr("class", "grid")
+    .call(d3.axisLeft(y).ticks(6).tickSize(-dim.innerW).tickFormat(""))
+    .call(g => g.select(".domain").remove());
+  lineGroup.append("g").attr("class", "axis y-axis")
+    .call(d3.axisLeft(y).ticks(6).tickFormat((d, i) => i === 0 ? d + " Mt CO\u2082e" : d).tickSize(0))
+    .call(g => g.select(".domain").remove());
+  lineGroup.append("g").attr("class", "axis x-axis")
+    .attr("transform", `translate(0,${dim.innerH})`)
+    .call(d3.axisBottom(x).ticks(sobIsMobile() ? 5 : 8).tickFormat(d3.format("d")).tickSize(0))
+    .call(g => g.select(".domain").remove());
+
+  /* Shaded area */
+  const area = d3.area()
+    .x(d => x(d.year)).y0(dim.innerH).y1(d => y(d.total))
+    .curve(d3.curveMonotoneX);
+  lineGroup.append("path").datum(emissions)
+    .attr("d", area).attr("fill", C.tealLight);
+
+  /* Line */
+  const line = d3.line().x(d => x(d.year)).y(d => y(d.total)).curve(d3.curveMonotoneX);
+  lineGroup.append("path").datum(emissions)
+    .attr("d", line).attr("fill", "none").attr("stroke", C.teal).attr("stroke-width", 2.5);
+
+  /* Endpoint dot + label */
+  lineGroup.append("circle")
+    .attr("cx", x(last.year)).attr("cy", y(last.total)).attr("r", 4)
+    .attr("fill", C.teal).attr("stroke", "#fff").attr("stroke-width", 2);
+  lineGroup.append("text").attr("class", "chart-annotation-bold")
+    .attr("x", x(last.year) + 8).attr("y", y(last.total) + 5)
+    .attr("fill", C.tealDark).text(d3.format(",.0f")(last.total) + " Mt");
+
+  /* Start dot + label */
+  lineGroup.append("circle")
+    .attr("cx", x(first.year)).attr("cy", y(first.total)).attr("r", 4)
+    .attr("fill", "#94A3B8").attr("stroke", "#fff").attr("stroke-width", 2);
+  lineGroup.append("text").attr("class", "chart-annotation")
+    .attr("x", x(first.year) + 8).attr("y", y(first.total) - 10)
+    .attr("fill", C.muted).text(d3.format(",.0f")(first.total) + " Mt");
+
+  /* Coal exit annotation */
+  lineGroup.append("text").attr("class", "chart-annotation")
+    .attr("x", x(2013)).attr("y", y(580) - 24).attr("text-anchor", "middle").attr("fill", C.teal)
+    .text("Coal phase-out");
+  lineGroup.append("text").attr("class", "chart-annotation")
+    .attr("x", x(2013)).attr("y", y(580) - 10).attr("text-anchor", "middle").attr("fill", C.teal)
+    .text("accelerates");
+  lineGroup.append("line")
+    .attr("x1", x(2013)).attr("x2", x(2013))
+    .attr("y1", y(580) - 4).attr("y2", y(emissions.find(d => d.year === 2013).total) - 4)
+    .attr("stroke", C.teal).attr("stroke-width", 1).attr("stroke-dasharray", "3,2");
+
+  /* Hover */
+  const hoverRect = lineGroup.append("rect")
+    .attr("width", dim.innerW).attr("height", dim.innerH)
+    .attr("fill", "transparent").style("cursor", "crosshair");
+  const hoverLine = lineGroup.append("line")
+    .attr("y1", 0).attr("y2", dim.innerH)
+    .attr("stroke", "#999").attr("stroke-width", 1).attr("stroke-dasharray", "3,2").style("opacity", 0);
+  const hoverDot = lineGroup.append("circle").attr("r", 4).attr("fill", C.teal).style("opacity", 0);
+
+  hoverRect.on("mousemove", function(event) {
+    const [mx] = d3.pointer(event, this);
+    const year = Math.round(x.invert(mx));
+    const d = emissions.find(e => e.year === year);
+    if (!d) return;
+    hoverLine.attr("x1", x(year)).attr("x2", x(year)).style("opacity", 1);
+    hoverDot.attr("cx", x(year)).attr("cy", y(d.total)).style("opacity", 1);
+    const change = ((d.total - first.total) / first.total * 100);
+    sobShowTooltip(`<div class="tt-label">${year}</div>
+      <div class="tt-value">Total: ${d3.format(",.1f")(d.total)} Mt CO\u2082e</div>
+      <div class="tt-value" style="color:${C.teal}">Change from 1990: ${d3.format("+.1f")(change)}%</div>`, event);
+  }).on("mouseleave", function() {
+    hoverLine.style("opacity", 0); hoverDot.style("opacity", 0); sobHideTooltip();
+  });
+}
+
+function updateHookChart(step) {
+  const container = document.getElementById("chart-hook");
+  const svg = d3.select(container).select("svg");
+  const FADE_OUT = Math.round(DURATION * 0.5);
+  if (step === 0) {
+    svg.select(".line-view").transition().duration(FADE_OUT).style("opacity", 0).on("end", function() { d3.select(this).style("pointer-events", "none"); });
+    svg.select(".bar-view").transition().delay(FADE_OUT).duration(DURATION).style("opacity", 1).on("end", function() { d3.select(this).style("pointer-events", "all"); });
+  } else {
+    svg.select(".bar-view").transition().duration(FADE_OUT).style("opacity", 0).on("end", function() { d3.select(this).style("pointer-events", "none"); });
+    svg.select(".line-view").transition().delay(FADE_OUT).duration(DURATION).style("opacity", 1).on("end", function() { d3.select(this).style("pointer-events", "all"); });
+  }
+}
+
+/* =========================================================
+   CHART 2: SECTORS — Stacked Area
+   ========================================================= */
+function buildSectorsChart() {
+  const container = document.getElementById("chart-sectors");
+  const dim = sobChartDims(container);
+  const svg = d3.select(container).append("svg")
+    .attr("width", dim.width).attr("height", dim.height)
+    .attr("viewBox", `0 0 ${dim.width} ${dim.height}`)
+    .attr("role", "img").attr("aria-label", "Stacked area chart of UK emissions by sector from 1990 to 2024, showing electricity and industry as the largest sources of reductions");
+  const g = svg.append("g").attr("transform", `translate(${dim.margin.left},${dim.margin.top})`);
+
+  const emissions = DATA.ghgEmissions;
+  const stackKeys = ["electricity", "transport", "industry", "buildings", "fuel", "agriculture", "waste"];
+  const stackColors = {
+    electricity: C.electricity, transport: C.transport, industry: C.industry,
+    buildings: C.buildings, fuel: C.fuel, agriculture: C.agriculture, waste: C.waste
+  };
+  const stackLabels = {
+    electricity: "Electricity", transport: "Transport", industry: "Industry",
+    buildings: "Buildings", fuel: "Fuel supply", agriculture: "Agriculture", waste: "Waste"
+  };
+
+  const stack = d3.stack().keys(stackKeys).order(d3.stackOrderNone).offset(d3.stackOffsetNone);
+  const series = stack(emissions);
+
+  const x = d3.scaleLinear().domain([1990, 2024]).range([0, dim.innerW]);
+  const y = d3.scaleLinear().domain([0, d3.max(emissions, d => stackKeys.reduce((s, k) => s + d[k], 0)) * 1.05]).range([dim.innerH, 0]);
+
+  g.append("g").attr("class", "grid")
+    .call(d3.axisLeft(y).ticks(6).tickSize(-dim.innerW).tickFormat(""))
+    .call(gg => gg.select(".domain").remove());
+  g.append("g").attr("class", "axis y-axis")
+    .call(d3.axisLeft(y).ticks(6).tickFormat((d, i) => i === 0 ? d + " Mt" : d).tickSize(0))
+    .call(gg => gg.select(".domain").remove());
+  g.append("g").attr("class", "axis x-axis")
+    .attr("transform", `translate(0,${dim.innerH})`)
+    .call(d3.axisBottom(x).ticks(sobIsMobile() ? 5 : 8).tickFormat(d3.format("d")).tickSize(0))
+    .call(gg => gg.select(".domain").remove());
+
+  const area = d3.area()
+    .x(d => x(d.data.year))
+    .y0(d => y(d[0]))
+    .y1(d => y(d[1]))
+    .curve(d3.curveMonotoneX);
+
+  const layers = g.selectAll(".layer")
+    .data(series).enter().append("path")
+    .attr("class", "layer")
+    .attr("d", area)
+    .attr("fill", d => stackColors[d.key])
+    .attr("opacity", 1)
+    .attr("data-key", d => d.key);
+
+  /* Direct labels at the right edge with collision avoidance */
+  const lastYear = emissions[emissions.length - 1];
+  const stackEndLabels = [];
+  series.forEach(s => {
+    const lastPt = s[s.length - 1];
+    const midY = (y(lastPt[0]) + y(lastPt[1])) / 2;
+    const thickness = y(lastPt[0]) - y(lastPt[1]);
+    if (thickness > 16) {
+      stackEndLabels.push({ rawY: midY + 4, color: stackColors[s.key], text: stackLabels[s.key] });
+    }
+  });
+  stackEndLabels.sort((a, b) => a.rawY - b.rawY);
+  for (let si = 1; si < stackEndLabels.length; si++) {
+    if (stackEndLabels[si].rawY - stackEndLabels[si - 1].rawY < 16) {
+      stackEndLabels[si].rawY = stackEndLabels[si - 1].rawY + 16;
+    }
+  }
+  stackEndLabels.forEach(l => {
+    g.append("text").attr("class", "chart-annotation")
+      .attr("x", dim.innerW + 6).attr("y", l.rawY)
+      .attr("fill", l.color).attr("font-weight", 600).attr("font-size", "12px")
+      .text(l.text);
+  });
+
+  /* Hover */
+  const hoverRect = g.append("rect")
+    .attr("width", dim.innerW).attr("height", dim.innerH)
+    .attr("fill", "transparent").style("cursor", "crosshair");
+  const hoverLine = g.append("line")
+    .attr("y1", 0).attr("y2", dim.innerH)
+    .attr("stroke", "#999").attr("stroke-width", 1).attr("stroke-dasharray", "3,2").style("opacity", 0);
+
+  hoverRect.on("mousemove", function(event) {
+    const [mx] = d3.pointer(event, this);
+    const year = Math.round(x.invert(mx));
+    const d = emissions.find(e => e.year === year);
+    if (!d) return;
+    hoverLine.attr("x1", x(year)).attr("x2", x(year)).style("opacity", 1);
+    let html = `<div class="tt-label">${year}</div>`;
+    stackKeys.forEach(k => {
+      html += `<div class="tt-value" style="color:${stackColors[k]}">${stackLabels[k]}: ${d3.format(",.1f")(d[k])} Mt</div>`;
+    });
+    html += `<div class="tt-value" style="font-weight:600;margin-top:4px">Total: ${d3.format(",.1f")(d.total)} Mt</div>`;
+    sobShowTooltip(html, event);
+  }).on("mouseleave", function() {
+    hoverLine.style("opacity", 0); sobHideTooltip();
+  });
+
+  /* Highlight function for step transitions */
+  container._highlight = function(key) {
+    layers.transition().duration(DURATION)
+      .attr("opacity", d => d.key === key ? 1 : 0.15);
+  };
+  container._reset = function() {
+    layers.transition().duration(DURATION).attr("opacity", 1);
+  };
+}
+
+function updateSectorsChart(step) {
+  const container = document.getElementById("chart-sectors");
+  if (step === 0) {
+    container._highlight("electricity");
+  } else if (step === 1) {
+    container._highlight("industry");
+  }
+}
+
+/* =========================================================
+   CHART 3: AIR QUALITY — NO2 and PM2.5
+   ========================================================= */
+function buildAirChart() {
+  const container = document.getElementById("chart-air");
+  const dim = sobChartDims(container);
+  const svg = d3.select(container).append("svg")
+    .attr("width", dim.width).attr("height", dim.height)
+    .attr("viewBox", `0 0 ${dim.width} ${dim.height}`)
+    .attr("role", "img").attr("aria-label", "Air quality charts showing nitrogen dioxide levels falling 76% since 1990 and PM2.5 falling 42% since 2009");
+  const g = svg.append("g").attr("transform", `translate(${dim.margin.left},${dim.margin.top})`);
+
+  const no2 = DATA.no2;
+  const pm25 = DATA.pm25;
+
+  /* --- STEP 0: NO2 --- */
+  const no2Group = g.append("g").attr("class", "no2-view");
+  const xNo2 = d3.scaleLinear().domain([1990, 2024]).range([0, dim.innerW]);
+  const yNo2 = d3.scaleLinear().domain([0, 65]).range([dim.innerH, 0]);
+
+  no2Group.append("g").attr("class", "grid")
+    .call(d3.axisLeft(yNo2).ticks(6).tickSize(-dim.innerW).tickFormat(""))
+    .call(gg => gg.select(".domain").remove());
+  no2Group.append("g").attr("class", "axis y-axis")
+    .call(d3.axisLeft(yNo2).ticks(6).tickFormat((d, i) => i === 0 ? d + " \u00b5g/m\u00b3" : d).tickSize(0))
+    .call(gg => gg.select(".domain").remove());
+  no2Group.append("g").attr("class", "axis x-axis")
+    .attr("transform", `translate(0,${dim.innerH})`)
+    .call(d3.axisBottom(xNo2).ticks(sobIsMobile() ? 5 : 8).tickFormat(d3.format("d")).tickSize(0))
+    .call(gg => gg.select(".domain").remove());
+
+  /* Area */
+  const no2Area = d3.area().x(d => xNo2(d.year)).y0(dim.innerH).y1(d => yNo2(d.mean)).curve(d3.curveMonotoneX);
+  no2Group.append("path").datum(no2).attr("d", no2Area).attr("fill", C.tealLight);
+
+  /* Line */
+  const no2Line = d3.line().x(d => xNo2(d.year)).y(d => yNo2(d.mean)).curve(d3.curveMonotoneX);
+  no2Group.append("path").datum(no2).attr("d", no2Line)
+    .attr("fill", "none").attr("stroke", C.teal).attr("stroke-width", 2.5);
+
+  /* Label: NO2 */
+  no2Group.append("text").attr("class", "chart-annotation-bold")
+    .attr("x", 0).attr("y", -10).attr("fill", C.tealDark)
+    .text("Nitrogen dioxide (NO\u2082) \u2014 annual mean at urban sites");
+
+  /* Start & end dots */
+  const no2First = no2[0];
+  const no2Last = no2[no2.length - 1];
+  no2Group.append("circle")
+    .attr("cx", xNo2(no2First.year)).attr("cy", yNo2(no2First.mean)).attr("r", 4)
+    .attr("fill", "#94A3B8").attr("stroke", "#fff").attr("stroke-width", 2);
+  no2Group.append("text").attr("class", "chart-annotation")
+    .attr("x", xNo2(no2First.year) + 8).attr("y", yNo2(no2First.mean) - 8)
+    .attr("fill", C.muted).text(d3.format(".1f")(no2First.mean) + " \u00b5g/m\u00b3");
+
+  no2Group.append("circle")
+    .attr("cx", xNo2(no2Last.year)).attr("cy", yNo2(no2Last.mean)).attr("r", 4)
+    .attr("fill", C.teal).attr("stroke", "#fff").attr("stroke-width", 2);
+  no2Group.append("text").attr("class", "chart-annotation-bold")
+    .attr("x", xNo2(no2Last.year) + 8).attr("y", yNo2(no2Last.mean) + 5)
+    .attr("fill", C.tealDark).text(d3.format(".1f")(no2Last.mean));
+
+  /* WHO guideline */
+  no2Group.append("line")
+    .attr("x1", 0).attr("x2", dim.innerW)
+    .attr("y1", yNo2(10)).attr("y2", yNo2(10))
+    .attr("stroke", C.green).attr("stroke-width", 1.5).attr("stroke-dasharray", "6,4");
+  no2Group.append("text").attr("class", "chart-annotation")
+    .attr("x", dim.innerW).attr("y", yNo2(10) - 6)
+    .attr("text-anchor", "end").attr("fill", C.green).attr("font-size", "12px")
+    .text("WHO guideline (10 \u00b5g/m\u00b3)");
+
+  /* Hover NO2 */
+  const no2Hover = no2Group.append("rect")
+    .attr("width", dim.innerW).attr("height", dim.innerH)
+    .attr("fill", "transparent").style("cursor", "crosshair");
+  const no2HLine = no2Group.append("line")
+    .attr("y1", 0).attr("y2", dim.innerH)
+    .attr("stroke", "#999").attr("stroke-width", 1).attr("stroke-dasharray", "3,2").style("opacity", 0);
+  const no2HDot = no2Group.append("circle").attr("r", 4).attr("fill", C.teal).style("opacity", 0);
+
+  no2Hover.on("mousemove", function(event) {
+    const [mx] = d3.pointer(event, this);
+    const year = Math.round(xNo2.invert(mx));
+    const d = no2.find(e => e.year === year);
+    if (!d) return;
+    no2HLine.attr("x1", xNo2(year)).attr("x2", xNo2(year)).style("opacity", 1);
+    no2HDot.attr("cx", xNo2(year)).attr("cy", yNo2(d.mean)).style("opacity", 1);
+    sobShowTooltip(`<div class="tt-label">${year}</div>
+      <div class="tt-value" style="color:${C.teal}">NO\u2082: ${d3.format(".1f")(d.mean)} \u00b5g/m\u00b3</div>`, event);
+  }).on("mouseleave", function() {
+    no2HLine.style("opacity", 0); no2HDot.style("opacity", 0); sobHideTooltip();
+  });
+
+  /* --- STEP 1: PM2.5 (hidden initially) --- */
+  const pmGroup = g.append("g").attr("class", "pm25-view").style("opacity", 0).style("pointer-events", "none");
+  const xPm = d3.scaleLinear().domain([2009, 2024]).range([0, dim.innerW]);
+  const yPm = d3.scaleLinear().domain([0, 16]).range([dim.innerH, 0]);
+
+  pmGroup.append("g").attr("class", "grid")
+    .call(d3.axisLeft(yPm).ticks(6).tickSize(-dim.innerW).tickFormat(""))
+    .call(gg => gg.select(".domain").remove());
+  pmGroup.append("g").attr("class", "axis y-axis")
+    .call(d3.axisLeft(yPm).ticks(6).tickFormat((d, i) => i === 0 ? d + " \u00b5g/m\u00b3" : d).tickSize(0))
+    .call(gg => gg.select(".domain").remove());
+  pmGroup.append("g").attr("class", "axis x-axis")
+    .attr("transform", `translate(0,${dim.innerH})`)
+    .call(d3.axisBottom(xPm).ticks(sobIsMobile() ? 5 : 8).tickFormat(d3.format("d")).tickSize(0))
+    .call(gg => gg.select(".domain").remove());
+
+  /* Area */
+  const pmArea = d3.area().x(d => xPm(d.year)).y0(dim.innerH).y1(d => yPm(d.mean)).curve(d3.curveMonotoneX);
+  pmGroup.append("path").datum(pm25).attr("d", pmArea).attr("fill", "rgba(8,145,178,0.08)");
+
+  /* Line */
+  const pmLine = d3.line().x(d => xPm(d.year)).y(d => yPm(d.mean)).curve(d3.curveMonotoneX);
+  pmGroup.append("path").datum(pm25).attr("d", pmLine)
+    .attr("fill", "none").attr("stroke", C.teal).attr("stroke-width", 2.5);
+
+  /* Label */
+  pmGroup.append("text").attr("class", "chart-annotation-bold")
+    .attr("x", 0).attr("y", -10).attr("fill", C.tealDark)
+    .text("Fine particles (PM2.5) \u2014 annual mean");
+
+  /* Start & end dots */
+  const pmFirst = pm25[0];
+  const pmLast = pm25[pm25.length - 1];
+  pmGroup.append("circle")
+    .attr("cx", xPm(pmFirst.year)).attr("cy", yPm(pmFirst.mean)).attr("r", 4)
+    .attr("fill", "#94A3B8").attr("stroke", "#fff").attr("stroke-width", 2);
+  pmGroup.append("text").attr("class", "chart-annotation")
+    .attr("x", xPm(pmFirst.year) + 8).attr("y", yPm(pmFirst.mean) - 8)
+    .attr("fill", C.muted).text(d3.format(".1f")(pmFirst.mean));
+
+  pmGroup.append("circle")
+    .attr("cx", xPm(pmLast.year)).attr("cy", yPm(pmLast.mean)).attr("r", 4)
+    .attr("fill", C.teal).attr("stroke", "#fff").attr("stroke-width", 2);
+  pmGroup.append("text").attr("class", "chart-annotation-bold")
+    .attr("x", xPm(pmLast.year) + 8).attr("y", yPm(pmLast.mean) + 5)
+    .attr("fill", C.tealDark).text(d3.format(".1f")(pmLast.mean) + " \u00b5g/m\u00b3");
+
+  /* WHO guideline for PM2.5 = 5 */
+  pmGroup.append("line")
+    .attr("x1", 0).attr("x2", dim.innerW)
+    .attr("y1", yPm(5)).attr("y2", yPm(5))
+    .attr("stroke", C.green).attr("stroke-width", 1.5).attr("stroke-dasharray", "6,4");
+  pmGroup.append("text").attr("class", "chart-annotation")
+    .attr("x", dim.innerW).attr("y", yPm(5) - 6)
+    .attr("text-anchor", "end").attr("fill", C.green).attr("font-size", "12px")
+    .text("WHO guideline (5 \u00b5g/m\u00b3)");
+
+  /* Hover PM2.5 */
+  const pmHover = pmGroup.append("rect")
+    .attr("width", dim.innerW).attr("height", dim.innerH)
+    .attr("fill", "transparent").style("cursor", "crosshair");
+  const pmHLine = pmGroup.append("line")
+    .attr("y1", 0).attr("y2", dim.innerH)
+    .attr("stroke", "#999").attr("stroke-width", 1).attr("stroke-dasharray", "3,2").style("opacity", 0);
+  const pmHDot = pmGroup.append("circle").attr("r", 4).attr("fill", C.teal).style("opacity", 0);
+
+  pmHover.on("mousemove", function(event) {
+    const [mx] = d3.pointer(event, this);
+    const year = Math.round(xPm.invert(mx));
+    const d = pm25.find(e => e.year === year);
+    if (!d) return;
+    pmHLine.attr("x1", xPm(year)).attr("x2", xPm(year)).style("opacity", 1);
+    pmHDot.attr("cx", xPm(year)).attr("cy", yPm(d.mean)).style("opacity", 1);
+    sobShowTooltip(`<div class="tt-label">${year}</div>
+      <div class="tt-value" style="color:${C.teal}">PM2.5: ${d3.format(".1f")(d.mean)} \u00b5g/m\u00b3</div>`, event);
+  }).on("mouseleave", function() {
+    pmHLine.style("opacity", 0); pmHDot.style("opacity", 0); sobHideTooltip();
+  });
+}
+
+function updateAirChart(step) {
+  const svg = d3.select("#chart-air svg");
+  const FADE_OUT = Math.round(DURATION * 0.5);
+  if (step === 0) {
+    svg.select(".pm25-view").transition().duration(FADE_OUT).style("opacity", 0).on("end", function() { d3.select(this).style("pointer-events", "none"); });
+    svg.select(".no2-view").transition().delay(FADE_OUT).duration(DURATION).style("opacity", 1).on("end", function() { d3.select(this).style("pointer-events", "all"); });
+  } else {
+    svg.select(".no2-view").transition().duration(FADE_OUT).style("opacity", 0).on("end", function() { d3.select(this).style("pointer-events", "none"); });
+    svg.select(".pm25-view").transition().delay(FADE_OUT).duration(DURATION).style("opacity", 1).on("end", function() { d3.select(this).style("pointer-events", "all"); });
+  }
+}
+
+/* =========================================================
+   CHART 4: EV REVOLUTION — Stacked Bar
+   ========================================================= */
+function buildEvChart() {
+  const container = document.getElementById("chart-ev");
+  const dim = sobChartDims(container);
+  const svg = d3.select(container).append("svg")
+    .attr("width", dim.width).attr("height", dim.height)
+    .attr("viewBox", `0 0 ${dim.width} ${dim.height}`)
+    .attr("role", "img").attr("aria-label", "Bar chart of ultra-low emission vehicle registrations in the UK from 2015 to 2024, showing rapid growth to 579,000");
+  const g = svg.append("g").attr("transform", `translate(${dim.margin.left},${dim.margin.top})`);
+
+  const ulev = DATA.ulevRegistrations;
+
+  /* --- STEP 0: Total ULEV bar chart --- */
+  const totalGroup = g.append("g").attr("class", "total-view");
+  const xBand = d3.scaleBand().domain(ulev.map(d => d.year)).range([0, dim.innerW]).padding(0.2);
+  const yTotal = d3.scaleLinear().domain([0, d3.max(ulev, d => d.total) * 1.12]).range([dim.innerH, 0]);
+
+  totalGroup.append("g").attr("class", "grid")
+    .call(d3.axisLeft(yTotal).ticks(6).tickSize(-dim.innerW).tickFormat(""))
+    .call(gg => gg.select(".domain").remove());
+  totalGroup.append("g").attr("class", "axis y-axis")
+    .call(d3.axisLeft(yTotal).ticks(6).tickFormat((d, i) => {
+      if (d === 0) return "0";
+      if (d >= 1000) return d3.format(",.0f")(d / 1000) + "k";
+      return d;
+    }).tickSize(0))
+    .call(gg => gg.select(".domain").remove());
+  totalGroup.append("g").attr("class", "axis x-axis")
+    .attr("transform", `translate(0,${dim.innerH})`)
+    .call(d3.axisBottom(xBand).tickSize(0).tickFormat(d => "'" + String(d).slice(2)))
+    .call(gg => gg.select(".domain").remove());
+
+  totalGroup.append("text").attr("class", "chart-annotation-bold")
+    .attr("x", 0).attr("y", -10).attr("fill", C.tealDark)
+    .text("Ultra-low emission vehicle registrations");
+
+  totalGroup.selectAll(".bar-total")
+    .data(ulev).enter().append("rect")
+    .attr("class", "bar-total")
+    .attr("x", d => xBand(d.year))
+    .attr("y", d => yTotal(d.total))
+    .attr("width", xBand.bandwidth())
+    .attr("height", d => dim.innerH - yTotal(d.total))
+    .attr("fill", C.teal).attr("rx", 2);
+
+  /* Label on last bar */
+  const lastU = ulev[ulev.length - 1];
+  totalGroup.append("text").attr("class", "chart-annotation-bold")
+    .attr("x", xBand(lastU.year) + xBand.bandwidth() / 2).attr("y", yTotal(lastU.total) - 8)
+    .attr("text-anchor", "middle").attr("fill", C.tealDark).attr("font-size", "13px")
+    .text(d3.format(",.0f")(lastU.total / 1000) + "k");
+
+  /* Hover on bars */
+  totalGroup.selectAll(".bar-total-hover")
+    .data(ulev).enter().append("rect")
+    .attr("x", d => xBand(d.year))
+    .attr("y", 0)
+    .attr("width", xBand.bandwidth())
+    .attr("height", dim.innerH)
+    .attr("fill", "transparent").style("cursor", "pointer")
+    .on("mousemove", function(event, d) {
+      sobShowTooltip(`<div class="tt-label">${d.year}</div>
+        <div class="tt-value">Total ULEV: ${d3.format(",")(d.total)}</div>
+        <div class="tt-value" style="color:${C.teal}">BEV: ${d3.format(",")(d.bev)}</div>
+        <div class="tt-value" style="color:${C.amber}">PHEV: ${d3.format(",")(d.phev)}</div>
+        <div class="tt-value" style="color:${C.muted}">Other: ${d3.format(",")(d.other)}</div>`, event);
+    }).on("mouseleave", hideTooltip);
+
+  /* --- STEP 1: Stacked BEV vs PHEV (hidden) --- */
+  const stackGroup = g.append("g").attr("class", "stack-view").style("opacity", 0).style("pointer-events", "none");
+
+  stackGroup.append("g").attr("class", "grid")
+    .call(d3.axisLeft(yTotal).ticks(6).tickSize(-dim.innerW).tickFormat(""))
+    .call(gg => gg.select(".domain").remove());
+  stackGroup.append("g").attr("class", "axis y-axis")
+    .call(d3.axisLeft(yTotal).ticks(6).tickFormat((d, i) => {
+      if (d === 0) return "0";
+      if (d >= 1000) return d3.format(",.0f")(d / 1000) + "k";
+      return d;
+    }).tickSize(0))
+    .call(gg => gg.select(".domain").remove());
+  stackGroup.append("g").attr("class", "axis x-axis")
+    .attr("transform", `translate(0,${dim.innerH})`)
+    .call(d3.axisBottom(xBand).tickSize(0).tickFormat(d => "'" + String(d).slice(2)))
+    .call(gg => gg.select(".domain").remove());
+
+  stackGroup.append("text").attr("class", "chart-annotation-bold")
+    .attr("x", 0).attr("y", -10).attr("fill", C.tealDark)
+    .text("BEV vs Plug-in Hybrid registrations");
+
+  /* BEV bars (bottom) */
+  stackGroup.selectAll(".bar-bev")
+    .data(ulev).enter().append("rect")
+    .attr("class", "bar-bev")
+    .attr("x", d => xBand(d.year))
+    .attr("y", d => yTotal(d.bev))
+    .attr("width", xBand.bandwidth())
+    .attr("height", d => dim.innerH - yTotal(d.bev))
+    .attr("fill", C.teal).attr("rx", 2);
+
+  /* PHEV bars (top, stacked on BEV) */
+  stackGroup.selectAll(".bar-phev")
+    .data(ulev).enter().append("rect")
+    .attr("class", "bar-phev")
+    .attr("x", d => xBand(d.year))
+    .attr("y", d => yTotal(d.bev + d.phev))
+    .attr("width", xBand.bandwidth())
+    .attr("height", d => yTotal(d.bev) - yTotal(d.bev + d.phev))
+    .attr("fill", C.amber).attr("rx", 2);
+
+  /* Legend */
+  const legendY = 6;
+  stackGroup.append("rect").attr("x", dim.innerW - 160).attr("y", legendY).attr("width", 14).attr("height", 14).attr("fill", C.teal).attr("rx", 2);
+  stackGroup.append("text").attr("class", "chart-annotation").attr("x", dim.innerW - 140).attr("y", legendY + 12).attr("fill", C.tealDark).attr("font-weight", 600).text("BEV");
+  stackGroup.append("rect").attr("x", dim.innerW - 90).attr("y", legendY).attr("width", 14).attr("height", 14).attr("fill", C.amber).attr("rx", 2);
+  stackGroup.append("text").attr("class", "chart-annotation").attr("x", dim.innerW - 70).attr("y", legendY + 12).attr("fill", C.amberDark).attr("font-weight", 600).text("PHEV");
+
+  /* BEV share annotation on 2024 */
+  const lastBevShare = Math.round(lastU.bev / lastU.total * 100);
+  stackGroup.append("text").attr("class", "chart-annotation-bold")
+    .attr("x", xBand(lastU.year) + xBand.bandwidth() / 2)
+    .attr("y", yTotal(lastU.bev) + (dim.innerH - yTotal(lastU.bev)) / 2 + 4)
+    .attr("text-anchor", "middle").attr("fill", "#fff").attr("font-size", "12px")
+    .text(lastBevShare + "%");
+
+  /* Hover on stacked bars */
+  stackGroup.selectAll(".bar-stack-hover")
+    .data(ulev).enter().append("rect")
+    .attr("x", d => xBand(d.year))
+    .attr("y", 0)
+    .attr("width", xBand.bandwidth())
+    .attr("height", dim.innerH)
+    .attr("fill", "transparent").style("cursor", "pointer")
+    .on("mousemove", function(event, d) {
+      const bevPct = Math.round(d.bev / d.total * 100);
+      sobShowTooltip(`<div class="tt-label">${d.year}</div>
+        <div class="tt-value" style="color:${C.teal}">BEV: ${d3.format(",")(d.bev)} (${bevPct}%)</div>
+        <div class="tt-value" style="color:${C.amber}">PHEV: ${d3.format(",")(d.phev)}</div>
+        <div class="tt-value">Total: ${d3.format(",")(d.total)}</div>`, event);
+    }).on("mouseleave", hideTooltip);
+}
+
+function updateEvChart(step) {
+  const svg = d3.select("#chart-ev svg");
+  const FADE_OUT = Math.round(DURATION * 0.5);
+  if (step === 0) {
+    svg.select(".stack-view").transition().duration(FADE_OUT).style("opacity", 0).on("end", function() { d3.select(this).style("pointer-events", "none"); });
+    svg.select(".total-view").transition().delay(FADE_OUT).duration(DURATION).style("opacity", 1).on("end", function() { d3.select(this).style("pointer-events", "all"); });
+  } else {
+    svg.select(".total-view").transition().duration(FADE_OUT).style("opacity", 0).on("end", function() { d3.select(this).style("pointer-events", "none"); });
+    svg.select(".stack-view").transition().delay(FADE_OUT).duration(DURATION).style("opacity", 1).on("end", function() { d3.select(this).style("pointer-events", "all"); });
+  }
+}
+
+/* =========================================================
+   CHART 5: THE HONEST PICTURE — Sector slope chart
+   ========================================================= */
+function buildHonestChart() {
+  const container = document.getElementById("chart-honest");
+  const dim = sobChartDims(container);
+  const svg = d3.select(container).append("svg")
+    .attr("width", dim.width).attr("height", dim.height)
+    .attr("viewBox", `0 0 ${dim.width} ${dim.height}`)
+    .attr("role", "img").attr("aria-label", "Horizontal bar chart showing percentage change in emissions by sector since 1990, with transport, agriculture and buildings as laggards");
+  const g = svg.append("g").attr("transform", `translate(${dim.margin.left},${dim.margin.top})`);
+
+  const emissions = DATA.ghgEmissions;
+  const first = emissions[0];
+  const last = emissions[emissions.length - 1];
+
+  /* Show % change per sector as horizontal bar */
+  const sectorChanges = [
+    { key: "electricity", label: "Electricity", pct: (last.electricity - first.electricity) / first.electricity * 100, good: true },
+    { key: "industry", label: "Industry", pct: (last.industry - first.industry) / first.industry * 100, good: true },
+    { key: "waste", label: "Waste", pct: (last.waste - first.waste) / first.waste * 100, good: true },
+    { key: "fuel", label: "Fuel supply", pct: (last.fuel - first.fuel) / first.fuel * 100, good: true },
+    { key: "buildings", label: "Buildings", pct: (last.buildings - first.buildings) / first.buildings * 100, good: false },
+    { key: "agriculture", label: "Agriculture", pct: (last.agriculture - first.agriculture) / first.agriculture * 100, good: false },
+    { key: "transport", label: "Transport", pct: (last.transport - first.transport) / first.transport * 100, good: false }
+  ];
+
+  /* --- STEP 0: Highlight transport --- */
+  const allGroup = g.append("g").attr("class", "slope-all");
+  const yBand = d3.scaleBand().domain(sectorChanges.map(d => d.key)).range([0, dim.innerH]).padding(0.25);
+  const xPct = d3.scaleLinear().domain([-90, 0]).range([0, dim.innerW * 0.85]);
+
+  allGroup.append("text").attr("class", "chart-annotation-bold")
+    .attr("x", 0).attr("y", -10).attr("fill", C.ink)
+    .text("Emissions change since 1990 by sector");
+
+  sectorChanges.forEach(s => {
+    const barWidth = xPct(0) - xPct(s.pct);
+    const barX = xPct(s.pct);
+    const isLaggard = s.key === "transport" || s.key === "agriculture" || s.key === "buildings";
+    const color = isLaggard ? C.amber : C.teal;
+
+    allGroup.append("rect")
+      .attr("class", "sector-bar sector-bar-" + s.key)
+      .attr("x", barX)
+      .attr("y", yBand(s.key))
+      .attr("width", barWidth)
+      .attr("height", yBand.bandwidth())
+      .attr("fill", color)
+      .attr("opacity", 0.85)
+      .attr("rx", 2);
+
+    allGroup.append("text").attr("class", "chart-annotation")
+      .attr("x", barX - 6)
+      .attr("y", yBand(s.key) + yBand.bandwidth() / 2 + 4)
+      .attr("text-anchor", "end")
+      .attr("font-weight", 600)
+      .attr("fill", color)
+      .text(d3.format(".0f")(s.pct) + "%");
+
+    allGroup.append("text").attr("class", "chart-annotation")
+      .attr("x", xPct(0) + 6)
+      .attr("y", yBand(s.key) + yBand.bandwidth() / 2 + 4)
+      .attr("fill", C.ink)
+      .attr("font-weight", 500)
+      .text(s.label);
+  });
+
+  /* Zero line */
+  allGroup.append("line")
+    .attr("x1", xPct(0)).attr("x2", xPct(0))
+    .attr("y1", -5).attr("y2", dim.innerH)
+    .attr("stroke", C.muted).attr("stroke-width", 1);
+
+  /* Highlight function */
+  container._highlightLaggards = function(highlight) {
+    const laggards = ["transport", "agriculture", "buildings"];
+    if (highlight) {
+      sectorChanges.forEach(s => {
+        const isLag = laggards.includes(s.key);
+        allGroup.select(".sector-bar-" + s.key)
+          .transition().duration(DURATION)
+          .attr("opacity", isLag ? 1 : 0.2);
+      });
+    } else {
+      /* Highlight transport only */
+      sectorChanges.forEach(s => {
+        const isTrans = s.key === "transport";
+        allGroup.select(".sector-bar-" + s.key)
+          .transition().duration(DURATION)
+          .attr("opacity", isTrans ? 1 : 0.3);
+      });
+    }
+  };
+}
+
+function updateHonestChart(step) {
+  const container = document.getElementById("chart-honest");
+  if (step === 0) {
+    container._highlightLaggards(false);
+  } else {
+    container._highlightLaggards(true);
+  }
+}
+
+/* =========================================================
+   CHART 6: THE GAP — Trajectory to Net Zero
+   ========================================================= */
+function buildGapChart() {
+  const container = document.getElementById("chart-gap");
+  const dim = sobChartDims(container);
+  const svg = d3.select(container).append("svg")
+    .attr("width", dim.width).attr("height", dim.height)
+    .attr("viewBox", `0 0 ${dim.width} ${dim.height}`)
+    .attr("role", "img").attr("aria-label", "Waterfall and projection chart showing the gap between current emissions trajectory and the net zero 2050 target");
+  const g = svg.append("g").attr("transform", `translate(${dim.margin.left},${dim.margin.top})`);
+
+  const emissions = DATA.ghgEmissions;
+  const last = emissions[emissions.length - 1];
+
+  /* --- STEP 0: Waterfall of what's been cut vs what remains --- */
+  const waterfallGroup = g.append("g").attr("class", "waterfall-view");
+  const first = emissions[0];
+
+  const segments = [
+    { label: "1990 total", value: first.total, type: "start" },
+    { label: "Electricity", value: -(first.electricity - last.electricity), type: "cut" },
+    { label: "Industry", value: -(first.industry - last.industry), type: "cut" },
+    { label: "Waste", value: -(first.waste - last.waste), type: "cut" },
+    { label: "Fuel supply", value: -(first.fuel - last.fuel), type: "cut" },
+    { label: "Buildings", value: -(first.buildings - last.buildings), type: "cut" },
+    { label: "Transport", value: -(first.transport - last.transport), type: "small" },
+    { label: "Agriculture", value: -(first.agriculture - last.agriculture), type: "small" },
+    { label: "2024 total", value: last.total, type: "end" }
+  ];
+
+  /* Compute waterfall positions */
+  let running = first.total;
+  segments.forEach((s, i) => {
+    if (i === 0) {
+      s.y0 = 0;
+      s.y1 = first.total;
+    } else if (s.type === "end") {
+      s.y0 = 0;
+      s.y1 = last.total;
+    } else {
+      s.y0 = running + s.value;
+      s.y1 = running;
+      running = s.y0;
+    }
+  });
+
+  const xWat = d3.scaleBand().domain(segments.map(d => d.label)).range([0, dim.innerW]).padding(0.15);
+  const yWat = d3.scaleLinear().domain([0, 900]).range([dim.innerH, 0]);
+
+  waterfallGroup.append("g").attr("class", "grid")
+    .call(d3.axisLeft(yWat).ticks(5).tickSize(-dim.innerW).tickFormat(""))
+    .call(gg => gg.select(".domain").remove());
+  waterfallGroup.append("g").attr("class", "axis y-axis")
+    .call(d3.axisLeft(yWat).ticks(5).tickFormat((d, i) => i === 0 ? d + " Mt" : d).tickSize(0))
+    .call(gg => gg.select(".domain").remove());
+
+  waterfallGroup.append("text").attr("class", "chart-annotation-bold")
+    .attr("x", 0).attr("y", -10).attr("fill", C.ink)
+    .text("What was cut and what remains");
+
+  segments.forEach((s, i) => {
+    const color = s.type === "start" ? "#94A3B8" : s.type === "end" ? "#64748B" : s.type === "small" ? C.amberLight : C.tealLight;
+    const barColor = s.type === "start" ? "#94A3B8" : s.type === "end" ? "#64748B" : s.type === "small" ? C.amber : C.teal;
+    const top = Math.min(yWat(s.y0), yWat(s.y1));
+    const height = Math.abs(yWat(s.y0) - yWat(s.y1));
+
+    waterfallGroup.append("rect")
+      .attr("x", xWat(s.label))
+      .attr("y", top)
+      .attr("width", xWat.bandwidth())
+      .attr("height", Math.max(height, 1))
+      .attr("fill", barColor)
+      .attr("opacity", s.type === "small" ? 0.5 : 0.85)
+      .attr("rx", 2);
+
+    /* Connector line to next segment */
+    if (i > 0 && i < segments.length - 1) {
+      waterfallGroup.append("line")
+        .attr("x1", xWat(s.label) + xWat.bandwidth())
+        .attr("x2", xWat(segments[i + 1].label))
+        .attr("y1", yWat(s.y0))
+        .attr("y2", yWat(s.y0))
+        .attr("stroke", C.faint).attr("stroke-width", 1).attr("stroke-dasharray", "3,2");
+    }
+
+    /* Value label */
+    if (height > 20) {
+      const labelVal = s.type === "start" || s.type === "end" ? d3.format(",.0f")(s.y1) : d3.format("+.0f")(s.value);
+      waterfallGroup.append("text").attr("class", "chart-annotation")
+        .attr("x", xWat(s.label) + xWat.bandwidth() / 2)
+        .attr("y", top - 6)
+        .attr("text-anchor", "middle")
+        .attr("fill", barColor)
+        .attr("font-weight", 600)
+        .attr("font-size", "11px")
+        .text(labelVal);
+    }
+  });
+
+  /* X axis labels (rotated slightly for space) */
+  waterfallGroup.append("g").attr("class", "axis x-axis")
+    .attr("transform", `translate(0,${dim.innerH})`)
+    .call(d3.axisBottom(xWat).tickSize(0))
+    .call(gg => {
+      gg.select(".domain").remove();
+      gg.selectAll("text").attr("font-size", "11px")
+        .attr("transform", "rotate(-40)").attr("text-anchor", "end").attr("dx", "-4px").attr("dy", "4px");
+    });
+
+  /* --- STEP 1: Projection line to 2050 --- */
+  const projGroup = g.append("g").attr("class", "proj-view").style("opacity", 0).style("pointer-events", "none");
+
+  const xProj = d3.scaleLinear().domain([1990, 2055]).range([0, dim.innerW]);
+  const yProj = d3.scaleLinear().domain([0, 900]).range([dim.innerH, 0]);
+
+  projGroup.append("g").attr("class", "grid")
+    .call(d3.axisLeft(yProj).ticks(6).tickSize(-dim.innerW).tickFormat(""))
+    .call(gg => gg.select(".domain").remove());
+  projGroup.append("g").attr("class", "axis y-axis")
+    .call(d3.axisLeft(yProj).ticks(6).tickFormat((d, i) => i === 0 ? d + " Mt CO\u2082e" : d).tickSize(0))
+    .call(gg => gg.select(".domain").remove());
+  projGroup.append("g").attr("class", "axis x-axis")
+    .attr("transform", `translate(0,${dim.innerH})`)
+    .call(d3.axisBottom(xProj).ticks(sobIsMobile() ? 5 : 8).tickFormat(d3.format("d")).tickSize(0))
+    .call(gg => gg.select(".domain").remove());
+
+  projGroup.append("text").attr("class", "chart-annotation-bold")
+    .attr("x", 0).attr("y", -10).attr("fill", C.ink)
+    .text("The road to net zero");
+
+  /* Historic line */
+  const histLine = d3.line().x(d => xProj(d.year)).y(d => yProj(d.total)).curve(d3.curveMonotoneX);
+  const histArea = d3.area().x(d => xProj(d.year)).y0(dim.innerH).y1(d => yProj(d.total)).curve(d3.curveMonotoneX);
+  projGroup.append("path").datum(emissions).attr("d", histArea).attr("fill", C.tealLight);
+  projGroup.append("path").datum(emissions).attr("d", histLine)
+    .attr("fill", "none").attr("stroke", C.teal).attr("stroke-width", 2.5);
+
+  /* Linear projection from recent trend (2014-2024) */
+  const recent = emissions.filter(d => d.year >= 2014);
+  const n = recent.length;
+  const sumX = recent.reduce((s, d) => s + d.year, 0);
+  const sumY = recent.reduce((s, d) => s + d.total, 0);
+  const sumXY = recent.reduce((s, d) => s + d.year * d.total, 0);
+  const sumX2 = recent.reduce((s, d) => s + d.year * d.year, 0);
+  const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+  const intercept = (sumY - slope * sumX) / n;
+
+  const projData = [];
+  for (let yr = 2024; yr <= 2050; yr++) {
+    projData.push({ year: yr, total: Math.max(0, slope * yr + intercept) });
+  }
+
+  const projLine = d3.line().x(d => xProj(d.year)).y(d => yProj(d.total)).curve(d3.curveMonotoneX);
+  projGroup.append("path").datum(projData).attr("d", projLine)
+    .attr("fill", "none").attr("stroke", C.amber).attr("stroke-width", 2)
+    .attr("stroke-dasharray", "6,4");
+
+  /* Target line to zero */
+  const targetData = [
+    { year: 2024, total: last.total },
+    { year: 2050, total: 0 }
+  ];
+  const targetLine = d3.line().x(d => xProj(d.year)).y(d => yProj(d.total));
+  projGroup.append("path").datum(targetData).attr("d", targetLine)
+    .attr("fill", "none").attr("stroke", C.green).attr("stroke-width", 2)
+    .attr("stroke-dasharray", "8,4");
+
+  /* Net zero target label */
+  projGroup.append("circle")
+    .attr("cx", xProj(2050)).attr("cy", yProj(0)).attr("r", 5)
+    .attr("fill", C.green).attr("stroke", "#fff").attr("stroke-width", 2);
+  projGroup.append("text").attr("class", "chart-annotation-bold")
+    .attr("x", xProj(2050) - 10).attr("y", yProj(0) - 14)
+    .attr("text-anchor", "end").attr("fill", C.green)
+    .text("Net zero target");
+
+  /* Projected level at 2050 */
+  const proj2050 = projData.find(d => d.year === 2050);
+  if (proj2050 && proj2050.total > 0) {
+    projGroup.append("circle")
+      .attr("cx", xProj(2050)).attr("cy", yProj(proj2050.total)).attr("r", 5)
+      .attr("fill", C.amber).attr("stroke", "#fff").attr("stroke-width", 2);
+    projGroup.append("text").attr("class", "chart-annotation-bold")
+      .attr("x", xProj(2050) - 10).attr("y", yProj(proj2050.total) - 14)
+      .attr("text-anchor", "end").attr("fill", C.amber)
+      .text("Current trajectory: ~" + d3.format(",.0f")(proj2050.total) + " Mt");
+
+    /* Gap arrow */
+    const gapX = xProj(2050) + 8;
+    projGroup.append("line")
+      .attr("x1", gapX).attr("x2", gapX)
+      .attr("y1", yProj(proj2050.total)).attr("y2", yProj(0))
+      .attr("stroke", C.amber).attr("stroke-width", 2);
+    projGroup.append("line")
+      .attr("x1", gapX - 5).attr("x2", gapX + 5)
+      .attr("y1", yProj(proj2050.total)).attr("y2", yProj(proj2050.total))
+      .attr("stroke", C.amber).attr("stroke-width", 2);
+    projGroup.append("line")
+      .attr("x1", gapX - 5).attr("x2", gapX + 5)
+      .attr("y1", yProj(0)).attr("y2", yProj(0))
+      .attr("stroke", C.amber).attr("stroke-width", 2);
+    projGroup.append("text").attr("class", "chart-annotation-bold")
+      .attr("x", gapX + 8).attr("y", (yProj(proj2050.total) + yProj(0)) / 2 + 5)
+      .attr("fill", C.amber).text("Gap");
+  }
+
+  /* Labels */
+  projGroup.append("text").attr("class", "chart-annotation")
+    .attr("x", xProj(2037)).attr("y", yProj(slope * 2037 + intercept) - 12)
+    .attr("fill", C.amber).attr("text-anchor", "middle")
+    .text("Current pace");
+  projGroup.append("text").attr("class", "chart-annotation")
+    .attr("x", xProj(2037)).attr("y", yProj(last.total * (1 - (2037 - 2024) / (2050 - 2024))) - 12)
+    .attr("fill", C.green).attr("text-anchor", "middle")
+    .text("Required pace");
+
+  /* Hover on projection */
+  const hoverRect = projGroup.append("rect")
+    .attr("width", dim.innerW).attr("height", dim.innerH)
+    .attr("fill", "transparent").style("cursor", "crosshair");
+  const hoverLine = projGroup.append("line")
+    .attr("y1", 0).attr("y2", dim.innerH)
+    .attr("stroke", "#999").attr("stroke-width", 1).attr("stroke-dasharray", "3,2").style("opacity", 0);
+  const hoverDot = projGroup.append("circle").attr("r", 4).attr("fill", C.teal).style("opacity", 0);
+
+  hoverRect.on("mousemove", function(event) {
+    const [mx] = d3.pointer(event, this);
+    const year = Math.round(xProj.invert(mx));
+    const d = emissions.find(e => e.year === year);
+    if (!d) return;
+    hoverLine.attr("x1", xProj(year)).attr("x2", xProj(year)).style("opacity", 1);
+    hoverDot.attr("cx", xProj(year)).attr("cy", yProj(d.total)).style("opacity", 1);
+    const change = ((d.total - emissions[0].total) / emissions[0].total * 100);
+    sobShowTooltip(`<div class="tt-label">${year}</div>
+      <div class="tt-value">Total: ${d3.format(",.1f")(d.total)} Mt CO\u2082e</div>
+      <div class="tt-value" style="color:${C.teal}">Change from 1990: ${d3.format("+.1f")(change)}%</div>`, event);
+  }).on("mouseleave", function() {
+    hoverLine.style("opacity", 0); hoverDot.style("opacity", 0); sobHideTooltip();
+  });
+}
+
+function updateGapChart(step) {
+  const svg = d3.select("#chart-gap svg");
+  const FADE_OUT = Math.round(DURATION * 0.5);
+  if (step === 0) {
+    svg.select(".proj-view").transition().duration(FADE_OUT).style("opacity", 0).on("end", function() { d3.select(this).style("pointer-events", "none"); });
+    svg.select(".waterfall-view").transition().delay(FADE_OUT).duration(DURATION).style("opacity", 1).on("end", function() { d3.select(this).style("pointer-events", "all"); });
+  } else {
+    svg.select(".waterfall-view").transition().duration(FADE_OUT).style("opacity", 0).on("end", function() { d3.select(this).style("pointer-events", "none"); });
+    svg.select(".proj-view").transition().delay(FADE_OUT).duration(DURATION).style("opacity", 1).on("end", function() { d3.select(this).style("pointer-events", "all"); });
+  }
+}
+
+/* =========================================================
+   UPDATE DISPATCHER
+   ========================================================= */
+function updateChart(section, step) {
+  switch (section) {
+    case "hook": updateHookChart(step); break;
+    case "sectors": updateSectorsChart(step); break;
+    case "air": updateAirChart(step); break;
+    case "ev": updateEvChart(step); break;
+    case "honest": updateHonestChart(step); break;
+    case "gap": updateGapChart(step); break;
+  }
+}
+
+/* =========================================================
+   SCROLLYTELLING — IntersectionObserver
+   ========================================================= */
+function setupScrollObserver() { sobSetupScrollObserver("hook"); })();

@@ -1,0 +1,6 @@
+/* fertility.html — page-specific styles */
+/* Page-specific styles */
+#loading-screen .spinner { border-top-color: #9F1239; }
+.site-header .kicker { color: #9F1239; }
+.site-footer a { color: #9F1239; }
+.big-number.rose { color: #9F1239; }

@@ -1,0 +1,14 @@
+/* debt.html — page-specific styles */
+/* Page-specific styles */
+#loading-screen .spinner { border-top-color: #991B1B; }
+.site-header .kicker { color: #991B1B; }
+.site-footer a { color: #991B1B; }
+.big-number.crimson { color: #991B1B; }
+.big-number.blue { color: #1E40AF; }
+.context-stat {
+  font-size: 1rem;
+  color: #555555;
+  margin-top: 4px;
+  line-height: 1.5;
+}
+.context-stat strong { color: #991B1B; font-weight: 600; }

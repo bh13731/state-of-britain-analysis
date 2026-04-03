@@ -38,7 +38,8 @@ function startServer() {
       const urlPath = req.url.split('?')[0];
       const filePath = path.join(ROOT_DIR, urlPath === '/' ? '/index.html' : urlPath);
       // Prevent path traversal — reject requests that escape ROOT_DIR
-      if (!filePath.startsWith(ROOT_DIR)) {
+      // Use ROOT_DIR + path.sep to avoid prefix collision (e.g. /a/b matching /a/b-extra)
+      if (!filePath.startsWith(ROOT_DIR + path.sep)) {
         res.writeHead(403);
         res.end('Forbidden');
         return;

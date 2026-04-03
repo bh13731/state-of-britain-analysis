@@ -241,7 +241,7 @@ async function testPage(BASE, browser, pageDef, viewport) {
     failures.push(`${prefix}: ERROR - ${err.message}`);
     console.log(`  ERROR: ${prefix}: ${err.message}`);
   } finally {
-    await page.close();
+    try { await page.close(); } catch (_) {}
   }
 }
 
@@ -311,7 +311,7 @@ async function run() {
       }
     }
   } finally {
-    try { if (browser) await browser.close(); } catch (_) { /* browser already gone */ }
+    try { if (browser) await browser.close(); } catch (e) { console.error('browser.close() failed:', e.message); }
     server.close();
   }
 

@@ -254,6 +254,7 @@ function httpGet(port, rawPath) {
       resolve(res.statusCode);
     });
     req.on('error', reject);
+    req.setTimeout(5000, () => { req.destroy(new Error('httpGet timed out after 5s')); });
     req.end();
   });
 }
@@ -287,14 +288,14 @@ async function run() {
 
   console.log(`Started static file server on port ${port}`);
 
-  // Run path traversal security tests first (no browser needed)
-  await testPathTraversalBlocked(port);
-
-  console.log('\nStarting mobile responsiveness tests...\n');
-  console.log(`Testing ${ALL_PAGES.length} pages x ${VIEWPORTS.length} viewports = ${ALL_PAGES.length * VIEWPORTS.length} combinations\n`);
-
   let browser;
   try {
+    // Run path traversal security tests first (no browser needed)
+    await testPathTraversalBlocked(port);
+
+    console.log('\nStarting mobile responsiveness tests...\n');
+    console.log(`Testing ${ALL_PAGES.length} pages x ${VIEWPORTS.length} viewports = ${ALL_PAGES.length * VIEWPORTS.length} combinations\n`);
+
     browser = await puppeteer.launch({
       headless: 'new',
       args: ['--no-sandbox', '--disable-setuid-sandbox'],

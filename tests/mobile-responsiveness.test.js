@@ -250,6 +250,7 @@ function httpGet(port, rawPath) {
     // Use explicit options to send the raw path without URL normalization
     // (new URL() resolves '../' sequences, which would defeat the test)
     const req = http.request({ hostname: '127.0.0.1', port, path: rawPath, method: 'GET' }, (res) => {
+      req.setTimeout(0); // Cancel the timeout now that we have a response
       res.resume();
       resolve(res.statusCode);
     });
@@ -310,7 +311,7 @@ async function run() {
       }
     }
   } finally {
-    if (browser) await browser.close();
+    try { if (browser) await browser.close(); } catch (_) { /* browser already gone */ }
     server.close();
   }
 

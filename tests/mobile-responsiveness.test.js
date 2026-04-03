@@ -37,6 +37,12 @@ function startServer() {
     const server = http.createServer((req, res) => {
       const urlPath = req.url.split('?')[0];
       const filePath = path.join(ROOT_DIR, urlPath === '/' ? '/index.html' : urlPath);
+      // Prevent path traversal — reject requests that escape ROOT_DIR
+      if (!filePath.startsWith(ROOT_DIR)) {
+        res.writeHead(403);
+        res.end('Forbidden');
+        return;
+      }
       const ext = path.extname(filePath);
       fs.readFile(filePath, (err, data) => {
         if (err) {

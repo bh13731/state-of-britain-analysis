@@ -10,13 +10,50 @@
  *  - Text is readable (font sizes)
  *  - Images/SVGs don't overflow
  *
- * Run:  node tests/mobile-responsiveness.test.js
- * Requires: puppeteer, local server on port 8000
+ * Run:  npm test
+ * The test automatically starts and stops a local static file server.
  */
 
 const puppeteer = require('puppeteer');
+const http = require('http');
+const fs = require('fs');
+const path = require('path');
 
-const BASE = 'http://localhost:8000';
+const ROOT_DIR = path.resolve(__dirname, '..');
+
+const MIME_TYPES = {
+  '.html': 'text/html',
+  '.css': 'text/css',
+  '.js': 'application/javascript',
+  '.json': 'application/json',
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.svg': 'image/svg+xml',
+  '.ico': 'image/x-icon',
+};
+
+function startServer() {
+  return new Promise((resolve, reject) => {
+    const server = http.createServer((req, res) => {
+      const urlPath = req.url.split('?')[0];
+      const filePath = path.join(ROOT_DIR, urlPath === '/' ? '/index.html' : urlPath);
+      const ext = path.extname(filePath);
+      fs.readFile(filePath, (err, data) => {
+        if (err) {
+          res.writeHead(404);
+          res.end('Not Found');
+          return;
+        }
+        res.writeHead(200, { 'Content-Type': MIME_TYPES[ext] || 'application/octet-stream' });
+        res.end(data);
+      });
+    });
+    server.listen(0, '127.0.0.1', () => {
+      resolve(server);
+    });
+    server.on('error', reject);
+  });
+}
 
 const VIEWPORTS = [
   { name: 'iPhone SE', width: 375, height: 667 },
@@ -50,7 +87,7 @@ function assert(condition, testName) {
   }
 }
 
-async function testPage(browser, pageDef, viewport) {
+async function testPage(BASE, browser, pageDef, viewport) {
   const prefix = `[${viewport.name} ${viewport.width}px] ${pageDef.name}`;
   const page = await browser.newPage();
   await page.setViewport({ width: viewport.width, height: viewport.height });
@@ -101,7 +138,7 @@ async function testPage(browser, pageDef, viewport) {
       });
       assert(headerVisible, `${prefix}: hub header h1 is visible`);
 
-      // 6. Card CTA touch targets
+      // 6. Card CTA touch targets (44px minimum per WCAG)
       if (viewport.width < 768) {
         const ctaSize = await page.evaluate(() => {
           const ctas = document.querySelectorAll('.card-cta');
@@ -112,7 +149,7 @@ async function testPage(browser, pageDef, viewport) {
           }
           return minH;
         });
-        assert(ctaSize >= 42, `${prefix}: card CTA touch target >= 44px (got ${Math.round(ctaSize)}px)`);
+        assert(ctaSize >= 44, `${prefix}: card CTA touch target >= 44px (got ${Math.round(ctaSize)}px)`);
       }
 
     } else {
@@ -182,14 +219,14 @@ async function testPage(browser, pageDef, viewport) {
         });
         assert(!bigNumOverflow, `${prefix}: big numbers don't overflow viewport`);
 
-        // 10. Nav link touch target
+        // 10. Nav link touch target (44px minimum per WCAG)
         const navLinkSize = await page.evaluate(() => {
           const link = document.querySelector('nav a');
           if (!link) return 44;
           const rect = link.getBoundingClientRect();
           return Math.max(rect.height, parseFloat(window.getComputedStyle(link).minHeight) || rect.height);
         });
-        assert(navLinkSize >= 40, `${prefix}: nav link touch target >= 40px (got ${Math.round(navLinkSize)}px)`);
+        assert(navLinkSize >= 44, `${prefix}: nav link touch target >= 44px (got ${Math.round(navLinkSize)}px)`);
       }
     }
   } catch (err) {
@@ -202,24 +239,41 @@ async function testPage(browser, pageDef, viewport) {
 }
 
 async function run() {
+  // Start built-in static file server
+  let server;
+  try {
+    server = await startServer();
+  } catch (err) {
+    console.error(`SETUP ERROR: Could not start static file server: ${err.message}`);
+    process.exit(1);
+  }
+
+  const port = server.address().port;
+  const BASE = `http://127.0.0.1:${port}`;
+
+  console.log(`Started static file server on port ${port}`);
   console.log('Starting mobile responsiveness tests...\n');
   console.log(`Testing ${ALL_PAGES.length} pages x ${VIEWPORTS.length} viewports = ${ALL_PAGES.length * VIEWPORTS.length} combinations\n`);
 
-  const browser = await puppeteer.launch({
-    headless: 'new',
-    args: ['--no-sandbox', '--disable-setuid-sandbox'],
-  });
+  let browser;
+  try {
+    browser = await puppeteer.launch({
+      headless: 'new',
+      args: ['--no-sandbox', '--disable-setuid-sandbox'],
+    });
 
-  for (const viewport of VIEWPORTS) {
-    console.log(`\n--- ${viewport.name} (${viewport.width}x${viewport.height}) ---`);
-    // Run pages in parallel batches of 5
-    for (let i = 0; i < ALL_PAGES.length; i += 5) {
-      const batch = ALL_PAGES.slice(i, i + 5);
-      await Promise.all(batch.map(p => testPage(browser, p, viewport)));
+    for (const viewport of VIEWPORTS) {
+      console.log(`\n--- ${viewport.name} (${viewport.width}x${viewport.height}) ---`);
+      // Run pages in parallel batches of 5
+      for (let i = 0; i < ALL_PAGES.length; i += 5) {
+        const batch = ALL_PAGES.slice(i, i + 5);
+        await Promise.all(batch.map(p => testPage(BASE, browser, p, viewport)));
+      }
     }
+  } finally {
+    if (browser) await browser.close();
+    server.close();
   }
-
-  await browser.close();
 
   console.log(`\n${'='.repeat(50)}`);
   console.log(`Results: ${passed} passed, ${failed} failed out of ${passed + failed} tests`);

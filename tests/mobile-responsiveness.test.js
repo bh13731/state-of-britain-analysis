@@ -15,8 +15,45 @@
  */
 
 const puppeteer = require('puppeteer');
+const http = require('http');
+const fs = require('fs');
+const path = require('path');
 
-const BASE = 'http://localhost:8000';
+const ROOT_DIR = path.resolve(__dirname, '..');
+
+const MIME_TYPES = {
+  '.html': 'text/html',
+  '.css': 'text/css',
+  '.js': 'application/javascript',
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.svg': 'image/svg+xml',
+  '.json': 'application/json',
+};
+
+function startServer() {
+  return new Promise((resolve, reject) => {
+    const server = http.createServer((req, res) => {
+      const url = new URL(req.url, 'http://localhost');
+      const filePath = path.join(ROOT_DIR, decodeURIComponent(url.pathname));
+      if (!filePath.startsWith(ROOT_DIR + path.sep) && filePath !== ROOT_DIR) {
+        res.writeHead(403); res.end('Forbidden'); return;
+      }
+      const target = filePath.endsWith('/') || filePath === ROOT_DIR
+        ? path.join(filePath, 'index.html') : filePath;
+      fs.readFile(target, (err, data) => {
+        if (err) { res.writeHead(404); res.end('Not found'); return; }
+        const ext = path.extname(target).toLowerCase();
+        res.writeHead(200, { 'Content-Type': MIME_TYPES[ext] || 'application/octet-stream' });
+        res.end(data);
+      });
+    });
+    server.listen(0, '127.0.0.1', () => resolve(server));
+    server.on('error', reject);
+  });
+}
+
+let BASE; // set after server starts
 
 const VIEWPORTS = [
   { name: 'iPhone SE', width: 375, height: 667 },
@@ -202,6 +239,11 @@ async function testPage(browser, pageDef, viewport) {
 }
 
 async function run() {
+  const server = await startServer();
+  const port = server.address().port;
+  BASE = `http://127.0.0.1:${port}`;
+
+  console.log(`Static server on port ${port}`);
   console.log('Starting mobile responsiveness tests...\n');
   console.log(`Testing ${ALL_PAGES.length} pages x ${VIEWPORTS.length} viewports = ${ALL_PAGES.length * VIEWPORTS.length} combinations\n`);
 
@@ -219,7 +261,8 @@ async function run() {
     }
   }
 
-  await browser.close();
+  try { await browser.close(); } catch (e) { console.error('browser.close() failed:', e.message); }
+  server.close();
 
   console.log(`\n${'='.repeat(50)}`);
   console.log(`Results: ${passed} passed, ${failed} failed out of ${passed + failed} tests`);

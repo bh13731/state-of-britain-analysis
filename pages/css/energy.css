@@ -1,3 +1,4 @@
+:root { --accent: #059669; }
 /* energy.html — page-specific styles */
 /* Page-specific styles */
 #loading-screen .spinner { border-top-color: #059669; }

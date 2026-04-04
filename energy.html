@@ -5,6 +5,13 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://d3js.org; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src https://stateofbritain.uk; img-src 'self' data:;">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="description" content="How Britain's electricity grid transformed from coal to renewables — a quiet revolution in energy generation.">
+<meta property="og:title" content="State of Britain — Energy">
+<meta property="og:description" content="How Britain's electricity grid transformed from coal to renewables — a quiet revolution in energy generation.">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="State of Britain">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="State of Britain — Energy">
+<meta name="twitter:description" content="How Britain's electricity grid transformed from coal to renewables — a quiet revolution in energy generation.">
 <title>State of Britain — Energy</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -16,6 +23,7 @@
 <link rel="stylesheet" href="pages/css/energy.css">
 </head>
 <body>
+<div class="progress-bar" id="progress-bar"></div>
 <a class="skip-link" href="#main-content">Skip to content</a>
 
 <div id="loading-screen" role="status" aria-live="polite">
@@ -169,6 +177,17 @@
 </section>
 
 </main>
+
+<nav class="story-pagination hidden-until-loaded" aria-label="Story navigation">
+  <a href="immigration.html">
+    <span class="page-dir">&larr; Previous story</span>
+    <span class="page-title">The migration surge</span>
+  </a>
+  <a href="environment.html" class="next-link">
+    <span class="page-dir">Next story &rarr;</span>
+    <span class="page-title">Clearing the air</span>
+  </a>
+</nav>
 
 <footer class="site-footer hidden-until-loaded" id="site-footer" role="contentinfo">
   <p><strong>Sources:</strong> Department for Energy Security and Net Zero (DESNZ); Digest of UK Energy Statistics (DUKES) 2025.<br>

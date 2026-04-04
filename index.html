@@ -135,19 +135,19 @@ body {
   transform: translateY(-2px);
 }
 
-/* Fade-in animation */
-.story-card {
+/* Fade-in animation — only activates when JS adds .animate-cards to .hub */
+.hub.animate-cards .story-card {
   opacity: 0;
   transform: translateY(20px);
   transition: opacity 0.5s ease, transform 0.5s ease, border-color 0.2s, box-shadow 0.2s;
 }
-.story-card.visible {
+.hub.animate-cards .story-card.visible {
   opacity: 1;
   transform: translateY(0);
 }
 .story-card.visible:hover { transform: translateY(-2px); }
 @media (prefers-reduced-motion: reduce) {
-  .story-card { opacity: 1; transform: none; transition: border-color 0.2s, box-shadow 0.2s; }
+  .hub.animate-cards .story-card { opacity: 1; transform: none; transition: border-color 0.2s, box-shadow 0.2s; }
 }
 
 .story-card::before {
@@ -464,24 +464,6 @@ body {
   </footer>
 </div>
 
-<script>
-(function() {
-  var cards = document.querySelectorAll('.story-card');
-  if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    var observer = new IntersectionObserver(function(entries) {
-      entries.forEach(function(entry) {
-        if (entry.isIntersecting) {
-          var idx = Array.prototype.indexOf.call(cards, entry.target);
-          setTimeout(function() { entry.target.classList.add('visible'); }, idx % 3 * 100);
-          observer.unobserve(entry.target);
-        }
-      });
-    }, { threshold: 0.1 });
-    cards.forEach(function(card) { observer.observe(card); });
-  } else {
-    cards.forEach(function(card) { card.classList.add('visible'); });
-  }
-})();
-</script>
+<script src="pages/js/hub.js"></script>
 </body>
 </html>

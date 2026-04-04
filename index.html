@@ -127,8 +127,22 @@ body {
 
 .story-card:hover {
   border-color: #C5C5C0;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+  box-shadow: 0 6px 24px rgba(0,0,0,0.08);
   transform: translateY(-2px);
+}
+
+/* Fade-in animation */
+.story-card {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.5s ease, transform 0.5s ease, border-color 0.2s, box-shadow 0.2s;
+}
+.story-card.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+@media (prefers-reduced-motion: reduce) {
+  .story-card { opacity: 1; transform: none; transition: border-color 0.2s, box-shadow 0.2s; }
 }
 
 .story-card::before {
@@ -184,6 +198,28 @@ body {
   margin-bottom: 8px;
   letter-spacing: -0.01em;
 }
+
+.story-card .card-stat {
+  font-family: 'Source Serif 4', Georgia, serif;
+  font-size: 1.6rem;
+  font-weight: 700;
+  line-height: 1.1;
+  margin-bottom: 10px;
+}
+.story-card.spending .card-stat { color: #C53030; }
+.story-card.debt .card-stat { color: #991B1B; }
+.story-card.nhs .card-stat { color: #0E7490; }
+.story-card.water .card-stat { color: #5B7553; }
+.story-card.immigration .card-stat { color: #B45309; }
+.story-card.infrastructure .card-stat { color: #475569; }
+.story-card.defence .card-stat { color: #4A5D23; }
+.story-card.inflation .card-stat { color: #DC2626; }
+.story-card.productivity .card-stat { color: #4338CA; }
+.story-card.education .card-stat { color: #0D9488; }
+.story-card.fertility .card-stat { color: #9F1239; }
+.story-card.justice .card-stat { color: #334155; }
+.story-card.energy .card-stat { color: #059669; }
+.story-card.environment .card-stat { color: #0891B2; }
 
 .story-card .card-desc {
   font-size: 0.92rem;
@@ -287,12 +323,14 @@ body {
       <a href="productivity.html" class="story-card productivity">
         <div class="card-kicker">Productivity</div>
         <h3>The lost decade</h3>
+        <div class="card-stat">0% growth since 2008</div>
         <p class="card-desc">Output per hour flatlined after 2008. If you can't produce more, you can't pay more. Everything else follows from this.</p>
         <span class="card-cta">Read story</span>
       </a>
       <a href="fertility.html" class="story-card fertility">
         <div class="card-kicker">Demographics</div>
         <h3>The baby bust</h3>
+        <div class="card-stat">1.44 TFR</div>
         <p class="card-desc">The fertility rate has fallen below 1.5 &mdash; the lowest ever. Fewer babies today means fewer workers tomorrow, and a pension system that can't sustain itself.</p>
         <span class="card-cta">Read story</span>
       </a>
@@ -312,18 +350,21 @@ body {
       <a href="spending.html" class="story-card spending">
         <div class="card-kicker">Public Finances</div>
         <h3>Where the money goes</h3>
+        <div class="card-stat">&pound;153bn/yr borrowed</div>
         <p class="card-desc">Britain borrows &pound;153bn a year. Debt approaches 100% of GDP. How much the government raises, what it spends, and why the gap keeps growing.</p>
         <span class="card-cta">Read story</span>
       </a>
       <a href="debt.html" class="story-card debt">
         <div class="card-kicker">Debt &amp; QE</div>
         <h3>The bill</h3>
+        <div class="card-stat">&pound;106bn/yr interest</div>
         <p class="card-desc">&pound;106bn a year in debt interest &mdash; &pound;290m a day. The decade of &ldquo;free money&rdquo; is over, and QE losses are costing billions more.</p>
         <span class="card-cta">Read story</span>
       </a>
       <a href="inflation.html" class="story-card inflation">
         <div class="card-kicker">Cost of Living</div>
         <h3>The squeeze</h3>
+        <div class="card-stat">40-year high</div>
         <p class="card-desc">The fastest price rises in 40 years. Everything costs more, permanently. Inflation fell, but the prices didn't.</p>
         <span class="card-cta">Read story</span>
       </a>
@@ -343,42 +384,49 @@ body {
       <a href="nhs.html" class="story-card nhs">
         <div class="card-kicker">NHS</div>
         <h3>The waiting game</h3>
+        <div class="card-stat">7.6m waiting</div>
         <p class="card-desc">7.6 million on the waiting list. A&E targets abandoned. How the health service stopped meeting its own standards.</p>
         <span class="card-cta">Read story</span>
       </a>
       <a href="education.html" class="story-card education">
         <div class="card-kicker">Education</div>
         <h3>Falling behind</h3>
+        <div class="card-stat">&minus;9% per-pupil</div>
         <p class="card-desc">PISA scores declining. Per-pupil funding cut in real terms. A generation educated on less.</p>
         <span class="card-cta">Read story</span>
       </a>
       <a href="justice.html" class="story-card justice">
         <div class="card-kicker">Justice</div>
         <h3>Justice delayed</h3>
+        <div class="card-stat">5.5% charge rate</div>
         <p class="card-desc">Court backlogs at record highs. Prisons overflowing. A 5.5% charging rate. The system failing at every stage.</p>
         <span class="card-cta">Read story</span>
       </a>
       <a href="defence.html" class="story-card defence">
         <div class="card-kicker">Defence</div>
         <h3>The defence gap</h3>
+        <div class="card-stat">Smallest since 1800</div>
         <p class="card-desc">The smallest military since Napoleon. NATO targets barely met. A shrinking force in a more dangerous world.</p>
         <span class="card-cta">Read story</span>
       </a>
       <a href="infrastructure.html" class="story-card infrastructure">
         <div class="card-kicker">Infrastructure</div>
         <h3>Crumbling</h3>
+        <div class="card-stat">1 in 5 roads poor</div>
         <p class="card-desc">Potholes, late trains, patchy broadband. The physical fabric of the country deteriorating.</p>
         <span class="card-cta">Read story</span>
       </a>
       <a href="water.html" class="story-card water">
         <div class="card-kicker">Water</div>
         <h3>Dirty water</h3>
+        <div class="card-stat">3.6m hrs sewage</div>
         <p class="card-desc">Sewage in rivers. Pollution rising. A privatised monopoly that stopped investing in the system.</p>
         <span class="card-cta">Read story</span>
       </a>
       <a href="immigration.html" class="story-card immigration">
         <div class="card-kicker">Immigration</div>
         <h3>The migration surge</h3>
+        <div class="card-stat">906k net (2023)</div>
         <p class="card-desc">Net migration tripled. Immigration fills the workforce gaps that low fertility and low productivity create &mdash; but generates pressures of its own.</p>
         <span class="card-cta">Read story</span>
       </a>
@@ -398,12 +446,14 @@ body {
       <a href="energy.html" class="story-card energy">
         <div class="card-kicker">Energy</div>
         <h3>The green grid</h3>
+        <div class="card-stat">Coal &rarr; 0%</div>
         <p class="card-desc">Coal generated a third of Britain's electricity in 1990. Now it's essentially zero. A quiet revolution in how Britain powers itself.</p>
         <span class="card-cta">Read story</span>
       </a>
       <a href="environment.html" class="story-card environment">
         <div class="card-kicker">Environment</div>
         <h3>Clearing the air</h3>
+        <div class="card-stat">Emissions &minus;50%</div>
         <p class="card-desc">Emissions halved. Air pollution down 76%. EVs surging. Decarbonisation is working &mdash; but the hard part is just beginning.</p>
         <span class="card-cta">Read story</span>
       </a>
@@ -417,5 +467,24 @@ body {
   </footer>
 </div>
 
+<script>
+(function() {
+  var cards = document.querySelectorAll('.story-card');
+  if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    var observer = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          var idx = Array.prototype.indexOf.call(cards, entry.target);
+          setTimeout(function() { entry.target.classList.add('visible'); }, idx % 3 * 100);
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.1 });
+    cards.forEach(function(card) { observer.observe(card); });
+  } else {
+    cards.forEach(function(card) { card.classList.add('visible'); });
+  }
+})();
+</script>
 </body>
 </html>

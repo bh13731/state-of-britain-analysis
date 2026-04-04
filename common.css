@@ -263,6 +263,7 @@ body {
     border-radius: 8px;
   }
   .big-number {
+    font-size: clamp(2.2rem, 8vw, 3.2rem);
     word-break: break-word;
   }
   .site-header {

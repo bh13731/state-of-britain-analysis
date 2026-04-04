@@ -5,6 +5,13 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://d3js.org; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src https://stateofbritain.uk; img-src 'self' data:;">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="description" content="Sewage in rivers, rising pollution, and a privatised water system that stopped investing. UK water company performance data.">
+<meta property="og:title" content="State of Britain — Dirty Water">
+<meta property="og:description" content="Sewage in rivers, rising pollution, and a privatised water system that stopped investing. UK water company performance data.">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="State of Britain">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="State of Britain — Dirty Water">
+<meta name="twitter:description" content="Sewage in rivers, rising pollution, and a privatised water system that stopped investing. UK water company performance data.">
 <title>State of Britain — Dirty Water</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -16,6 +23,7 @@
 <link rel="stylesheet" href="pages/css/water.css">
 </head>
 <body>
+<div class="progress-bar" id="progress-bar"></div>
 <a class="skip-link" href="#main-content">Skip to content</a>
 
 <nav class="story-nav" aria-label="Story navigation"><a href="index.html">&larr; All stories</a><span class="nav-separator">|</span><span class="nav-title">Water</span></nav>
@@ -126,6 +134,17 @@
 </section>
 
 </main>
+
+<nav class="story-pagination hidden-until-loaded" aria-label="Story navigation">
+  <a href="infrastructure.html">
+    <span class="page-dir">&larr; Previous story</span>
+    <span class="page-title">Crumbling</span>
+  </a>
+  <a href="immigration.html" class="next-link">
+    <span class="page-dir">Next story &rarr;</span>
+    <span class="page-title">The migration surge</span>
+  </a>
+</nav>
 
 <footer class="site-footer hidden-until-loaded" id="site-footer" role="contentinfo">
   <p><strong>Sources:</strong> Ofwat Water Company Performance Report 2024&ndash;25; Environment Agency Pollution Incident Report 2016&ndash;2024; Environment Agency Storm Overflow EDM Annual Returns 2024.<br>

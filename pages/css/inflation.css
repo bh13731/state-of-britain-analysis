@@ -1,3 +1,4 @@
+:root { --accent: #DC2626; }
 /* inflation.html — page-specific styles */
 /* Page-specific styles */
 #loading-screen .spinner { border-top-color: #DC2626; }

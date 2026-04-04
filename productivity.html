@@ -5,6 +5,13 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://d3js.org; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src https://stateofbritain.uk; img-src 'self' data:;">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="description" content="The UK productivity puzzle — output per hour flatlined after 2008. Why Britain's lost decade matters for everything else.">
+<meta property="og:title" content="State of Britain — Productivity">
+<meta property="og:description" content="The UK productivity puzzle — output per hour flatlined after 2008. Why Britain's lost decade matters for everything else.">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="State of Britain">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="State of Britain — Productivity">
+<meta name="twitter:description" content="The UK productivity puzzle — output per hour flatlined after 2008. Why Britain's lost decade matters for everything else.">
 <title>State of Britain — Productivity</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -16,6 +23,7 @@
 <link rel="stylesheet" href="pages/css/productivity.css">
 </head>
 <body>
+<div class="progress-bar" id="progress-bar"></div>
 <a class="skip-link" href="#main-content">Skip to content</a>
 
 <div id="loading-screen" role="status" aria-live="polite">
@@ -128,6 +136,14 @@
 </section>
 
 </main>
+
+<nav class="story-pagination hidden-until-loaded" aria-label="Story navigation">
+  <span></span>
+  <a href="fertility.html" class="next-link">
+    <span class="page-dir">Next story &rarr;</span>
+    <span class="page-title">The baby bust</span>
+  </a>
+</nav>
 
 <footer class="site-footer hidden-until-loaded" id="site-footer" role="contentinfo">
   <p><strong>Sources:</strong> ONS Output per hour worked, UK (February 2026); OECD Productivity Database.<br>

@@ -1,3 +1,4 @@
+:root { --accent: #991B1B; }
 /* debt.html — page-specific styles */
 /* Page-specific styles */
 #loading-screen .spinner { border-top-color: #991B1B; }

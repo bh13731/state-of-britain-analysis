@@ -473,6 +473,8 @@ function sobRevealContent() {
   if (main) { main.classList.remove("hidden-until-loaded"); main.style.display = ""; }
   var footer = document.getElementById("site-footer");
   if (footer) { footer.classList.remove("hidden-until-loaded"); footer.style.display = ""; }
+  var pagination = document.querySelector(".story-pagination");
+  if (pagination) { pagination.classList.remove("hidden-until-loaded"); pagination.style.display = ""; }
 }
 
 /**
@@ -534,4 +536,13 @@ function sobSetupScrollObserver(firstSection) {
   // Activate first step immediately
   var firstStep = document.querySelector('.step[data-section="' + firstSection + '"][data-step="0"] .step-inner');
   if (firstStep) firstStep.classList.add("active");
+
+  // Reading progress bar
+  var bar = document.getElementById("progress-bar");
+  if (bar) {
+    window.addEventListener("scroll", function() {
+      var h = document.documentElement.scrollHeight - window.innerHeight;
+      bar.style.width = h > 0 ? (window.scrollY / h * 100) + "%" : "0%";
+    }, { passive: true });
+  }
 }

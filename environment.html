@@ -5,6 +5,13 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://d3js.org; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src https://stateofbritain.uk; img-src 'self' data:;">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="description" content="UK emissions halved, air pollution down 76%, EVs surging — the environmental transformation in data.">
+<meta property="og:title" content="State of Britain — Environment">
+<meta property="og:description" content="UK emissions halved, air pollution down 76%, EVs surging — the environmental transformation in data.">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="State of Britain">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="State of Britain — Environment">
+<meta name="twitter:description" content="UK emissions halved, air pollution down 76%, EVs surging — the environmental transformation in data.">
 <title>State of Britain — Environment</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -16,6 +23,7 @@
 <link rel="stylesheet" href="pages/css/environment.css">
 </head>
 <body>
+<div class="progress-bar" id="progress-bar"></div>
 <a class="skip-link" href="#main-content">Skip to content</a>
 
 <div id="loading-screen" role="status" aria-live="polite">
@@ -170,6 +178,17 @@
 </section>
 
 </main>
+
+<nav class="story-pagination hidden-until-loaded" aria-label="Story navigation">
+  <a href="energy.html">
+    <span class="page-dir">&larr; Previous story</span>
+    <span class="page-title">The green grid</span>
+  </a>
+  <a href="index.html" class="next-link">
+    <span class="page-dir">Back to &rarr;</span>
+    <span class="page-title">All stories</span>
+  </a>
+</nav>
 
 <footer class="site-footer hidden-until-loaded" id="site-footer" role="contentinfo">
   <p><strong>Sources:</strong> DESNZ Provisional GHG Emissions Statistics 2024; DEFRA Air Quality Statistics; DfT Vehicle Licensing Statistics (VEH0171).<br>

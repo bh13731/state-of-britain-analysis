@@ -1,3 +1,4 @@
+:root { --accent: #0891B2; }
 /* environment.html — page-specific styles */
 /* Page-specific styles */
 #loading-screen .spinner { border-top-color: #0891B2; }

@@ -5,6 +5,13 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://d3js.org; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src https://stateofbritain.uk; img-src 'self' data:;">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="description" content="Potholes, late trains, and patchy broadband — the state of Britain's infrastructure in data.">
+<meta property="og:title" content="State of Britain — Infrastructure">
+<meta property="og:description" content="Potholes, late trains, and patchy broadband — the state of Britain's infrastructure in data.">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="State of Britain">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="State of Britain — Infrastructure">
+<meta name="twitter:description" content="Potholes, late trains, and patchy broadband — the state of Britain's infrastructure in data.">
 <title>State of Britain — Infrastructure</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -16,6 +23,7 @@
 <link rel="stylesheet" href="pages/css/infrastructure.css">
 </head>
 <body>
+<div class="progress-bar" id="progress-bar"></div>
 <a class="skip-link" href="#main-content">Skip to content</a>
 
 <nav class="story-nav" aria-label="Story navigation"><a href="index.html">&larr; All stories</a><span class="nav-separator">|</span><span class="nav-title">Infrastructure</span></nav>
@@ -169,6 +177,17 @@
 </section>
 
 </main>
+
+<nav class="story-pagination hidden-until-loaded" aria-label="Story navigation">
+  <a href="defence.html">
+    <span class="page-dir">&larr; Previous story</span>
+    <span class="page-title">The defence gap</span>
+  </a>
+  <a href="water.html" class="next-link">
+    <span class="page-dir">Next story &rarr;</span>
+    <span class="page-title">Dirty water</span>
+  </a>
+</nav>
 
 <footer class="site-footer hidden-until-loaded" id="site-footer" role="contentinfo">
   <p><strong>Sources:</strong> Ofcom Connected Nations 2018&ndash;2025; ORR Data Portal (Tables 3103, 1220, 6320); DfT Road Traffic (TRA0101), Road Length (RDL0203) &amp; Road Conditions (RDC0120).<br>

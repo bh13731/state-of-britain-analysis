@@ -5,6 +5,13 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://d3js.org; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src https://stateofbritain.uk; img-src 'self' data:;">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="description" content="UK education spending, GCSE results, and PISA scores — a generation educated on less.">
+<meta property="og:title" content="State of Britain — Education">
+<meta property="og:description" content="UK education spending, GCSE results, and PISA scores — a generation educated on less.">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="State of Britain">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="State of Britain — Education">
+<meta name="twitter:description" content="UK education spending, GCSE results, and PISA scores — a generation educated on less.">
 <title>State of Britain — Education</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -16,6 +23,7 @@
 <link rel="stylesheet" href="pages/css/education.css">
 </head>
 <body>
+<div class="progress-bar" id="progress-bar"></div>
 <a class="skip-link" href="#main-content">Skip to content</a>
 
 <div id="loading-screen" role="status" aria-live="polite">
@@ -147,6 +155,17 @@
 </section>
 
 </main>
+
+<nav class="story-pagination hidden-until-loaded" aria-label="Story navigation">
+  <a href="nhs.html">
+    <span class="page-dir">&larr; Previous story</span>
+    <span class="page-title">The waiting game</span>
+  </a>
+  <a href="justice.html" class="next-link">
+    <span class="page-dir">Next story &rarr;</span>
+    <span class="page-title">Justice delayed</span>
+  </a>
+</nav>
 
 <footer class="site-footer hidden-until-loaded" id="site-footer" role="contentinfo">
   <p><strong>Sources:</strong> IFS Annual Report on Education Spending 2024; DfE GCSE Results (England); OECD PISA 2022; DfE School Workforce Census; DfE HE Participation Rates; OECD Education at a Glance 2024; HESA Student Statistics.<br>

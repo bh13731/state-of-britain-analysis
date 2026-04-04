@@ -17,6 +17,7 @@
 </style>
 </head>
 <body>
+<div class="progress-bar" id="progress-bar"></div>
 
 <nav class="story-nav">
   <a href="index.html">&larr; All stories</a>
@@ -158,6 +159,17 @@
 
 </main>
 
+<nav class="story-pagination" style="display:none;">
+  <a href="productivity.html">
+    <span class="page-dir">&larr; Previous story</span>
+    <span class="page-title">The lost decade</span>
+  </a>
+  <a href="spending.html" class="next-link">
+    <span class="page-dir">Next story &rarr;</span>
+    <span class="page-title">Where the money goes</span>
+  </a>
+</nav>
+
 <footer class="site-footer" id="site-footer" style="display:none;">
   <p><strong>Sources:</strong> ONS Births in England and Wales, 2024; ONS Families and Households in the UK, 2024; ONS Fertility Rates by Parity.<br>
   Data via <a href="https://stateofbritain.uk" target="_blank" rel="noopener">stateofbritain.uk</a>.<br>
@@ -245,6 +257,7 @@ function init() {
   document.getElementById("site-header").style.display = "";
   document.getElementById("main-content").style.display = "";
   document.getElementById("site-footer").style.display = "";
+  document.querySelector('.story-pagination').style.display = '';
 
   // Set big numbers
   document.getElementById("bn-tfr").textContent = DATA.snapshot.tfr.toFixed(2);
@@ -1245,6 +1258,13 @@ function setupScrollObserver() {
 }
 
 })();
+
+// Reading progress bar
+window.addEventListener('scroll', function() {
+  var bar = document.getElementById('progress-bar');
+  var h = document.documentElement.scrollHeight - window.innerHeight;
+  bar.style.width = h > 0 ? (window.scrollY / h * 100) + '%' : '0%';
+}, { passive: true });
 </script>
 </body>
 </html>

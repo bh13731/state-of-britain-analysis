@@ -17,6 +17,7 @@
 </style>
 </head>
 <body>
+<div class="progress-bar" id="progress-bar"></div>
 
 <nav class="story-nav">
   <a href="index.html">&larr; All stories</a>
@@ -133,6 +134,14 @@
 
 </main>
 
+<nav class="story-pagination" style="display:none;">
+  <span></span>
+  <a href="fertility.html" class="next-link">
+    <span class="page-dir">Next story &rarr;</span>
+    <span class="page-title">The baby bust</span>
+  </a>
+</nav>
+
 <footer class="site-footer" id="site-footer" style="display:none;">
   <p><strong>Sources:</strong> ONS Output per hour worked, UK (February 2026); OECD Productivity Database.<br>
   Data via <a href="https://stateofbritain.uk" target="_blank" rel="noopener">stateofbritain.uk</a>.<br>
@@ -224,6 +233,7 @@ function init() {
   document.getElementById("site-header").style.display = "";
   document.getElementById("main-content").style.display = "";
   document.getElementById("site-footer").style.display = "";
+  document.querySelector('.story-pagination').style.display = '';
 
   // Set big number: growth from 2008 to 2024
   const idx2008 = DATA.indexSeries.find(d => d.year === 2008).index;
@@ -1031,6 +1041,13 @@ function updateChart(section, step) {
 }
 
 })();
+
+// Reading progress bar
+window.addEventListener('scroll', function() {
+  var bar = document.getElementById('progress-bar');
+  var h = document.documentElement.scrollHeight - window.innerHeight;
+  bar.style.width = h > 0 ? (window.scrollY / h * 100) + '%' : '0%';
+}, { passive: true });
 </script>
 </body>
 </html>

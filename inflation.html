@@ -14,6 +14,7 @@
 </style>
 </head>
 <body>
+<div class="progress-bar" id="progress-bar"></div>
 
 <nav class="story-nav">
   <a href="index.html">&larr; All stories</a>
@@ -128,6 +129,17 @@
 </section>
 
 </main>
+
+<nav class="story-pagination" style="display:none;">
+  <a href="debt.html">
+    <span class="page-dir">&larr; Previous story</span>
+    <span class="page-title">The bill</span>
+  </a>
+  <a href="nhs.html" class="next-link">
+    <span class="page-dir">Next story &rarr;</span>
+    <span class="page-title">The waiting game</span>
+  </a>
+</nav>
 
 <footer class="site-footer" id="site-footer" style="display:none;">
   <p><strong>Sources:</strong> ONS Consumer Prices Index including owner occupiers&rsquo; housing costs (CPIH), dataset cpih01.<br>
@@ -248,6 +260,7 @@ function init() {
   document.getElementById("site-header").style.display = "";
   document.getElementById("main-content").style.display = "";
   document.getElementById("site-footer").style.display = "";
+  document.querySelector('.story-pagination').style.display = '';
 
   // Find peak CPIH rate
   const peakEntry = RATES.reduce((max, d) => d.CP00 > max.CP00 ? d : max, RATES[0]);
@@ -1233,6 +1246,13 @@ function setupScrollObserver() {
 }
 
 })();
+
+// Reading progress bar
+window.addEventListener('scroll', function() {
+  var bar = document.getElementById('progress-bar');
+  var h = document.documentElement.scrollHeight - window.innerHeight;
+  bar.style.width = h > 0 ? (window.scrollY / h * 100) + '%' : '0%';
+}, { passive: true });
 </script>
 </body>
 </html>

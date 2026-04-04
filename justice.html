@@ -22,6 +22,7 @@
 </style>
 </head>
 <body>
+<div class="progress-bar" id="progress-bar"></div>
 
 <nav class="story-nav">
   <a href="index.html">&larr; All stories</a>
@@ -158,6 +159,17 @@
 
 </main>
 
+<nav class="story-pagination" style="display:none;">
+  <a href="education.html">
+    <span class="page-dir">&larr; Previous story</span>
+    <span class="page-title">Falling behind</span>
+  </a>
+  <a href="defence.html" class="next-link">
+    <span class="page-dir">Next story &rarr;</span>
+    <span class="page-title">The defence gap</span>
+  </a>
+</nav>
+
 <footer class="site-footer" id="site-footer" style="display:none;">
   <p><strong>Sources:</strong> ONS Crime in England and Wales; Home Office Police Workforce Statistics; MoJ Prison Population Statistics; MoJ Criminal Court Statistics; Home Office Crime Outcomes.<br>
   Data via <a href="https://stateofbritain.uk" target="_blank" rel="noopener">stateofbritain.uk</a>.<br>
@@ -249,6 +261,7 @@ function init() {
   document.getElementById("site-header").style.display = "";
   document.getElementById("main-content").style.display = "";
   document.getElementById("site-footer").style.display = "";
+  document.querySelector('.story-pagination').style.display = '';
 
   // Set big numbers
   document.getElementById("bn-charge-rate").textContent = DATA.snapshot.chargeRate + "%";
@@ -1261,6 +1274,13 @@ function setupScrollObserver() {
 }
 
 })();
+
+// Reading progress bar
+window.addEventListener('scroll', function() {
+  var bar = document.getElementById('progress-bar');
+  var h = document.documentElement.scrollHeight - window.innerHeight;
+  bar.style.width = h > 0 ? (window.scrollY / h * 100) + '%' : '0%';
+}, { passive: true });
 </script>
 </body>
 </html>

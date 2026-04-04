@@ -23,6 +23,7 @@
 </style>
 </head>
 <body>
+<div class="progress-bar" id="progress-bar"></div>
 
 <nav class="story-nav">
   <a href="index.html">&larr; All stories</a>
@@ -180,6 +181,17 @@
 
 </main>
 
+<nav class="story-pagination" style="display:none;">
+  <a href="defence.html">
+    <span class="page-dir">&larr; Previous story</span>
+    <span class="page-title">The defence gap</span>
+  </a>
+  <a href="water.html" class="next-link">
+    <span class="page-dir">Next story &rarr;</span>
+    <span class="page-title">Dirty water</span>
+  </a>
+</nav>
+
 <footer class="site-footer" id="site-footer" style="display:none;">
   <p><strong>Sources:</strong> Ofcom Connected Nations 2018&ndash;2025; ORR Data Portal (Tables 3103, 1220, 6320); DfT Road Traffic (TRA0101), Road Length (RDL0203) &amp; Road Conditions (RDC0120).<br>
   Data via <a href="https://stateofbritain.uk" target="_blank" rel="noopener">stateofbritain.uk</a>.<br>
@@ -264,6 +276,7 @@ function init() {
   document.getElementById("site-header").style.display = "";
   document.getElementById("main-content").style.display = "";
   document.getElementById("site-footer").style.display = "";
+  document.querySelector('.story-pagination').style.display = '';
 
   // Set big numbers
   const latestPothole = DATA.roads.potholes[DATA.roads.potholes.length - 1];
@@ -1717,6 +1730,13 @@ function setupScrollObserver() {
 }
 
 })();
+
+// Reading progress bar
+window.addEventListener('scroll', function() {
+  var bar = document.getElementById('progress-bar');
+  var h = document.documentElement.scrollHeight - window.innerHeight;
+  bar.style.width = h > 0 ? (window.scrollY / h * 100) + '%' : '0%';
+}, { passive: true });
 </script>
 </body>
 </html>

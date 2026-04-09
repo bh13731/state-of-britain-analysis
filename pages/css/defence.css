@@ -1,0 +1,8 @@
+:root { --accent: #4A5D23; }
+/* defence.html — page-specific styles */
+/* Page-specific styles */
+#loading-screen .spinner { border-top-color: #4A5D23; }
+.site-header .kicker { color: #4A5D23; }
+.site-footer a { color: #4A5D23; }
+.big-number.green { color: #4A5D23; }
+.big-number.military { color: #4A5D23; }

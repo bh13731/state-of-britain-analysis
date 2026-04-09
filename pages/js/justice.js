@@ -1,0 +1,1032 @@
+// @ts-check
+/**
+ * @file justice.js — Crime rates, police numbers, prison population, court backlogs
+ * @description Interactive D3.js scrollytelling charts for the justice story.
+ * Depends on shared/utils.js being loaded first.
+ */
+(function() {
+"use strict";
+
+sobInstallErrorHandler();
+if (!sobCheckD3()) return;
+
+/* =========================================================
+   COLOURS & CONSTANTS
+   ========================================================= */
+const C = SOB_COLORS;
+const DURATION = SOB_DURATION;
+const MOBILE = SOB_MOBILE;
+
+
+/* =========================================================
+   HELPERS
+   ========================================================= */
+function fmtK(v) { return d3.format(",.1f")(v) + "k"; }
+function fmtM(v) { return d3.format(",.2f")(v) + "m"; }
+
+
+function parseFinYear(fy) {
+  return +fy.split("-")[0];
+}
+
+
+
+/* =========================================================
+   DATA LOAD & INIT
+   ========================================================= */
+/** @type {Object} API response data */
+let DATA;
+
+sobFetchJSON("https://stateofbritain.uk/api/data/justice.json")
+  .then(d => { DATA = sobUnwrapApiResponse(d); init(); })
+  .catch(sobShowError);
+
+function init() {
+  sobRevealContent();
+
+  // Set big numbers
+  document.getElementById("bn-charge-rate").textContent = DATA.snapshot.chargeRate + "%";
+  document.getElementById("bn-backlog").textContent = d3.format(".0f")(DATA.snapshot.courtBacklog) + "k";
+
+  buildAllCharts();
+  setupScrollObserver();
+  window.addEventListener("resize", sobDebounce(rebuildAll, 250));
+}
+
+function rebuildAll() {
+  d3.selectAll("#chart-hook svg, #chart-police svg, #chart-crime svg, #chart-courts svg, #chart-prison svg").remove();
+  buildAllCharts();
+  document.querySelectorAll(".step-inner.active").forEach(el => {
+    const step = el.closest(".step");
+    const sec = step.dataset.section;
+    const idx = +step.dataset.step;
+    updateChart(sec, idx);
+  });
+}
+
+/* =========================================================
+   BUILD ALL CHARTS
+   ========================================================= */
+function buildAllCharts() {
+  buildHookChart();
+  buildPoliceChart();
+  buildCrimeChart();
+  buildCourtsChart();
+  buildPrisonChart();
+}
+
+/* =========================================================
+   CHART 1: HOOK — Charge Rate
+   ========================================================= */
+function buildHookChart() {
+  const container = document.getElementById("chart-hook");
+  const dim = sobChartDims(container);
+  const svg = d3.select(container).append("svg")
+    .attr("width", dim.width).attr("height", dim.height)
+    .attr("viewBox", "0 0 " + dim.width + " " + dim.height)
+    .attr("role", "img")
+    .attr("aria-label", "Chart showing the collapse of the charge rate from 16% in 2014-15 to 5.5% in 2023-24");
+  const g = svg.append("g").attr("transform", "translate(" + dim.margin.left + "," + dim.margin.top + ")");
+
+  const chargeData = DATA.chargeRate;
+
+  // --- BIG NUMBER VIEW (step 0) ---
+  var bigGroup = g.append("g").attr("class", "big-view");
+
+  // Show a large donut-style gauge
+  var gaugeR = Math.min(dim.innerW, dim.innerH) * 0.35;
+  var gaugeCx = dim.innerW / 2;
+  var gaugeCy = dim.innerH / 2;
+  var arcBg = d3.arc().innerRadius(gaugeR - 28).outerRadius(gaugeR).startAngle(-Math.PI * 0.75).endAngle(Math.PI * 0.75);
+  var arcFg = d3.arc().innerRadius(gaugeR - 28).outerRadius(gaugeR).startAngle(-Math.PI * 0.75)
+    .endAngle(-Math.PI * 0.75 + (Math.PI * 1.5) * (DATA.snapshot.chargeRate / 100));
+
+  bigGroup.append("path").attr("d", arcBg())
+    .attr("transform", "translate(" + gaugeCx + "," + gaugeCy + ")")
+    .attr("fill", "#E8E8E3");
+  bigGroup.append("path").attr("d", arcFg())
+    .attr("transform", "translate(" + gaugeCx + "," + gaugeCy + ")")
+    .attr("fill", C.red);
+
+  bigGroup.append("text")
+    .attr("x", gaugeCx).attr("y", gaugeCy - 10)
+    .attr("text-anchor", "middle")
+    .attr("font-family", "Source Serif 4, serif")
+    .attr("font-size", "48px").attr("font-weight", "700").attr("fill", C.red)
+    .text(DATA.snapshot.chargeRate + "%");
+  bigGroup.append("text")
+    .attr("x", gaugeCx).attr("y", gaugeCy + 24)
+    .attr("text-anchor", "middle")
+    .attr("font-family", "Inter, sans-serif")
+    .attr("font-size", "15px").attr("fill", C.muted)
+    .text("of recorded crimes lead to a charge");
+
+  // 2014-15 comparison
+  bigGroup.append("text")
+    .attr("x", gaugeCx).attr("y", gaugeCy + 56)
+    .attr("text-anchor", "middle")
+    .attr("font-family", "Inter, sans-serif")
+    .attr("font-size", "14px").attr("fill", C.faint)
+    .text("Down from 16.1% in 2014\u201315");
+
+  // --- LINE VIEW (step 1, hidden) ---
+  var lineGroup = g.append("g").attr("class", "line-view").style("opacity", 0).style("pointer-events", "none");
+
+  var xScale = d3.scaleLinear()
+    .domain([parseFinYear(chargeData[0].year), parseFinYear(chargeData[chargeData.length - 1].year)])
+    .range([0, dim.innerW]);
+  var yScale = d3.scaleLinear().domain([0, 20]).range([dim.innerH, 0]);
+
+  // Grid
+  lineGroup.append("g").attr("class", "grid")
+    .call(d3.axisLeft(yScale).ticks(5).tickSize(-dim.innerW).tickFormat(""))
+    .call(function(g) { g.select(".domain").remove(); });
+
+  // Area
+  var area = d3.area()
+    .x(function(d) { return xScale(parseFinYear(d.year)); })
+    .y0(dim.innerH)
+    .y1(function(d) { return yScale(d.rate); })
+    .curve(d3.curveMonotoneX);
+  lineGroup.append("path").datum(chargeData)
+    .attr("d", area).attr("fill", C.redLight);
+
+  // Line
+  var line = d3.line()
+    .x(function(d) { return xScale(parseFinYear(d.year)); })
+    .y(function(d) { return yScale(d.rate); })
+    .curve(d3.curveMonotoneX);
+  lineGroup.append("path").datum(chargeData)
+    .attr("d", line).attr("fill", "none").attr("stroke", C.red).attr("stroke-width", 2.5);
+
+  // Dots
+  lineGroup.selectAll(".dot").data(chargeData).enter()
+    .append("circle").attr("class", "dot")
+    .attr("cx", function(d) { return xScale(parseFinYear(d.year)); })
+    .attr("cy", function(d) { return yScale(d.rate); })
+    .attr("r", 4).attr("fill", C.red).attr("stroke", "#fff").attr("stroke-width", 1.5);
+
+  // Start and end labels
+  var first = chargeData[0];
+  var last = chargeData[chargeData.length - 1];
+  lineGroup.append("text").attr("class", "chart-annotation-bold")
+    .attr("x", xScale(parseFinYear(first.year))).attr("y", yScale(first.rate) - 14)
+    .attr("text-anchor", "middle").attr("fill", C.slate)
+    .text(sobFmtPct(first.rate));
+  lineGroup.append("text").attr("class", "chart-annotation-bold")
+    .attr("x", xScale(parseFinYear(last.year))).attr("y", yScale(last.rate) + 24)
+    .attr("text-anchor", "middle").attr("fill", C.red)
+    .text(sobFmtPct(last.rate));
+
+  // Axes
+  lineGroup.append("g").attr("class", "axis x-axis")
+    .attr("transform", "translate(0," + dim.innerH + ")")
+    .call(d3.axisBottom(xScale).ticks(chargeData.length).tickFormat(function(d) { return d + "\u2013" + String(d + 1).slice(2); }).tickSize(0))
+    .call(function(g) { g.select(".domain").remove(); })
+    .selectAll("text").attr("transform", "rotate(-30)").attr("text-anchor", "end");
+
+  lineGroup.append("g").attr("class", "axis y-axis")
+    .call(d3.axisLeft(yScale).ticks(5).tickFormat(function(d) { return d + "%"; }).tickSize(0))
+    .call(function(g) { g.select(".domain").remove(); });
+
+  // Title
+  lineGroup.append("text").attr("class", "chart-title")
+    .attr("x", dim.innerW / 2).attr("y", -10)
+    .attr("text-anchor", "middle")
+    .text("Charge rate (% of recorded crimes leading to charge)");
+
+  // Hover
+  var hoverRect = lineGroup.append("rect")
+    .attr("width", dim.innerW).attr("height", dim.innerH)
+    .attr("fill", "transparent").style("cursor", "crosshair");
+  var hoverLine = lineGroup.append("line")
+    .attr("y1", 0).attr("y2", dim.innerH)
+    .attr("stroke", "#999").attr("stroke-width", 1).attr("stroke-dasharray", "3,2").style("opacity", 0);
+  var hoverDot = lineGroup.append("circle").attr("r", 5).attr("fill", C.red).style("opacity", 0);
+
+  hoverRect.on("mousemove", function(event) {
+    var mx = d3.pointer(event, this)[0];
+    var year = Math.round(xScale.invert(mx));
+    var d = chargeData.find(function(a) { return parseFinYear(a.year) === year; });
+    if (!d) return;
+    var px = xScale(parseFinYear(d.year));
+    hoverLine.attr("x1", px).attr("x2", px).style("opacity", 1);
+    hoverDot.attr("cx", px).attr("cy", yScale(d.rate)).style("opacity", 1);
+    sobShowTooltip('<div class="tt-label">' + d.year + '</div><div class="tt-value">Charge rate: ' + sobFmtPct(d.rate) + '</div>', event);
+  }).on("mouseleave", function() {
+    hoverLine.style("opacity", 0); hoverDot.style("opacity", 0); sobHideTooltip();
+  });
+}
+
+function sequentialSwap(svg, showSel, hideSel) {
+  var hideEl = svg.select(hideSel);
+  var showEl = svg.select(showSel);
+  hideEl.transition().duration(DURATION / 2).style("opacity", 0).on("end", function() {
+    d3.select(this).style("pointer-events", "none");
+    showEl.transition().duration(DURATION / 2).style("opacity", 1).on("end", function() {
+      d3.select(this).style("pointer-events", "all");
+    });
+  });
+}
+
+function updateHookChart(step) {
+  var svg = d3.select("#chart-hook svg");
+  if (step === 0) {
+    sequentialSwap(svg, ".big-view", ".line-view");
+  } else {
+    sequentialSwap(svg, ".line-view", ".big-view");
+  }
+}
+
+/* =========================================================
+   CHART 2: POLICE NUMBERS
+   ========================================================= */
+function buildPoliceChart() {
+  var container = document.getElementById("chart-police");
+  var dim = sobChartDims(container);
+  var svg = d3.select(container).append("svg")
+    .attr("width", dim.width).attr("height", dim.height)
+    .attr("viewBox", "0 0 " + dim.width + " " + dim.height)
+    .attr("role", "img")
+    .attr("aria-label", "Chart showing police officer numbers in England and Wales from 2003 to 2024");
+  var g = svg.append("g").attr("transform", "translate(" + dim.margin.left + "," + dim.margin.top + ")");
+
+  var policeData = DATA.policeWorkforce;
+
+  // --- OFFICERS LINE VIEW (step 0) ---
+  var officerGroup = g.append("g").attr("class", "officer-view");
+
+  var xScale = d3.scaleLinear().domain([policeData[0].year, policeData[policeData.length - 1].year]).range([0, dim.innerW]);
+  var yScale = d3.scaleLinear().domain([110, 160]).range([dim.innerH, 0]);
+
+  // Grid
+  officerGroup.append("g").attr("class", "grid")
+    .call(d3.axisLeft(yScale).ticks(6).tickSize(-dim.innerW).tickFormat(""))
+    .call(function(g) { g.select(".domain").remove(); });
+
+  // Austerity band
+  var austStart = xScale(2010);
+  var austEnd = xScale(2018);
+  officerGroup.append("rect")
+    .attr("x", austStart).attr("y", 0)
+    .attr("width", austEnd - austStart).attr("height", dim.innerH)
+    .attr("fill", C.redLight);
+  officerGroup.append("text").attr("class", "chart-annotation")
+    .attr("x", (austStart + austEnd) / 2).attr("y", 16)
+    .attr("text-anchor", "middle").attr("fill", C.red)
+    .text("Austerity cuts");
+
+  // Recovery band
+  var recStart = xScale(2019);
+  var recEnd = xScale(2024);
+  officerGroup.append("rect")
+    .attr("x", recStart).attr("y", 0)
+    .attr("width", recEnd - recStart).attr("height", dim.innerH)
+    .attr("fill", C.greenLight);
+  officerGroup.append("text").attr("class", "chart-annotation")
+    .attr("x", (recStart + recEnd) / 2).attr("y", 16)
+    .attr("text-anchor", "middle").attr("fill", C.green)
+    .text("Uplift");
+
+  // Line
+  var line = d3.line()
+    .x(function(d) { return xScale(d.year); })
+    .y(function(d) { return yScale(d.officers); })
+    .curve(d3.curveMonotoneX);
+  officerGroup.append("path").datum(policeData)
+    .attr("d", line).attr("fill", "none").attr("stroke", C.slate).attr("stroke-width", 2.5);
+
+  // Dots at key points
+  var keyYears = [2009, 2017, 2023, 2024];
+  officerGroup.selectAll(".key-dot").data(policeData.filter(function(d) { return keyYears.indexOf(d.year) >= 0; }))
+    .enter().append("circle").attr("class", "key-dot")
+    .attr("cx", function(d) { return xScale(d.year); })
+    .attr("cy", function(d) { return yScale(d.officers); })
+    .attr("r", 5).attr("fill", C.slate).attr("stroke", "#fff").attr("stroke-width", 2);
+
+  // Annotations
+  var peak = policeData.find(function(d) { return d.year === 2009; });
+  var trough = policeData.find(function(d) { return d.year === 2017; });
+  var recent = policeData.find(function(d) { return d.year === 2023; });
+
+  officerGroup.append("text").attr("class", "chart-annotation-bold")
+    .attr("x", xScale(2009)).attr("y", yScale(peak.officers) - 14)
+    .attr("text-anchor", "middle").attr("fill", C.slate)
+    .text(fmtK(peak.officers));
+  officerGroup.append("text").attr("class", "chart-annotation")
+    .attr("x", xScale(2009)).attr("y", yScale(peak.officers) - 30)
+    .attr("text-anchor", "middle").attr("fill", C.muted)
+    .text("2009 peak");
+
+  officerGroup.append("text").attr("class", "chart-annotation-bold")
+    .attr("x", xScale(2017)).attr("y", yScale(trough.officers) + 24)
+    .attr("text-anchor", "middle").attr("fill", C.red)
+    .text(fmtK(trough.officers));
+  officerGroup.append("text").attr("class", "chart-annotation")
+    .attr("x", xScale(2017)).attr("y", yScale(trough.officers) + 40)
+    .attr("text-anchor", "middle").attr("fill", C.red)
+    .text("2017 trough");
+
+  officerGroup.append("text").attr("class", "chart-annotation-bold")
+    .attr("x", xScale(2023) + 6).attr("y", yScale(recent.officers) - 14)
+    .attr("text-anchor", "middle").attr("fill", C.green)
+    .text(fmtK(recent.officers));
+
+  // Axes
+  officerGroup.append("g").attr("class", "axis x-axis")
+    .attr("transform", "translate(0," + dim.innerH + ")")
+    .call(d3.axisBottom(xScale).ticks(10).tickFormat(d3.format("d")).tickSize(0))
+    .call(function(g) { g.select(".domain").remove(); });
+  officerGroup.append("g").attr("class", "axis y-axis")
+    .call(d3.axisLeft(yScale).ticks(6).tickFormat(function(d) { return d + "k"; }).tickSize(0))
+    .call(function(g) { g.select(".domain").remove(); });
+
+  // Axis-break indicator (y-axis does not start at zero)
+  officerGroup.append("text").attr("class", "axis-break")
+    .attr("x", -8).attr("y", dim.innerH + 4)
+    .attr("text-anchor", "middle")
+    .text("\u2E17");
+
+  // Title
+  officerGroup.append("text").attr("class", "chart-title")
+    .attr("x", dim.innerW / 2).attr("y", -10)
+    .attr("text-anchor", "middle")
+    .text("Police officers (thousands), England & Wales");
+
+  // --- FULL WORKFORCE STACKED VIEW (step 1, hidden) ---
+  var stackGroup = g.append("g").attr("class", "stack-view").style("opacity", 0).style("pointer-events", "none");
+
+  var yStack = d3.scaleLinear().domain([0, 250]).range([dim.innerH, 0]);
+
+  // Grid
+  stackGroup.append("g").attr("class", "grid")
+    .call(d3.axisLeft(yStack).ticks(6).tickSize(-dim.innerW).tickFormat(""))
+    .call(function(g) { g.select(".domain").remove(); });
+
+  // Stacked areas
+  var areaOfficers = d3.area()
+    .x(function(d) { return xScale(d.year); })
+    .y0(dim.innerH)
+    .y1(function(d) { return yStack(d.officers); })
+    .curve(d3.curveMonotoneX);
+  var areaStaff = d3.area()
+    .x(function(d) { return xScale(d.year); })
+    .y0(function(d) { return yStack(d.officers); })
+    .y1(function(d) { return yStack(d.officers + d.staff); })
+    .curve(d3.curveMonotoneX);
+  var areaPcsos = d3.area()
+    .x(function(d) { return xScale(d.year); })
+    .y0(function(d) { return yStack(d.officers + d.staff); })
+    .y1(function(d) { return yStack(d.officers + d.staff + d.pcsos); })
+    .curve(d3.curveMonotoneX);
+
+  stackGroup.append("path").datum(policeData).attr("d", areaOfficers).attr("fill", C.slate);
+  stackGroup.append("path").datum(policeData).attr("d", areaStaff).attr("fill", "#64748B");
+  stackGroup.append("path").datum(policeData).attr("d", areaPcsos).attr("fill", "#94A3B8");
+
+  // Direct labels -- placed inside the stacked areas for legibility
+  var lastP = policeData[policeData.length - 1];
+  var labelX = xScale(lastP.year) - 10;
+  stackGroup.append("text").attr("class", "chart-annotation-bold")
+    .attr("x", labelX).attr("y", yStack(lastP.officers / 2))
+    .attr("text-anchor", "end")
+    .attr("fill", "#fff").attr("font-size", "13px")
+    .text("Officers " + fmtK(lastP.officers));
+  stackGroup.append("text").attr("class", "chart-annotation-bold")
+    .attr("x", labelX).attr("y", yStack(lastP.officers + lastP.staff / 2))
+    .attr("text-anchor", "end")
+    .attr("fill", "#fff").attr("font-size", "13px")
+    .text("Staff " + fmtK(lastP.staff));
+  stackGroup.append("text").attr("class", "chart-annotation-bold")
+    .attr("x", labelX).attr("y", yStack(lastP.officers + lastP.staff + lastP.pcsos / 2))
+    .attr("text-anchor", "end")
+    .attr("fill", C.ink).attr("font-size", "13px")
+    .text("PCSOs " + fmtK(lastP.pcsos));
+
+  // Axes
+  stackGroup.append("g").attr("class", "axis x-axis")
+    .attr("transform", "translate(0," + dim.innerH + ")")
+    .call(d3.axisBottom(xScale).ticks(10).tickFormat(d3.format("d")).tickSize(0))
+    .call(function(g) { g.select(".domain").remove(); });
+  stackGroup.append("g").attr("class", "axis y-axis")
+    .call(d3.axisLeft(yStack).ticks(6).tickFormat(function(d) { return d + "k"; }).tickSize(0))
+    .call(function(g) { g.select(".domain").remove(); });
+
+  stackGroup.append("text").attr("class", "chart-title")
+    .attr("x", dim.innerW / 2).attr("y", -10)
+    .attr("text-anchor", "middle")
+    .text("Total police workforce (thousands)");
+
+  // Hover on officer view
+  var hoverRect = officerGroup.append("rect")
+    .attr("width", dim.innerW).attr("height", dim.innerH)
+    .attr("fill", "transparent").style("cursor", "crosshair");
+  var hLine = officerGroup.append("line")
+    .attr("y1", 0).attr("y2", dim.innerH)
+    .attr("stroke", "#999").attr("stroke-width", 1).attr("stroke-dasharray", "3,2").style("opacity", 0);
+  var hDot = officerGroup.append("circle").attr("r", 5).attr("fill", C.slate).style("opacity", 0);
+
+  hoverRect.on("mousemove", function(event) {
+    var mx = d3.pointer(event, this)[0];
+    var year = Math.round(xScale.invert(mx));
+    var d = policeData.find(function(a) { return a.year === year; });
+    if (!d) return;
+    hLine.attr("x1", xScale(year)).attr("x2", xScale(year)).style("opacity", 1);
+    hDot.attr("cx", xScale(year)).attr("cy", yScale(d.officers)).style("opacity", 1);
+    sobShowTooltip('<div class="tt-label">' + d.year + '</div><div class="tt-value">Officers: ' + fmtK(d.officers) + '</div><div class="tt-value">Staff: ' + fmtK(d.staff) + '</div><div class="tt-value">PCSOs: ' + fmtK(d.pcsos) + '</div>', event);
+  }).on("mouseleave", function() {
+    hLine.style("opacity", 0); hDot.style("opacity", 0); sobHideTooltip();
+  });
+
+  // Hover on stack view
+  var hoverRect2 = stackGroup.append("rect")
+    .attr("width", dim.innerW).attr("height", dim.innerH)
+    .attr("fill", "transparent").style("cursor", "crosshair");
+  hoverRect2.on("mousemove", function(event) {
+    var mx = d3.pointer(event, this)[0];
+    var year = Math.round(xScale.invert(mx));
+    var d = policeData.find(function(a) { return a.year === year; });
+    if (!d) return;
+    var total = d.officers + d.staff + d.pcsos;
+    sobShowTooltip('<div class="tt-label">' + d.year + '</div><div class="tt-value">Officers: ' + fmtK(d.officers) + '</div><div class="tt-value">Staff: ' + fmtK(d.staff) + '</div><div class="tt-value">PCSOs: ' + fmtK(d.pcsos) + '</div><div class="tt-value" style="font-weight:600;">Total: ' + fmtK(total) + '</div>', event);
+  }).on("mouseleave", sobHideTooltip);
+}
+
+function updatePoliceChart(step) {
+  var svg = d3.select("#chart-police svg");
+  if (step === 0) {
+    sequentialSwap(svg, ".officer-view", ".stack-view");
+  } else {
+    sequentialSwap(svg, ".stack-view", ".officer-view");
+  }
+}
+
+/* =========================================================
+   CHART 3: CRIME TRENDS
+   ========================================================= */
+function buildCrimeChart() {
+  var container = document.getElementById("chart-crime");
+  var dim = sobChartDims(container);
+  var svg = d3.select(container).append("svg")
+    .attr("width", dim.width).attr("height", dim.height)
+    .attr("viewBox", "0 0 " + dim.width + " " + dim.height)
+    .attr("role", "img")
+    .attr("aria-label", "Chart comparing survey-based and police-recorded crime trends in England and Wales");
+  var g = svg.append("g").attr("transform", "translate(" + dim.margin.left + "," + dim.margin.top + ")");
+
+  var crimeData = DATA.crimeSeries;
+  var breakdown = DATA.crimeBreakdown;
+
+  // --- DUAL LINE VIEW (step 0) ---
+  var lineGroup = g.append("g").attr("class", "line-view");
+
+  var xScale = d3.scaleLinear()
+    .domain([parseFinYear(crimeData[0].year), parseFinYear(crimeData[crimeData.length - 1].year)])
+    .range([0, dim.innerW]);
+  var yScale = d3.scaleLinear().domain([0, 14]).range([dim.innerH, 0]);
+
+  // Grid
+  lineGroup.append("g").attr("class", "grid")
+    .call(d3.axisLeft(yScale).ticks(7).tickSize(-dim.innerW).tickFormat(""))
+    .call(function(g) { g.select(".domain").remove(); });
+
+  // CSEW line
+  var csewLine = d3.line()
+    .x(function(d) { return xScale(parseFinYear(d.year)); })
+    .y(function(d) { return yScale(d.csew); })
+    .curve(d3.curveMonotoneX);
+  lineGroup.append("path").datum(crimeData)
+    .attr("d", csewLine).attr("fill", "none").attr("stroke", C.green).attr("stroke-width", 2.5);
+
+  // Recorded line
+  var recLine = d3.line()
+    .x(function(d) { return xScale(parseFinYear(d.year)); })
+    .y(function(d) { return yScale(d.recorded); })
+    .curve(d3.curveMonotoneX);
+  lineGroup.append("path").datum(crimeData)
+    .attr("d", recLine).attr("fill", "none").attr("stroke", C.red).attr("stroke-width", 2.5);
+
+  // Direct labels -- separate vertically if the two series are close
+  var lastCrime = crimeData[crimeData.length - 1];
+  var csewY = yScale(lastCrime.csew);
+  var recY = yScale(lastCrime.recorded);
+  var minSep = 18;
+  if (Math.abs(csewY - recY) < minSep) {
+    var mid = (csewY + recY) / 2;
+    csewY = mid - minSep / 2;
+    recY = mid + minSep / 2;
+  }
+  lineGroup.append("text").attr("class", "chart-annotation-bold")
+    .attr("x", xScale(parseFinYear(lastCrime.year)) + 6).attr("y", csewY + 4)
+    .attr("fill", C.green).text("CSEW " + d3.format(".1f")(lastCrime.csew) + "m");
+  lineGroup.append("text").attr("class", "chart-annotation-bold")
+    .attr("x", xScale(parseFinYear(lastCrime.year)) + 6).attr("y", recY + 4)
+    .attr("fill", C.red).text("Recorded " + d3.format(".1f")(lastCrime.recorded) + "m");
+
+  // Divergence annotation
+  lineGroup.append("text").attr("class", "chart-annotation")
+    .attr("x", xScale(2013)).attr("y", yScale(5.5))
+    .attr("text-anchor", "middle").attr("fill", C.muted)
+    .text("Recording reforms");
+  lineGroup.append("text").attr("class", "chart-annotation")
+    .attr("x", xScale(2013)).attr("y", yScale(5.5) + 16)
+    .attr("text-anchor", "middle").attr("fill", C.muted)
+    .text("drive divergence");
+
+  // Axes
+  lineGroup.append("g").attr("class", "axis x-axis")
+    .attr("transform", "translate(0," + dim.innerH + ")")
+    .call(d3.axisBottom(xScale).ticks(10).tickFormat(function(d) { return "'" + String(d).slice(2); }).tickSize(0))
+    .call(function(g) { g.select(".domain").remove(); });
+  lineGroup.append("g").attr("class", "axis y-axis")
+    .call(d3.axisLeft(yScale).ticks(7).tickFormat(function(d) { return d + "m"; }).tickSize(0))
+    .call(function(g) { g.select(".domain").remove(); });
+
+  lineGroup.append("text").attr("class", "chart-title")
+    .attr("x", dim.innerW / 2).attr("y", -10)
+    .attr("text-anchor", "middle")
+    .text("Crime in England & Wales (millions)");
+
+  // Hover
+  var hoverRect = lineGroup.append("rect")
+    .attr("width", dim.innerW).attr("height", dim.innerH)
+    .attr("fill", "transparent").style("cursor", "crosshair");
+  var hLine = lineGroup.append("line")
+    .attr("y1", 0).attr("y2", dim.innerH)
+    .attr("stroke", "#999").attr("stroke-width", 1).attr("stroke-dasharray", "3,2").style("opacity", 0);
+  var hDotC = lineGroup.append("circle").attr("r", 4).attr("fill", C.green).style("opacity", 0);
+  var hDotR = lineGroup.append("circle").attr("r", 4).attr("fill", C.red).style("opacity", 0);
+
+  hoverRect.on("mousemove", function(event) {
+    var mx = d3.pointer(event, this)[0];
+    var year = Math.round(xScale.invert(mx));
+    var d = crimeData.find(function(a) { return parseFinYear(a.year) === year; });
+    if (!d) return;
+    var px = xScale(parseFinYear(d.year));
+    hLine.attr("x1", px).attr("x2", px).style("opacity", 1);
+    hDotC.attr("cx", px).attr("cy", yScale(d.csew)).style("opacity", 1);
+    hDotR.attr("cx", px).attr("cy", yScale(d.recorded)).style("opacity", 1);
+    sobShowTooltip('<div class="tt-label">' + d.year + '</div><div class="tt-value" style="color:' + C.green + '">CSEW: ' + d3.format(".1f")(d.csew) + 'm</div><div class="tt-value" style="color:' + C.red + '">Recorded: ' + d3.format(".1f")(d.recorded) + 'm</div>', event);
+  }).on("mouseleave", function() {
+    hLine.style("opacity", 0); hDotC.style("opacity", 0); hDotR.style("opacity", 0); sobHideTooltip();
+  });
+
+  // --- BREAKDOWN BAR VIEW (step 1, hidden) ---
+  var barGroup = g.append("g").attr("class", "bar-view").style("opacity", 0).style("pointer-events", "none");
+
+  var sortedBreakdown = breakdown.slice().sort(function(a, b) { return b.value - a.value; });
+  var totalCrime = d3.sum(sortedBreakdown, function(d) { return d.value; });
+
+  var mBar = { left: sobIsMobile() ? 100 : 160 };
+  var barInnerW = dim.innerW - mBar.left + dim.margin.left;
+
+  var yBar = d3.scaleBand()
+    .domain(sortedBreakdown.map(function(d) { return d.category; }))
+    .range([0, dim.innerH])
+    .padding(0.22);
+  var xBar = d3.scaleLinear()
+    .domain([0, d3.max(sortedBreakdown, function(d) { return d.value; }) * 1.2])
+    .range([0, barInnerW]);
+
+  // Bars
+  barGroup.selectAll(".crime-bar").data(sortedBreakdown).enter()
+    .append("rect").attr("class", "crime-bar")
+    .attr("x", mBar.left).attr("y", function(d) { return yBar(d.category); })
+    .attr("width", function(d) { return xBar(d.value); }).attr("height", yBar.bandwidth())
+    .attr("fill", function(d, i) { return i === 0 ? C.red : C.slate; })
+    .attr("opacity", function(d, i) { return i === 0 ? 1 : 0.4 + (0.5 * (1 - i / sortedBreakdown.length)); })
+    .attr("rx", 2)
+    .on("mousemove", function(event, d) {
+      var valStr = d.value >= 1000 ? d3.format(".1f")(d.value / 1000) + "m" : d3.format(",")(d.value) + "k";
+      sobShowTooltip('<div class="tt-label">' + d.category + '</div><div class="tt-value">' + valStr + ' offences (' + Math.round(d.value / totalCrime * 100) + '% of total)</div>', event);
+    })
+    .on("mouseleave", sobHideTooltip);
+
+  // Value labels
+  barGroup.selectAll(".crime-val").data(sortedBreakdown).enter()
+    .append("text").attr("class", function(d, i) { return i === 0 ? "chart-annotation-bold" : "chart-annotation"; })
+    .attr("x", function(d) { return mBar.left + xBar(d.value) + 6; })
+    .attr("y", function(d) { return yBar(d.category) + yBar.bandwidth() / 2 + 4.5; })
+    .attr("fill", function(d, i) { return i === 0 ? C.red : C.muted; })
+    .text(function(d) { return d3.format(",")(d.value) + "k"; });
+
+  // Category labels
+  barGroup.selectAll(".crime-cat").data(sortedBreakdown).enter()
+    .append("text").attr("class", "chart-annotation")
+    .attr("x", mBar.left - 8)
+    .attr("y", function(d) { return yBar(d.category) + yBar.bandwidth() / 2 + 4.5; })
+    .attr("text-anchor", "end")
+    .attr("fill", function(d, i) { return i === 0 ? C.ink : C.muted; })
+    .attr("font-weight", function(d, i) { return i === 0 ? 600 : 400; })
+    .text(function(d) {
+      var maxLen = sobIsMobile() ? 18 : 28;
+      return d.category.length > maxLen ? d.category.slice(0, maxLen - 1) + "\u2026" : d.category;
+    });
+
+  barGroup.append("text").attr("class", "chart-title")
+    .attr("x", dim.innerW / 2).attr("y", -10)
+    .attr("text-anchor", "middle")
+    .text("Recorded crime by type, 2023\u201324 (thousands)");
+}
+
+function updateCrimeChart(step) {
+  var svg = d3.select("#chart-crime svg");
+  if (step === 0) {
+    sequentialSwap(svg, ".line-view", ".bar-view");
+  } else {
+    sequentialSwap(svg, ".bar-view", ".line-view");
+  }
+}
+
+/* =========================================================
+   CHART 4: COURT BACKLOG
+   ========================================================= */
+function buildCourtsChart() {
+  var container = document.getElementById("chart-courts");
+  var dim = sobChartDims(container);
+  var svg = d3.select(container).append("svg")
+    .attr("width", dim.width).attr("height", dim.height)
+    .attr("viewBox", "0 0 " + dim.width + " " + dim.height)
+    .attr("role", "img")
+    .attr("aria-label", "Chart showing the Crown Court case backlog nearly doubling from 2019 to 2024");
+  var g = svg.append("g").attr("transform", "translate(" + dim.margin.left + "," + dim.margin.top + ")");
+
+  var courtData = DATA.courtBacklog;
+
+  // --- BAR CHART VIEW (step 0, default) ---
+  var barGroup = g.append("g").attr("class", "bar-view");
+
+  var xScale = d3.scaleBand()
+    .domain(courtData.map(function(d) { return d.year; }))
+    .range([0, dim.innerW])
+    .padding(0.3);
+  var yMax = Math.ceil(d3.max(courtData, function(d) { return d.outstanding; }) * 1.15 / 10) * 10;
+  var yScale = d3.scaleLinear().domain([0, yMax]).range([dim.innerH, 0]);
+
+  // No gridlines: every bar has a direct label, so gridlines are chart-junk
+
+  // Bars
+  barGroup.selectAll(".court-bar").data(courtData).enter()
+    .append("rect").attr("class", "court-bar")
+    .attr("x", function(d) { return xScale(d.year); })
+    .attr("y", function(d) { return yScale(d.outstanding); })
+    .attr("width", xScale.bandwidth())
+    .attr("height", function(d) { return dim.innerH - yScale(d.outstanding); })
+    .attr("fill", function(d) { return d.year >= 2020 ? C.red : C.slate; })
+    .attr("rx", 3)
+    .on("mousemove", function(event, d) {
+      sobShowTooltip('<div class="tt-label">' + d.year + '</div><div class="tt-value">Outstanding cases: ' + d3.format(",.0f")(d.outstanding) + 'k</div>', event);
+    })
+    .on("mouseleave", sobHideTooltip);
+
+  // Value labels on bars
+  barGroup.selectAll(".court-label").data(courtData).enter()
+    .append("text").attr("class", "chart-annotation-bold")
+    .attr("x", function(d) { return xScale(d.year) + xScale.bandwidth() / 2; })
+    .attr("y", function(d) { return yScale(d.outstanding) - 10; })
+    .attr("text-anchor", "middle")
+    .attr("fill", function(d) { return d.year >= 2020 ? C.red : C.slate; })
+    .text(function(d) { return d3.format(".0f")(d.outstanding) + "k"; });
+
+  // COVID annotation
+  barGroup.append("text").attr("class", "chart-annotation")
+    .attr("x", xScale(2020) + xScale.bandwidth() / 2).attr("y", yScale(54) - 30)
+    .attr("text-anchor", "middle").attr("fill", C.red)
+    .text("COVID closures");
+  barGroup.append("line")
+    .attr("x1", xScale(2020) + xScale.bandwidth() / 2)
+    .attr("x2", xScale(2020) + xScale.bandwidth() / 2)
+    .attr("y1", yScale(54) - 20).attr("y2", yScale(54) - 6)
+    .attr("stroke", C.red).attr("stroke-width", 1).attr("stroke-dasharray", "3,2");
+
+  // Pre-COVID baseline
+  barGroup.append("line")
+    .attr("x1", 0).attr("x2", dim.innerW)
+    .attr("y1", yScale(39)).attr("y2", yScale(39))
+    .attr("stroke", C.slate).attr("stroke-width", 1).attr("stroke-dasharray", "6,4");
+  barGroup.append("text").attr("class", "chart-annotation")
+    .attr("x", dim.innerW).attr("y", yScale(39) - 8)
+    .attr("text-anchor", "end").attr("fill", C.slate)
+    .text("2019 level: 39k");
+
+  // X axis
+  barGroup.append("g").attr("class", "axis x-axis")
+    .attr("transform", "translate(0," + dim.innerH + ")")
+    .call(d3.axisBottom(xScale).tickSize(0))
+    .call(function(g) { g.select(".domain").remove(); });
+  // y-axis omitted: every bar carries its own direct label -- no redundant ink
+
+  barGroup.append("text").attr("class", "chart-title")
+    .attr("x", dim.innerW / 2).attr("y", -10)
+    .attr("text-anchor", "middle")
+    .text("Crown Court outstanding cases (thousands)");
+
+  // --- GROWTH RATE VIEW (step 1, hidden) ---
+  var growthGroup = g.append("g").attr("class", "growth-view").style("opacity", 0).style("pointer-events", "none");
+
+  // Show growth from 2019 baseline
+  var baseVal = courtData[0].outstanding;
+  var growthData = courtData.map(function(d) {
+    return { year: d.year, outstanding: d.outstanding, pctGrowth: ((d.outstanding - baseVal) / baseVal) * 100 };
+  });
+
+  var xGrowth = d3.scaleLinear()
+    .domain([courtData[0].year, courtData[courtData.length - 1].year])
+    .range([0, dim.innerW]);
+  var yGrowth = d3.scaleLinear().domain([0, 100]).range([dim.innerH, 0]);
+
+  // Grid
+  growthGroup.append("g").attr("class", "grid")
+    .call(d3.axisLeft(yGrowth).ticks(5).tickSize(-dim.innerW).tickFormat(""))
+    .call(function(g) { g.select(".domain").remove(); });
+
+  // Area
+  var growthArea = d3.area()
+    .x(function(d) { return xGrowth(d.year); })
+    .y0(dim.innerH)
+    .y1(function(d) { return yGrowth(d.pctGrowth); })
+    .curve(d3.curveMonotoneX);
+  growthGroup.append("path").datum(growthData)
+    .attr("d", growthArea).attr("fill", C.redLight);
+
+  // Line
+  var growthLine = d3.line()
+    .x(function(d) { return xGrowth(d.year); })
+    .y(function(d) { return yGrowth(d.pctGrowth); })
+    .curve(d3.curveMonotoneX);
+  growthGroup.append("path").datum(growthData)
+    .attr("d", growthLine).attr("fill", "none").attr("stroke", C.red).attr("stroke-width", 2.5);
+
+  // Dots
+  growthGroup.selectAll(".gdot").data(growthData).enter()
+    .append("circle").attr("class", "gdot")
+    .attr("cx", function(d) { return xGrowth(d.year); })
+    .attr("cy", function(d) { return yGrowth(d.pctGrowth); })
+    .attr("r", 5).attr("fill", C.red).attr("stroke", "#fff").attr("stroke-width", 2);
+
+  // End label
+  var lastG = growthData[growthData.length - 1];
+  growthGroup.append("text").attr("class", "chart-annotation-bold")
+    .attr("x", xGrowth(lastG.year)).attr("y", yGrowth(lastG.pctGrowth) - 14)
+    .attr("text-anchor", "middle").attr("fill", C.red)
+    .text("+" + Math.round(lastG.pctGrowth) + "% since 2019");
+
+  // Axes
+  growthGroup.append("g").attr("class", "axis x-axis")
+    .attr("transform", "translate(0," + dim.innerH + ")")
+    .call(d3.axisBottom(xGrowth).ticks(courtData.length).tickFormat(d3.format("d")).tickSize(0))
+    .call(function(g) { g.select(".domain").remove(); });
+  growthGroup.append("g").attr("class", "axis y-axis")
+    .call(d3.axisLeft(yGrowth).ticks(5).tickFormat(function(d) { return "+" + d + "%"; }).tickSize(0))
+    .call(function(g) { g.select(".domain").remove(); });
+
+  growthGroup.append("text").attr("class", "chart-title")
+    .attr("x", dim.innerW / 2).attr("y", -10)
+    .attr("text-anchor", "middle")
+    .text("Backlog growth since 2019 (%)");
+}
+
+function updateCourtsChart(step) {
+  var svg = d3.select("#chart-courts svg");
+  if (step === 0) {
+    sequentialSwap(svg, ".bar-view", ".growth-view");
+  } else {
+    sequentialSwap(svg, ".growth-view", ".bar-view");
+  }
+}
+
+/* =========================================================
+   CHART 5: PRISON POPULATION
+   ========================================================= */
+function buildPrisonChart() {
+  var container = document.getElementById("chart-prison");
+  var dim = sobChartDims(container);
+  var svg = d3.select(container).append("svg")
+    .attr("width", dim.width).attr("height", dim.height)
+    .attr("viewBox", "0 0 " + dim.width + " " + dim.height)
+    .attr("role", "img")
+    .attr("aria-label", "Chart showing prison population approaching capacity at 98% utilisation");
+  var g = svg.append("g").attr("transform", "translate(" + dim.margin.left + "," + dim.margin.top + ")");
+
+  var prisonData = DATA.prisonPopulation;
+
+  // --- POPULATION LINE (step 0) ---
+  var popGroup = g.append("g").attr("class", "pop-view");
+
+  var xScale = d3.scaleLinear()
+    .domain([prisonData[0].year, prisonData[prisonData.length - 1].year])
+    .range([0, dim.innerW]);
+  var yScale = d3.scaleLinear().domain([55, 95]).range([dim.innerH, 0]);
+
+  // Grid
+  popGroup.append("g").attr("class", "grid")
+    .call(d3.axisLeft(yScale).ticks(6).tickSize(-dim.innerW).tickFormat(""))
+    .call(function(g) { g.select(".domain").remove(); });
+
+  // Capacity line
+  var capLine = d3.line()
+    .x(function(d) { return xScale(d.year); })
+    .y(function(d) { return yScale(d.capacity); })
+    .curve(d3.curveMonotoneX);
+  popGroup.append("path").datum(prisonData)
+    .attr("d", capLine).attr("fill", "none").attr("stroke", C.faint).attr("stroke-width", 2)
+    .attr("stroke-dasharray", "6,4");
+
+  // Population area under capacity
+  var gapArea = d3.area()
+    .x(function(d) { return xScale(d.year); })
+    .y0(function(d) { return yScale(d.capacity); })
+    .y1(function(d) { return yScale(d.population); })
+    .curve(d3.curveMonotoneX);
+  popGroup.append("path").datum(prisonData)
+    .attr("d", gapArea).attr("fill", C.amberLight);
+
+  // Population line
+  var popLine = d3.line()
+    .x(function(d) { return xScale(d.year); })
+    .y(function(d) { return yScale(d.population); })
+    .curve(d3.curveMonotoneX);
+  popGroup.append("path").datum(prisonData)
+    .attr("d", popLine).attr("fill", "none").attr("stroke", C.red).attr("stroke-width", 2.5);
+
+  // Direct labels at end with collision avoidance
+  var lastP = prisonData[prisonData.length - 1];
+  var prisonLabels = [
+    { rawY: yScale(lastP.population) + 4, color: C.red, text: "Population " + d3.format(".1f")(lastP.population) + "k" },
+    { rawY: yScale(lastP.capacity) + 4, color: C.muted, text: "Capacity " + d3.format(".1f")(lastP.capacity) + "k" }
+  ];
+  prisonLabels.sort(function(a, b) { return a.rawY - b.rawY; });
+  for (var pi = 1; pi < prisonLabels.length; pi++) {
+    if (prisonLabels[pi].rawY - prisonLabels[pi - 1].rawY < 18) {
+      prisonLabels[pi].rawY = prisonLabels[pi - 1].rawY + 18;
+    }
+  }
+  prisonLabels.forEach(function(l) {
+    popGroup.append("text").attr("class", "chart-annotation-bold")
+      .attr("x", xScale(lastP.year) + 6).attr("y", l.rawY)
+      .attr("fill", l.color).text(l.text);
+  });
+
+  // COVID dip annotation
+  var covidD = prisonData.find(function(d) { return d.year === 2021; });
+  if (covidD) {
+    popGroup.append("text").attr("class", "chart-annotation")
+      .attr("x", xScale(2020)).attr("y", yScale(covidD.population) + 24)
+      .attr("text-anchor", "middle").attr("fill", C.muted)
+      .text("COVID releases");
+  }
+
+  // Axes
+  popGroup.append("g").attr("class", "axis x-axis")
+    .attr("transform", "translate(0," + dim.innerH + ")")
+    .call(d3.axisBottom(xScale).ticks(10).tickFormat(d3.format("d")).tickSize(0))
+    .call(function(g) { g.select(".domain").remove(); });
+  popGroup.append("g").attr("class", "axis y-axis")
+    .call(d3.axisLeft(yScale).ticks(6).tickFormat(function(d) { return d + "k"; }).tickSize(0))
+    .call(function(g) { g.select(".domain").remove(); });
+
+  // Axis-break indicator (y-axis does not start at zero)
+  popGroup.append("text").attr("class", "axis-break")
+    .attr("x", -8).attr("y", dim.innerH + 4)
+    .attr("text-anchor", "middle")
+    .text("\u2E17");
+
+  popGroup.append("text").attr("class", "chart-title")
+    .attr("x", dim.innerW / 2).attr("y", -10)
+    .attr("text-anchor", "middle")
+    .text("Prison population vs capacity (thousands)");
+
+  // Hover
+  var hoverRect = popGroup.append("rect")
+    .attr("width", dim.innerW).attr("height", dim.innerH)
+    .attr("fill", "transparent").style("cursor", "crosshair");
+  var hLine = popGroup.append("line")
+    .attr("y1", 0).attr("y2", dim.innerH)
+    .attr("stroke", "#999").attr("stroke-width", 1).attr("stroke-dasharray", "3,2").style("opacity", 0);
+  var hDotPop = popGroup.append("circle").attr("r", 4).attr("fill", C.red).style("opacity", 0);
+  var hDotCap = popGroup.append("circle").attr("r", 4).attr("fill", C.faint).style("opacity", 0);
+
+  hoverRect.on("mousemove", function(event) {
+    var mx = d3.pointer(event, this)[0];
+    var year = Math.round(xScale.invert(mx));
+    var d = prisonData.find(function(a) { return a.year === year; });
+    if (!d) return;
+    var px = xScale(d.year);
+    hLine.attr("x1", px).attr("x2", px).style("opacity", 1);
+    hDotPop.attr("cx", px).attr("cy", yScale(d.population)).style("opacity", 1);
+    hDotCap.attr("cx", px).attr("cy", yScale(d.capacity)).style("opacity", 1);
+    var utilisation = d3.format(".0f")(d.population / d.capacity * 100);
+    sobShowTooltip('<div class="tt-label">' + d.year + '</div><div class="tt-value" style="color:' + C.red + '">Population: ' + d3.format(".1f")(d.population) + 'k</div><div class="tt-value">Capacity: ' + d3.format(".1f")(d.capacity) + 'k</div><div class="tt-value">Utilisation: ' + utilisation + '%</div>', event);
+  }).on("mouseleave", function() {
+    hLine.style("opacity", 0); hDotPop.style("opacity", 0); hDotCap.style("opacity", 0); sobHideTooltip();
+  });
+
+  // --- GAP VIEW (step 1, hidden) ---
+  var gapGroup = g.append("g").attr("class", "gap-view").style("opacity", 0).style("pointer-events", "none");
+
+  var gapData = prisonData.map(function(d) {
+    return { year: d.year, gap: d.capacity - d.population, utilisation: d.population / d.capacity * 100 };
+  });
+
+  var yGap = d3.scaleLinear().domain([85, 100]).range([dim.innerH, 0]);
+
+  // Grid
+  gapGroup.append("g").attr("class", "grid")
+    .call(d3.axisLeft(yGap).ticks(6).tickSize(-dim.innerW).tickFormat(""))
+    .call(function(g) { g.select(".domain").remove(); });
+
+  // 100% line
+  gapGroup.append("line")
+    .attr("x1", 0).attr("x2", dim.innerW)
+    .attr("y1", yGap(100)).attr("y2", yGap(100))
+    .attr("stroke", C.red).attr("stroke-width", 1.5).attr("stroke-dasharray", "6,4");
+  gapGroup.append("text").attr("class", "chart-annotation-bold")
+    .attr("x", dim.innerW).attr("y", yGap(100) - 8)
+    .attr("text-anchor", "end").attr("fill", C.red)
+    .text("100% capacity");
+
+  // Area under utilisation
+  var utilArea = d3.area()
+    .x(function(d) { return xScale(d.year); })
+    .y0(dim.innerH)
+    .y1(function(d) { return yGap(d.utilisation); })
+    .curve(d3.curveMonotoneX);
+  gapGroup.append("path").datum(gapData)
+    .attr("d", utilArea).attr("fill", C.redLight);
+
+  // Line
+  var utilLine = d3.line()
+    .x(function(d) { return xScale(d.year); })
+    .y(function(d) { return yGap(d.utilisation); })
+    .curve(d3.curveMonotoneX);
+  gapGroup.append("path").datum(gapData)
+    .attr("d", utilLine).attr("fill", "none").attr("stroke", C.red).attr("stroke-width", 2.5);
+
+  // Dots at key points
+  gapGroup.selectAll(".util-dot").data(gapData).enter()
+    .append("circle").attr("class", "util-dot")
+    .attr("cx", function(d) { return xScale(d.year); })
+    .attr("cy", function(d) { return yGap(d.utilisation); })
+    .attr("r", 3.5).attr("fill", C.red).attr("stroke", "#fff").attr("stroke-width", 1.5);
+
+  // End label
+  var lastG = gapData[gapData.length - 1];
+  gapGroup.append("text").attr("class", "chart-annotation-bold")
+    .attr("x", xScale(lastG.year) + 6).attr("y", yGap(lastG.utilisation) + 4)
+    .attr("fill", C.red).text(d3.format(".0f")(lastG.utilisation) + "%");
+
+  // Spare places annotation
+  gapGroup.append("text").attr("class", "chart-annotation")
+    .attr("x", xScale(lastG.year)).attr("y", yGap(lastG.utilisation) + 24)
+    .attr("text-anchor", "middle").attr("fill", C.muted)
+    .text("Only " + d3.format(",.0f")(lastG.gap * 1000) + " spare places");
+
+  // Axes
+  gapGroup.append("g").attr("class", "axis x-axis")
+    .attr("transform", "translate(0," + dim.innerH + ")")
+    .call(d3.axisBottom(xScale).ticks(10).tickFormat(d3.format("d")).tickSize(0))
+    .call(function(g) { g.select(".domain").remove(); });
+  gapGroup.append("g").attr("class", "axis y-axis")
+    .call(d3.axisLeft(yGap).ticks(6).tickFormat(function(d) { return d + "%"; }).tickSize(0))
+    .call(function(g) { g.select(".domain").remove(); });
+
+  // Axis-break indicator (y-axis starts at 85%)
+  gapGroup.append("text").attr("class", "axis-break")
+    .attr("x", -8).attr("y", dim.innerH + 4)
+    .attr("text-anchor", "middle")
+    .text("\u2E17");
+
+  gapGroup.append("text").attr("class", "chart-title")
+    .attr("x", dim.innerW / 2).attr("y", -10)
+    .attr("text-anchor", "middle")
+    .text("Prison utilisation rate (%)");
+}
+
+function updatePrisonChart(step) {
+  var svg = d3.select("#chart-prison svg");
+  if (step === 0) {
+    sequentialSwap(svg, ".pop-view", ".gap-view");
+  } else {
+    sequentialSwap(svg, ".gap-view", ".pop-view");
+  }
+}
+
+/* =========================================================
+   UPDATE DISPATCHER
+   ========================================================= */
+function updateChart(section, step) {
+  switch (section) {
+    case "hook": updateHookChart(step); break;
+    case "police": updatePoliceChart(step); break;
+    case "crime": updateCrimeChart(step); break;
+    case "courts": updateCourtsChart(step); break;
+    case "prison": updatePrisonChart(step); break;
+  }
+}
+
+/* =========================================================
+   SCROLLYTELLING — IntersectionObserver
+   ========================================================= */
+function setupScrollObserver() { sobSetupScrollObserver("hook"); }
+
+})();

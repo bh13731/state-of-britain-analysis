@@ -1,0 +1,7 @@
+:root { --accent: #0D9488; }
+/* education.html — page-specific styles */
+/* Page-specific styles */
+#loading-screen .spinner { border-top-color: #0D9488; }
+.site-header .kicker { color: #0D9488; }
+.site-footer a { color: #0D9488; }
+.big-number.teal { color: #0D9488; }

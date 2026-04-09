@@ -1,0 +1,19 @@
+:root { --accent: #475569; }
+/* infrastructure.html — page-specific styles */
+/* Page-specific styles */
+#loading-screen .spinner { border-top-color: #475569; }
+.site-header .kicker { color: #475569; }
+.site-footer a { color: #475569; }
+.big-number.slate { color: #475569; }
+.chart-title {
+  font-size: 15px;
+  font-weight: 600;
+  fill: #1A1A1A;
+  font-family: 'Inter', sans-serif;
+}
+.baseline-flag {
+  font-size: 11px;
+  fill: #8A8A82;
+  font-family: 'Inter', sans-serif;
+  font-style: italic;
+}

@@ -1,0 +1,8 @@
+:root { --accent: #5B7553; }
+/* water.html — page-specific styles */
+/* Page-specific styles */
+#loading-screen .spinner { border-top-color: #5B7553; }
+.site-header .kicker { color: #5B7553; }
+.site-footer a { color: #5B7553; }
+.big-number.murky { color: #5B7553; }
+.big-number.brown { color: #8B6C42; }

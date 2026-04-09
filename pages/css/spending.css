@@ -1,0 +1,5 @@
+:root { --accent: #2563A0; }
+/* spending.html — page-specific styles */
+/* Page-specific styles */
+#loading-screen .spinner { border-top-color: #2563A0; }
+.site-header .kicker { color: #2563A0; }

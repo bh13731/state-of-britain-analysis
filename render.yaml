@@ -1,9 +1,10 @@
 services:
+  # ── Production ──────────────────────────────────────────
   - type: web
     name: state-of-britain
     runtime: static
-    buildCommand: ""
-    staticPublishPath: .
+    buildCommand: "npm install --include=dev && npm run build"
+    staticPublishPath: dist
     routes:
       - type: rewrite
         source: /
@@ -12,3 +13,51 @@ services:
       - path: /*
         name: Cache-Control
         value: public, max-age=3600
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: X-Frame-Options
+        value: DENY
+      - path: /*
+        name: Referrer-Policy
+        value: strict-origin-when-cross-origin
+      - path: /*
+        name: Permissions-Policy
+        value: camera=(), microphone=(), geolocation=()
+      - path: /*
+        name: Strict-Transport-Security
+        value: max-age=31536000; includeSubDomains
+      - path: /shared/*
+        name: Cache-Control
+        value: public, max-age=86400, immutable
+      - path: /pages/*
+        name: Cache-Control
+        value: public, max-age=86400, immutable
+      - path: /charts/*
+        name: Cache-Control
+        value: public, max-age=604800, immutable
+
+  # ── Staging (preview) ──────────────────────────────────
+  - type: web
+    name: state-of-britain-staging
+    runtime: static
+    buildCommand: "npm install --include=dev && npm run build"
+    staticPublishPath: dist
+    envVars:
+      - key: NODE_ENV
+        value: staging
+    routes:
+      - type: rewrite
+        source: /
+        destination: /index.html
+    headers:
+      - path: /*
+        name: Cache-Control
+        value: no-cache
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: X-Robots-Tag
+        value: noindex, nofollow

@@ -1,0 +1,8 @@
+:root { --accent: #059669; }
+/* energy.html — page-specific styles */
+/* Page-specific styles */
+#loading-screen .spinner { border-top-color: #059669; }
+.site-header .kicker { color: #059669; }
+.site-footer a { color: #059669; }
+.big-number.green { color: #059669; }
+.big-number.grey { color: #64748B; }

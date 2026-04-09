@@ -1,0 +1,7 @@
+:root { --accent: #0E7490; }
+/* nhs.html — page-specific styles */
+/* Page-specific styles */
+#loading-screen .spinner { border-top-color: #0E7490; }
+.site-header .kicker { color: #0E7490; }
+.site-footer a { color: #0E7490; }
+.big-number.teal { color: #0E7490; }

@@ -10,13 +10,57 @@
  *  - Text is readable (font sizes)
  *  - Images/SVGs don't overflow
  *
- * Run:  node tests/mobile-responsiveness.test.js
- * Requires: puppeteer, local server on port 8000
+ * Run:  npm test
+ * The test automatically starts and stops a local static file server.
  */
 
 const puppeteer = require('puppeteer');
+const http = require('http');
+const fs = require('fs');
+const path = require('path');
 
-const BASE = 'http://localhost:8000';
+const ROOT_DIR = path.resolve(__dirname, '..');
+
+const MIME_TYPES = {
+  '.html': 'text/html',
+  '.css': 'text/css',
+  '.js': 'application/javascript',
+  '.json': 'application/json',
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.svg': 'image/svg+xml',
+  '.ico': 'image/x-icon',
+};
+
+function startServer() {
+  return new Promise((resolve, reject) => {
+    const server = http.createServer((req, res) => {
+      const urlPath = req.url.split('?')[0];
+      const filePath = path.join(ROOT_DIR, urlPath === '/' ? '/index.html' : urlPath);
+      // Prevent path traversal — reject requests that escape ROOT_DIR
+      // Use ROOT_DIR + path.sep to avoid prefix collision (e.g. /a/b matching /a/b-extra)
+      if (!filePath.startsWith(ROOT_DIR + path.sep)) {
+        res.writeHead(403);
+        res.end('Forbidden');
+        return;
+      }
+      const ext = path.extname(filePath);
+      fs.readFile(filePath, (err, data) => {
+        if (err) {
+          res.writeHead(404);
+          res.end('Not Found');
+          return;
+        }
+        res.writeHead(200, { 'Content-Type': MIME_TYPES[ext] || 'application/octet-stream' });
+        res.end(data);
+      });
+    });
+    server.listen(0, '127.0.0.1', () => {
+      resolve(server);
+    });
+    server.on('error', reject);
+  });
+}
 
 const VIEWPORTS = [
   { name: 'iPhone SE', width: 375, height: 667 },
@@ -50,7 +94,7 @@ function assert(condition, testName) {
   }
 }
 
-async function testPage(browser, pageDef, viewport) {
+async function testPage(BASE, browser, pageDef, viewport) {
   const prefix = `[${viewport.name} ${viewport.width}px] ${pageDef.name}`;
   const page = await browser.newPage();
   await page.setViewport({ width: viewport.width, height: viewport.height });
@@ -101,7 +145,7 @@ async function testPage(browser, pageDef, viewport) {
       });
       assert(headerVisible, `${prefix}: hub header h1 is visible`);
 
-      // 6. Card CTA touch targets
+      // 6. Card CTA touch targets (44px minimum per WCAG)
       if (viewport.width < 768) {
         const ctaSize = await page.evaluate(() => {
           const ctas = document.querySelectorAll('.card-cta');
@@ -112,7 +156,7 @@ async function testPage(browser, pageDef, viewport) {
           }
           return minH;
         });
-        assert(ctaSize >= 42, `${prefix}: card CTA touch target >= 44px (got ${Math.round(ctaSize)}px)`);
+        assert(ctaSize >= 44, `${prefix}: card CTA touch target >= 44px (got ${Math.round(ctaSize)}px)`);
       }
 
     } else {
@@ -182,14 +226,14 @@ async function testPage(browser, pageDef, viewport) {
         });
         assert(!bigNumOverflow, `${prefix}: big numbers don't overflow viewport`);
 
-        // 10. Nav link touch target
+        // 10. Nav link touch target (44px minimum per WCAG)
         const navLinkSize = await page.evaluate(() => {
           const link = document.querySelector('nav a');
           if (!link) return 44;
           const rect = link.getBoundingClientRect();
           return Math.max(rect.height, parseFloat(window.getComputedStyle(link).minHeight) || rect.height);
         });
-        assert(navLinkSize >= 40, `${prefix}: nav link touch target >= 40px (got ${Math.round(navLinkSize)}px)`);
+        assert(navLinkSize >= 44, `${prefix}: nav link touch target >= 44px (got ${Math.round(navLinkSize)}px)`);
       }
     }
   } catch (err) {
@@ -197,29 +241,79 @@ async function testPage(browser, pageDef, viewport) {
     failures.push(`${prefix}: ERROR - ${err.message}`);
     console.log(`  ERROR: ${prefix}: ${err.message}`);
   } finally {
-    await page.close();
+    try { await page.close(); } catch (_) {}
   }
 }
 
-async function run() {
-  console.log('Starting mobile responsiveness tests...\n');
-  console.log(`Testing ${ALL_PAGES.length} pages x ${VIEWPORTS.length} viewports = ${ALL_PAGES.length * VIEWPORTS.length} combinations\n`);
-
-  const browser = await puppeteer.launch({
-    headless: 'new',
-    args: ['--no-sandbox', '--disable-setuid-sandbox'],
+function httpGet(port, rawPath) {
+  return new Promise((resolve, reject) => {
+    // Use explicit options to send the raw path without URL normalization
+    // (new URL() resolves '../' sequences, which would defeat the test)
+    const req = http.request({ hostname: '127.0.0.1', port, path: rawPath, method: 'GET' }, (res) => {
+      req.setTimeout(0); // Cancel the timeout now that we have a response
+      res.resume();
+      resolve(res.statusCode);
+    });
+    req.on('error', reject);
+    req.setTimeout(5000, () => { req.destroy(new Error('httpGet timed out after 5s')); });
+    req.end();
   });
+}
 
-  for (const viewport of VIEWPORTS) {
-    console.log(`\n--- ${viewport.name} (${viewport.width}x${viewport.height}) ---`);
-    // Run pages in parallel batches of 5
-    for (let i = 0; i < ALL_PAGES.length; i += 5) {
-      const batch = ALL_PAGES.slice(i, i + 5);
-      await Promise.all(batch.map(p => testPage(browser, p, viewport)));
-    }
+async function testPathTraversalBlocked(port) {
+  console.log('--- Path traversal guard ---');
+
+  // Test 1: Classic directory traversal (/../../../etc/passwd)
+  const status1 = await httpGet(port, '/../../../etc/passwd');
+  assert(status1 === 403, `path traversal: /../../../etc/passwd returns 403 (got ${status1})`);
+
+  // Test 2: Prefix collision — sibling directory whose name starts with ROOT_DIR basename
+  // e.g. ROOT_DIR="/a/b" should NOT allow access to "/a/b-evil/secret"
+  const rootBasename = path.basename(ROOT_DIR);
+  const status2 = await httpGet(port, `/../${rootBasename}-evil/secret`);
+  assert(status2 === 403, `path traversal: prefix collision (${rootBasename}-evil) returns 403 (got ${status2})`);
+}
+
+async function run() {
+  // Start built-in static file server
+  let server;
+  try {
+    server = await startServer();
+  } catch (err) {
+    console.error(`SETUP ERROR: Could not start static file server: ${err.message}`);
+    process.exit(1);
   }
 
-  await browser.close();
+  const port = server.address().port;
+  const BASE = `http://127.0.0.1:${port}`;
+
+  console.log(`Started static file server on port ${port}`);
+
+  let browser;
+  try {
+    // Run path traversal security tests first (no browser needed)
+    await testPathTraversalBlocked(port);
+
+    console.log('\nStarting mobile responsiveness tests...\n');
+    console.log(`Testing ${ALL_PAGES.length} pages x ${VIEWPORTS.length} viewports = ${ALL_PAGES.length * VIEWPORTS.length} combinations\n`);
+
+    browser = await puppeteer.launch({
+      headless: 'new',
+      args: ['--no-sandbox', '--disable-setuid-sandbox'],
+    });
+
+    for (const viewport of VIEWPORTS) {
+      console.log(`\n--- ${viewport.name} (${viewport.width}x${viewport.height}) ---`);
+      // Run pages in parallel batches of 5
+      for (let i = 0; i < ALL_PAGES.length; i += 5) {
+        const batch = ALL_PAGES.slice(i, i + 5);
+        await Promise.all(batch.map(p => testPage(BASE, browser, p, viewport)));
+      }
+    }
+  } finally {
+    try { if (browser) await browser.close(); } catch (e) { console.error('browser.close() failed:', e.message); }
+    server.close();
+  }
 
   console.log(`\n${'='.repeat(50)}`);
   console.log(`Results: ${passed} passed, ${failed} failed out of ${passed + failed} tests`);
